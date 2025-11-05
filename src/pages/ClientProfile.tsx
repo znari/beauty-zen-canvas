@@ -45,6 +45,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import { openWhatsAppMessage, generateAnamnesisLink } from "@/lib/whatsapp";
+
 
 // Mock data - substituir com dados reais do backend
 const mockClientData = {
@@ -123,15 +125,37 @@ const ClientProfile = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
 
-  const handleWhatsAppMessage = (message: string) => {
-    const whatsappNumber = client.phone.replace(/\D/g, "");
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
+  const handleWhatsAppMessage = (messageType?: string) => {
+    if (messageType === "anamnesis") {
+      const fichaUrl = generateAnamnesisLink(id || "");
+      openWhatsAppMessage("EnvioFicha", {
+        nomeCliente: client.name,
+        telefone: client.phone,
+        linkFicha: fichaUrl,
+      });
+      toast({
+        title: "WhatsApp aberto",
+        description: "Link da ficha enviado via WhatsApp.",
+      });
+    } else {
+      openWhatsAppMessage("BoasVindas", {
+        nomeCliente: client.name,
+        telefone: client.phone,
+      });
+    }
   };
 
   const handleSendAnamnesisLink = () => {
-    const fichaUrl = `${window.location.origin}/ficha/${id}`;
-    const mensagem = `Olá ${client.name}! 😊\n\nPara garantir o melhor atendimento, precisamos que você preencha sua ficha de anamnese.\n\nPor favor, acesse o link abaixo:\n${fichaUrl}\n\nObrigada! 💜`;
-    handleWhatsAppMessage(mensagem);
+    const fichaUrl = generateAnamnesisLink(id || "");
+    openWhatsAppMessage("EnvioFicha", {
+      nomeCliente: client.name,
+      telefone: client.phone,
+      linkFicha: fichaUrl,
+    });
+    toast({
+      title: "WhatsApp aberto",
+      description: "Link da ficha enviado via WhatsApp.",
+    });
   };
 
   const handleReschedule = () => {
@@ -242,11 +266,11 @@ const ClientProfile = () => {
                   </div>
 
                   <Button
-                    onClick={() => handleWhatsAppMessage("Olá! Tudo bem? 😊")}
+                    onClick={() => handleWhatsAppMessage()}
                     className="w-full"
                     variant="outline"
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
+                    <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar Mensagem
                   </Button>
 
@@ -308,7 +332,7 @@ const ClientProfile = () => {
                     variant="outline"
                     className="w-full"
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
+                    <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar por WhatsApp
                   </Button>
                 </div>

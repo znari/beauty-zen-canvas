@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle } from "lucide-react";
+import { openWhatsAppMessage, generateAnamnesisLink, formatDate } from "@/lib/whatsapp";
 
 // Lista de procedimentos disponíveis (mock - futuramente virá do banco)
 const procedimentosDisponiveis = [
@@ -91,18 +92,33 @@ export default function NewClient() {
     
     // Enviar link da ficha via WhatsApp se marcado
     if (enviarWhatsApp) {
-      const fichaUrl = `${window.location.origin}/ficha/${clientId}`;
-      const mensagem = encodeURIComponent(
-        `Olá ${data.nome}! 😊\n\nSeja bem-vinda ao FichaZen! 💜\n\nPara garantir o melhor atendimento, precisamos que você preencha sua ficha de anamnese.\n\nPor favor, acesse o link abaixo:\n${fichaUrl}\n\nObrigada! ✨`
-      );
-      const whatsappNumber = data.whatsapp.replace(/\D/g, "");
-      window.open(`https://wa.me/${whatsappNumber}?text=${mensagem}`, "_blank");
+      const fichaUrl = generateAnamnesisLink(clientId);
+      const procedimentosNomes = data.procedimentos.map(p => p.nome);
+      
+      openWhatsAppMessage("EnvioFicha", {
+        nomeCliente: data.nome,
+        telefone: data.whatsapp,
+        linkFicha: fichaUrl,
+      });
+
+      // Também pode enviar confirmação de agendamento
+      if (data.dataVisita && data.horaVisita) {
+        setTimeout(() => {
+          openWhatsAppMessage("ConfirmacaoAgendamento", {
+            nomeCliente: data.nome,
+            telefone: data.whatsapp,
+            data: formatDate(data.dataVisita),
+            hora: data.horaVisita,
+            procedimentos: procedimentosNomes,
+          });
+        }, 1000);
+      }
     }
     
     toast({
       title: "Cliente cadastrado com sucesso!",
       description: enviarWhatsApp 
-        ? `${data.nome} foi adicionado e o link da ficha foi enviado via WhatsApp.` 
+        ? `${data.nome} foi adicionado e as mensagens foram enviadas via WhatsApp.` 
         : `${data.nome} foi adicionado ao sistema.`,
     });
     
@@ -386,11 +402,11 @@ export default function NewClient() {
                       htmlFor="enviar-whatsapp"
                       className="text-sm font-semibold text-foreground cursor-pointer flex items-center gap-2"
                     >
-                      <MessageCircle className="h-4 w-4 text-primary" />
-                      Enviar link da ficha de anamnese via WhatsApp
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                      Enviar mensagens via WhatsApp
                     </label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Após salvar, o WhatsApp será aberto automaticamente com uma mensagem contendo o link da ficha para a cliente preencher.
+                      Após salvar, o WhatsApp será aberto com mensagem de boas-vindas e link da ficha de anamnese.
                     </p>
                   </div>
                 </div>
