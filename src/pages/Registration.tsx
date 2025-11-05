@@ -9,12 +9,20 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { FileText, MessageCircle, Camera } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import InputMask from "react-input-mask";
+import { validateCPForCNPJ, cleanDocument, getDocumentMask } from "@/lib/validateDocument";
+import { supabase } from "@/integrations/supabase/client";
 
 const registrationSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
   nomeEstudio: z.string().min(2, "Nome do estúdio deve ter pelo menos 2 caracteres").max(100),
   email: z.string().email("E-mail inválido").max(255),
   telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos").max(20),
+  cpfCnpj: z.string()
+    .min(1, "CPF ou CNPJ é obrigatório")
+    .refine((val) => validateCPForCNPJ(val), {
+      message: "CPF ou CNPJ inválido",
+    }),
   senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   confirmarSenha: z.string()
 }).refine((data) => data.senha === data.confirmarSenha, {
@@ -28,6 +36,7 @@ export default function Registration() {
   const navigate = useNavigate();
   const { signUp, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [documentMask, setDocumentMask] = useState('999.999.999-999');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -47,10 +56,41 @@ export default function Registration() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
     
+    // Clean CPF/CNPJ (remove mask)
+    const cleanedDocument = cleanDocument(data.cpfCnpj);
+    
+    // Check if CPF/CNPJ already exists
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('cpf_cnpj')
+      .eq('cpf_cnpj', cleanedDocument)
+      .maybeSingle();
+    
+    if (checkError) {
+      toast({
+        title: "Erro ao verificar documento",
+        description: "Não foi possível verificar o CPF/CNPJ. Tente novamente.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    if (existingProfile) {
+      toast({
+        title: "CPF/CNPJ já cadastrado",
+        description: "Este CPF/CNPJ já está cadastrado no sistema.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
     const { error } = await signUp(data.email, data.senha, {
       full_name: data.nomeCompleto,
       studio_name: data.nomeEstudio,
       phone: data.telefone,
+      cpf_cnpj: cleanedDocument,
     });
     
     if (error) {
@@ -188,6 +228,35 @@ export default function Registration() {
                 />
                 {errors.telefone && (
                   <p className="text-sm text-destructive mt-1">{errors.telefone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="cpfCnpj">CPF ou CNPJ</Label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <InputMask
+                    mask={documentMask}
+                    {...register("cpfCnpj")}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setDocumentMask(getDocumentMask(value));
+                      register("cpfCnpj").onChange(e);
+                    }}
+                  >
+                    {/* @ts-ignore */}
+                    {(inputProps: any) => (
+                      <Input
+                        {...inputProps}
+                        id="cpfCnpj"
+                        placeholder="000.000.000-00"
+                        className="mt-1 pl-10"
+                      />
+                    )}
+                  </InputMask>
+                </div>
+                {errors.cpfCnpj && (
+                  <p className="text-sm text-destructive mt-1">{errors.cpfCnpj.message}</p>
                 )}
               </div>
 
