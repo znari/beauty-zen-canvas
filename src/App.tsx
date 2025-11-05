@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
+import PasswordRecovery from "./pages/PasswordRecovery";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/registro" element={<Registration />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/recuperar-senha" element={<PasswordRecovery />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
