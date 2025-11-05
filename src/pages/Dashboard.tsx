@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Calendar, Users, FileText, Settings, Search, Plus } from "lucide-react";
 import {
   DropdownMenu,
@@ -78,6 +79,7 @@ const mockClients = [
 
 const Dashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -243,6 +245,7 @@ const Dashboard = () => {
                   {filteredClients.map((client, idx) => (
                     <TableRow 
                       key={client.id} 
+                      onClick={() => navigate(`/cliente/${client.id}`)}
                       className={`cursor-pointer hover:bg-muted/50 transition-all hover:shadow-sm ${
                         idx % 2 === 0 ? 'bg-white' : 'bg-muted/20'
                       }`}
