@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy } from "lucide-react";
+import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy, ArrowLeft } from "lucide-react";
 import { messageTemplates, gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
 import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
 import { toast } from "sonner";
@@ -48,6 +49,7 @@ const messageTypeLabels: Record<MessageType, string> = {
 };
 
 export default function MessageSettings() {
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState<MessageTemplate[]>(mockTemplates);
   const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
   const [filterType, setFilterType] = useState<MessageType | "all">("all");
@@ -144,13 +146,23 @@ export default function MessageSettings() {
       <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-primary-dark">
-                Templates de Mensagens
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Gerencie seus templates personalizados de WhatsApp
-              </p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/dashboard")}
+                className="hover:bg-primary-light"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-semibold text-primary-dark">
+                  Templates de Mensagens
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Gerencie seus templates personalizados de WhatsApp
+                </p>
+              </div>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
