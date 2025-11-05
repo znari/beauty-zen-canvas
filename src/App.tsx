@@ -10,6 +10,7 @@ import PasswordRecovery from "./pages/PasswordRecovery";
 import NewPassword from "./pages/NewPassword";
 import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
+import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
 import AnamnesisForm from "./pages/AnamnesisForm";
 import Success from "./pages/Success";
 import NewClient from "./pages/NewClient";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/nova-senha" element={<NewPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cliente/:id" element={<ClientProfile />} />
+          <Route path="/cliente/:id/ficha" element={<ClientAnamnesisForm />} />
           <Route path="/clientes" element={<ClientList />} />
           <Route path="/clientes/novo" element={<NewClient />} />
           <Route path="/ficha/:id" element={<AnamnesisForm />} />

@@ -323,12 +323,12 @@ const ClientProfile = () => {
 
                 <div className="flex flex-col gap-2">
                   <Button
-                    onClick={() => navigate(`/ficha/${id}`)}
+                    onClick={() => navigate(`/cliente/${id}/ficha`)}
                     variant="default"
                     className="w-full"
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    Visualizar Ficha
+                    {client.anamnesisStatus === "Preenchida" ? "Ver / Editar Ficha" : "Preencher Ficha de Anamnese"}
                   </Button>
                   <Button
                     onClick={handleSendAnamnesisLink}
