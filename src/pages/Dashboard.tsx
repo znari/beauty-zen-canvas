@@ -113,15 +113,15 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FCF8FD] to-[#EFCFEF]">
+    <div className="min-h-screen gradient-hero">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-primary">FichaZen</h1>
+          <h1 className="text-2xl font-bold text-primary">FichaZen</h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5 text-primary" />
+              <Button variant="ghost" size="icon" className="text-secondary hover:text-primary hover:bg-primary/10">
+                <Settings className="h-6 w-6" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
@@ -137,19 +137,21 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
           {kpiData.map((kpi, index) => {
             const Icon = kpi.icon;
             return (
-              <Card key={index} className="bg-white/90 backdrop-blur-sm border-primary/10 hover:shadow-lg transition-shadow">
+              <Card key={index} className="bg-white border-b-4 border-b-primary shadow-card hover-lift">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                     {kpi.label}
                   </CardTitle>
-                  <Icon className="h-5 w-5 text-primary" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Icon className="h-6 w-6 text-primary drop-shadow-sm" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-primary">{kpi.value}</div>
+                  <div className="text-4xl font-bold text-secondary">{kpi.value}</div>
                 </CardContent>
               </Card>
             );
@@ -157,17 +159,20 @@ const Dashboard = () => {
         </div>
 
         {/* Weekly Calendar */}
-        <Card className="bg-white/90 backdrop-blur-sm border-primary/10">
+        <Card className="bg-white shadow-card border-0 animate-fade-in-up">
           <CardHeader>
-            <CardTitle className="text-xl text-primary">Calendário de Agendamentos</CardTitle>
+            <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              Calendário de Agendamentos
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {mockWeekDays.map((day) => (
-                <div key={day.date} className="space-y-2">
-                  <div className="text-center p-2 bg-primary/10 rounded-lg">
-                    <div className="font-semibold text-primary">{day.day}</div>
-                    <div className="text-sm text-muted-foreground">{day.date}</div>
+                <div key={day.date} className="space-y-3">
+                  <div className="text-center p-3 bg-primary text-white rounded-xl shadow-sm">
+                    <div className="font-semibold text-base">{day.day}</div>
+                    <div className="text-sm opacity-90">{day.date}</div>
                   </div>
                   <div className="space-y-2">
                     {mockAppointments[day.date as keyof typeof mockAppointments].length > 0 ? (
@@ -175,14 +180,16 @@ const Dashboard = () => {
                         <button
                           key={apt.id}
                           onClick={() => setSelectedAppointment(apt)}
-                          className="w-full p-2 bg-primary/20 hover:bg-primary/30 rounded-lg text-left transition-colors"
+                          className="w-full p-3 bg-white border border-primary/20 hover:bg-accent/30 rounded-xl text-left transition-all hover:scale-[1.02] hover:shadow-md"
                         >
-                          <div className="text-xs font-semibold text-primary">{apt.time}</div>
-                          <div className="text-sm text-foreground">{apt.client}</div>
+                          <div className="text-xs font-bold text-secondary flex items-center gap-1">
+                            <span>🕓</span> {apt.time}
+                          </div>
+                          <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
                         </button>
                       ))
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground border-2 border-dashed border-primary/20 rounded-lg">
+                      <div className="p-4 text-center text-sm text-muted-foreground border-2 border-dashed border-primary/30 rounded-xl bg-muted/30">
                         Nenhum agendamento
                       </div>
                     )}
@@ -194,53 +201,60 @@ const Dashboard = () => {
         </Card>
 
         {/* Clients Section */}
-        <Card className="bg-white/90 backdrop-blur-sm border-primary/10">
+        <Card className="bg-white shadow-card border-0 animate-fade-in-up">
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <CardTitle className="text-xl text-primary">Meus Clientes</CardTitle>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-2xl font-bold text-secondary flex items-center gap-2">
+                <Users className="h-6 w-6" />
+                Meus Clientes
+              </CardTitle>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 sm:w-72">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Buscar por nome ou telefone..."
-                    className="pl-10 border-primary/20 focus:border-primary"
+                    className="pl-10 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Button
                   onClick={() => setShowNewClientDialog(true)}
-                  className="bg-primary hover:bg-primary/90"
+                  className="gradient-button text-white font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-5 w-5 mr-2" />
                   Novo Cliente
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-primary/10 overflow-hidden">
+            <div className="rounded-xl border border-primary/20 overflow-hidden shadow-sm">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Status da Ficha</TableHead>
-                    <TableHead>Última Atividade</TableHead>
+                  <TableRow className="bg-accent/30 hover:bg-accent/30">
+                    <TableHead className="font-bold text-secondary">Cliente</TableHead>
+                    <TableHead className="font-bold text-secondary">WhatsApp</TableHead>
+                    <TableHead className="font-bold text-secondary">Status da Ficha</TableHead>
+                    <TableHead className="font-bold text-secondary">Última Atividade</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.map((client) => (
-                    <TableRow key={client.id} className="cursor-pointer hover:bg-primary/5">
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.phone}</TableCell>
+                  {filteredClients.map((client, idx) => (
+                    <TableRow 
+                      key={client.id} 
+                      className={`cursor-pointer hover:bg-muted/50 transition-all hover:shadow-sm ${
+                        idx % 2 === 0 ? 'bg-white' : 'bg-muted/20'
+                      }`}
+                    >
+                      <TableCell className="font-semibold text-foreground">{client.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{client.phone}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={client.status === "Ativa" ? "default" : "secondary"}
                           className={
                             client.status === "Ativa"
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                              ? "bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))] hover:bg-[hsl(var(--status-active))] font-semibold"
+                              : "bg-[hsl(var(--status-pending))] text-[hsl(var(--status-pending-foreground))] hover:bg-[hsl(var(--status-pending))] font-semibold"
                           }
                         >
                           {client.status}
@@ -256,47 +270,47 @@ const Dashboard = () => {
         </Card>
 
         {/* Footer */}
-        <footer className="text-center text-sm text-muted-foreground py-4">
-          © 2025 FichaZen — Seu estúdio, mais zen.
+        <footer className="text-center text-sm py-6">
+          <p className="text-secondary/70 font-medium">© 2025 FichaZen — Seu estúdio, mais zen.</p>
         </footer>
       </main>
 
       {/* Appointment Details Dialog */}
       <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent className="bg-white border-primary/20 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-primary">Detalhes do Agendamento</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-primary">Detalhes do Agendamento</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Informações completas sobre este agendamento
             </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4 py-4">
-              <div>
-                <Label className="text-sm font-semibold text-muted-foreground">Cliente</Label>
-                <p className="text-lg">{selectedAppointment.client}</p>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Cliente</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
               </div>
-              <div>
-                <Label className="text-sm font-semibold text-muted-foreground">Procedimento</Label>
-                <p className="text-lg">{selectedAppointment.procedure}</p>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Procedimento</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
               </div>
-              <div>
-                <Label className="text-sm font-semibold text-muted-foreground">Horário</Label>
-                <p className="text-lg">{selectedAppointment.time}</p>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Horário</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
               </div>
               {selectedAppointment.notes && (
-                <div>
-                  <Label className="text-sm font-semibold text-muted-foreground">Observações</Label>
-                  <p className="text-lg">{selectedAppointment.notes}</p>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Observações</Label>
+                  <p className="text-lg text-foreground mt-1">{selectedAppointment.notes}</p>
                 </div>
               )}
             </div>
           )}
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleReschedule} className="border-primary/20">
+            <Button variant="outline" onClick={handleReschedule} className="border-primary/30 hover:bg-primary/10">
               Reagendar
             </Button>
-            <Button variant="destructive" onClick={handleCancelAppointment}>
+            <Button variant="destructive" onClick={handleCancelAppointment} className="shadow-md">
               Cancelar Agendamento
             </Button>
           </DialogFooter>
@@ -305,32 +319,52 @@ const Dashboard = () => {
 
       {/* New Client Dialog */}
       <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
-        <DialogContent className="bg-white">
+        <DialogContent className="bg-white border-primary/20 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-primary">Novo Cliente</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-primary">Novo Cliente</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Cadastre um novo cliente no seu estúdio
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="name">Nome completo</Label>
-              <Input id="name" placeholder="Digite o nome do cliente" className="border-primary/20" />
+              <Label htmlFor="name" className="text-secondary font-semibold">Nome completo</Label>
+              <Input 
+                id="name" 
+                placeholder="Digite o nome do cliente" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
             <div>
-              <Label htmlFor="phone">WhatsApp</Label>
-              <Input id="phone" placeholder="(11) 98765-4321" className="border-primary/20" />
+              <Label htmlFor="phone" className="text-secondary font-semibold">WhatsApp</Label>
+              <Input 
+                id="phone" 
+                placeholder="(11) 98765-4321" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
             <div>
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" placeholder="cliente@exemplo.com" className="border-primary/20" />
+              <Label htmlFor="email" className="text-secondary font-semibold">E-mail</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="cliente@exemplo.com" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewClientDialog(false)} className="border-primary/20">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowNewClientDialog(false)} 
+              className="border-primary/30 hover:bg-primary/10"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleNewClient} className="bg-primary hover:bg-primary/90">
+            <Button 
+              onClick={handleNewClient} 
+              className="gradient-button text-white font-semibold shadow-md hover:shadow-lg"
+            >
               Cadastrar Cliente
             </Button>
           </DialogFooter>

@@ -8,47 +8,55 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* FichaZen Brand Colors */
-    --background: 300 60% 98%;
-    --foreground: 276 21% 21%;
+    /* FichaZen Brand Colors - Vibrantes e Elegantes */
+    --background: 283 100% 96%;
+    --foreground: 0 0% 23%;
 
     --card: 0 0% 100%;
-    --card-foreground: 276 21% 21%;
+    --card-foreground: 0 0% 23%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 276 21% 21%;
+    --popover-foreground: 0 0% 23%;
 
-    /* Rosé suave - cor primária */
-    --primary: 300 60% 93%;
-    --primary-foreground: 276 21% 21%;
+    /* Lavanda vibrante - cor primária #C084FC */
+    --primary: 283 96% 75%;
+    --primary-foreground: 0 0% 100%;
     
-    /* Lavanda - cor secundária */
-    --secondary: 266 68% 72%;
+    /* Roxo escuro - contraste #6B21A8 */
+    --secondary: 277 67% 39%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 300 40% 95%;
-    --muted-foreground: 276 21% 45%;
+    --muted: 283 50% 97%;
+    --muted-foreground: 0 0% 43%;
 
-    /* Acento rosé */
-    --accent: 345 65% 90%;
-    --accent-foreground: 276 21% 21%;
+    /* Rosa suave - acento #F9A8D4 */
+    --accent: 330 85% 82%;
+    --accent-foreground: 0 0% 23%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 300 30% 90%;
-    --input: 300 30% 90%;
-    --ring: 266 68% 72%;
+    --border: 283 30% 90%;
+    --input: 283 30% 90%;
+    --ring: 283 96% 75%;
 
     --radius: 1rem;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(300 60% 93%), hsl(266 68% 72%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(300 60% 98%));
+    /* Status badges */
+    --status-active: 142 76% 80%;
+    --status-active-foreground: 142 76% 25%;
+    --status-pending: 48 96% 76%;
+    --status-pending-foreground: 45 93% 25%;
+
+    /* Gradients vibrantes */
+    --gradient-hero: linear-gradient(135deg, hsl(283 100% 96%), hsl(330 100% 96%));
+    --gradient-button: linear-gradient(135deg, hsl(283 96% 75%), hsl(330 85% 82%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(283 50% 98%));
     
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -2px hsl(266 68% 72% / 0.15);
-    --shadow-card: 0 2px 12px -1px hsl(266 68% 72% / 0.1);
+    /* Shadows mais perceptíveis */
+    --shadow-soft: 0 4px 20px -2px hsl(283 96% 75% / 0.25);
+    --shadow-card: 0 4px 16px -2px hsl(283 96% 75% / 0.15);
+    --shadow-hover: 0 8px 24px -4px hsl(283 96% 75% / 0.3);
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -114,7 +122,7 @@ All colors MUST be HSL.
   }
 
   .hover-lift {
-    @apply transition-all duration-300 hover:scale-[1.03] hover:shadow-lg;
+    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-hover;
   }
 
   .gradient-hero {
@@ -125,12 +133,20 @@ All colors MUST be HSL.
     background: var(--gradient-card);
   }
 
+  .gradient-button {
+    background: var(--gradient-button);
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
 
   .shadow-card {
     box-shadow: var(--shadow-card);
+  }
+
+  .shadow-hover {
+    box-shadow: var(--shadow-hover);
   }
 }
 
