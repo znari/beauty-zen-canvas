@@ -221,7 +221,7 @@ const Dashboard = () => {
                   />
                 </div>
                 <Button
-                  onClick={() => setShowNewClientDialog(true)}
+                  onClick={() => navigate("/clientes/novo")}
                   className="gradient-button text-white font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
                   <Plus className="h-5 w-5 mr-2" />

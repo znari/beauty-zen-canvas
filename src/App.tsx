@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
 import AnamnesisForm from "./pages/AnamnesisForm";
 import Success from "./pages/Success";
+import NewClient from "./pages/NewClient";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/nova-senha" element={<NewPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cliente/:id" element={<ClientProfile />} />
+          <Route path="/clientes/novo" element={<NewClient />} />
           <Route path="/ficha/:id" element={<AnamnesisForm />} />
           <Route path="/sucesso" element={<Success />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
