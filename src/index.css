@@ -8,63 +8,93 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* FichaZen Brand Colors - Vibrantes e Elegantes */
-    --background: 283 100% 96%;
-    --foreground: 0 0% 23%;
+    /* FichaZen Brand Colors - Paleta completa */
+    
+    /* Fundos */
+    --background: 300 100% 99%;  /* #FDF8FF */
+    --background-section: 0 0% 100%;  /* #FFFFFF */
+    --background-alt: 270 100% 98%;  /* #F9F5FF */
+    
+    /* Textos */
+    --foreground: 0 0% 23%;  /* #3B3B3B */
+    --foreground-secondary: 0 0% 43%;  /* #6D6D6D */
 
-    --card: 0 0% 100%;
+    /* Cards */
+    --card: 0 0% 100%;  /* #FFFFFF */
     --card-foreground: 0 0% 23%;
 
+    /* Popover */
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 23%;
 
-    /* Lavanda vibrante - cor primária #C084FC */
-    --primary: 283 96% 75%;
+    /* Primária - Lavanda vibrante */
+    --primary: 283 96% 75%;  /* #C084FC */
     --primary-foreground: 0 0% 100%;
+    --primary-light: 277 100% 92%;  /* #E9D5FF */
+    --primary-dark: 277 77% 47%;  /* #7E22CE */
     
-    /* Roxo escuro - contraste #6B21A8 */
-    --secondary: 277 67% 39%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secundária - Rosa suave */
+    --secondary: 330 85% 82%;  /* #F9A8D4 */
+    --secondary-foreground: 0 0% 23%;
+    --secondary-light: 322 91% 95%;  /* #FCE7F3 */
+    --secondary-dark: 332 83% 49%;  /* #DB2777 */
 
-    --muted: 283 50% 97%;
-    --muted-foreground: 0 0% 43%;
+    /* Muted */
+    --muted: 270 100% 98%;  /* #F9F5FF */
+    --muted-foreground: 0 0% 60%;  /* #9CA3AF */
 
-    /* Rosa suave - acento #F9A8D4 */
-    --accent: 330 85% 82%;
+    /* Accent - Rosa suave */
+    --accent: 330 85% 82%;  /* #F9A8D4 */
     --accent-foreground: 0 0% 23%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    /* Feedback colors */
+    --destructive: 0 84% 79%;  /* #FCA5A5 */
+    --destructive-foreground: 0 0% 23%;
+    --success: 152 68% 85%;  /* #A7F3D0 */
+    --success-foreground: 152 68% 25%;
+    --warning: 48 98% 77%;  /* #FDE68A */
+    --warning-foreground: 45 93% 25%;
+    --info: 213 94% 87%;  /* #BFDBFE */
+    --info-foreground: 213 94% 30%;
 
-    --border: 283 30% 90%;
-    --input: 283 30% 90%;
+    /* Bordas e inputs */
+    --border: 270 30% 90%;  /* #E5E0EC */
+    --input: 277 100% 92%;  /* #E9D5FF */
     --ring: 283 96% 75%;
 
     --radius: 1rem;
 
-    /* Status badges */
-    --status-active: 142 76% 80%;
-    --status-active-foreground: 142 76% 25%;
-    --status-pending: 48 96% 76%;
+    /* Status badges (compatibilidade) */
+    --status-active: 152 68% 85%;
+    --status-active-foreground: 152 68% 25%;
+    --status-pending: 48 98% 77%;
     --status-pending-foreground: 45 93% 25%;
 
-    /* Gradients vibrantes */
-    --gradient-hero: linear-gradient(135deg, hsl(283 100% 96%), hsl(330 100% 96%));
-    --gradient-button: linear-gradient(135deg, hsl(283 96% 75%), hsl(330 85% 82%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(283 50% 98%));
+    /* Gradientes vibrantes */
+    --gradient-primary: linear-gradient(135deg, hsl(283 96% 75%), hsl(330 85% 82%));
+    --gradient-hero: linear-gradient(135deg, hsl(300 100% 99%), hsl(330 100% 98%));
+    --gradient-button: linear-gradient(135deg, hsl(283 96% 75%), hsl(327 87% 68%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(270 100% 98%));
+    --gradient-page: linear-gradient(135deg, hsl(300 100% 99%), hsl(330 100% 98%));
     
-    /* Shadows mais perceptíveis */
+    /* Sombras elegantes */
     --shadow-soft: 0 4px 20px -2px hsl(283 96% 75% / 0.25);
-    --shadow-card: 0 4px 16px -2px hsl(283 96% 75% / 0.15);
+    --shadow-card: 0 4px 16px -2px hsl(283 80% 77% / 0.15);
     --shadow-hover: 0 8px 24px -4px hsl(283 96% 75% / 0.3);
+    --shadow-button: 0 4px 12px -2px hsl(283 96% 75% / 0.35);
     
     /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.25s ease-in-out;
+    --transition-scale: transform 0.25s ease-in-out;
   }
 
   .dark {
     --background: 276 21% 12%;
+    --background-section: 276 21% 15%;
+    --background-alt: 276 21% 18%;
+    
     --foreground: 300 60% 98%;
+    --foreground-secondary: 300 40% 70%;
 
     --card: 276 21% 15%;
     --card-foreground: 300 60% 98%;
@@ -72,24 +102,34 @@ All colors MUST be HSL.
     --popover: 276 21% 15%;
     --popover-foreground: 300 60% 98%;
 
-    --primary: 300 60% 93%;
-    --primary-foreground: 276 21% 21%;
+    --primary: 283 96% 75%;
+    --primary-foreground: 276 21% 12%;
+    --primary-light: 277 100% 92%;
+    --primary-dark: 277 77% 47%;
 
-    --secondary: 266 68% 72%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 330 85% 82%;
+    --secondary-foreground: 276 21% 12%;
+    --secondary-light: 322 91% 95%;
+    --secondary-dark: 332 83% 49%;
 
     --muted: 276 21% 20%;
     --muted-foreground: 300 40% 70%;
 
-    --accent: 345 65% 75%;
-    --accent-foreground: 276 21% 21%;
+    --accent: 330 85% 82%;
+    --accent-foreground: 276 21% 12%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 100%;
+    --success: 152 68% 85%;
+    --success-foreground: 152 68% 25%;
+    --warning: 48 98% 77%;
+    --warning-foreground: 45 93% 25%;
+    --info: 213 94% 87%;
+    --info-foreground: 213 94% 30%;
 
     --border: 276 21% 25%;
     --input: 276 21% 25%;
-    --ring: 266 68% 72%;
+    --ring: 283 96% 75%;
   }
 }
 
@@ -100,11 +140,16 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+    background: var(--gradient-page);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.2px;
   }
 
   html {
@@ -122,7 +167,8 @@ All colors MUST be HSL.
   }
 
   .hover-lift {
-    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-hover;
+    transition: var(--transition-smooth);
+    @apply hover:scale-[1.02] hover:shadow-hover;
   }
 
   .gradient-hero {
@@ -137,6 +183,10 @@ All colors MUST be HSL.
     background: var(--gradient-button);
   }
 
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -147,6 +197,19 @@ All colors MUST be HSL.
 
   .shadow-hover {
     box-shadow: var(--shadow-hover);
+  }
+
+  .shadow-button {
+    box-shadow: var(--shadow-button);
+  }
+
+  /* Input e formulários */
+  input:focus, textarea:focus, select:focus {
+    @apply ring-2 ring-primary border-primary;
+  }
+
+  input::placeholder, textarea::placeholder {
+    @apply text-muted-foreground;
   }
 }
 
