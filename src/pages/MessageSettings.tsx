@@ -12,6 +12,7 @@ const messageLabels: Record<MessageType, string> = {
   ConfirmacaoAgendamento: "Confirmação de Agendamento",
   EnvioFicha: "Envio de Ficha de Anamnese",
   Lembrete: "Lembrete de Agendamento",
+  Agradecimento: "Mensagem de Agradecimento",
   BoasVindas: "Boas-Vindas",
   Reagendamento: "Reagendamento",
   Cancelamento: "Cancelamento",
@@ -36,13 +37,44 @@ export default function MessageSettings() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Mensagens Pré-prontas</h1>
-        <p className="text-muted-foreground">
-          Personalize as mensagens enviadas automaticamente via WhatsApp
-        </p>
-      </div>
+    <div className="min-h-screen gradient-hero">
+      {/* Header */}
+      <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-primary-dark">
+                Mensagens do WhatsApp
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Personalize as mensagens enviadas automaticamente via WhatsApp
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="mb-6">
+          <Card className="bg-blue-50/50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <MessageCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-900">
+                    💡 Como usar as variáveis
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Use as variáveis entre colchetes para personalizar suas mensagens.
+                    Elas serão substituídas automaticamente pelos dados reais do cliente
+                    quando a mensagem for enviada.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Editor de mensagens */}
@@ -175,6 +207,7 @@ export default function MessageSettings() {
           </Card>
         </div>
       </div>
+      </main>
     </div>
   );
 }

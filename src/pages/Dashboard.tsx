@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,21 +126,29 @@ const Dashboard = () => {
                 <Settings className="h-6 w-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/perfil")}>
+                <User className="h-4 w-4 mr-2" />
                 Perfil
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/configuracoes/procedimentos")}>
+                <Clipboard className="h-4 w-4 mr-2" />
                 Procedimentos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/ficha-anamnese")}>
+                <FileText className="h-4 w-4 mr-2" />
+                Ficha de Anamnese
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/configuracoes/mensagens")}>
                 <MessageSquare className="h-4 w-4 mr-2" />
-                Mensagens Pré-Prontas
+                Mensagens do WhatsApp
               </DropdownMenuItem>
               <DropdownMenuItem>
+                <HelpCircle className="h-4 w-4 mr-2" />
                 Ajuda
               </DropdownMenuItem>
               <DropdownMenuItem>
+                <LifeBuoy className="h-4 w-4 mr-2" />
                 Suporte
               </DropdownMenuItem>
             </DropdownMenuContent>

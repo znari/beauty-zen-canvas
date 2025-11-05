@@ -3,7 +3,7 @@
  * Permite envio de mensagens prontas com variáveis dinâmicas
  */
 
-export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "BoasVindas" | "Reagendamento" | "Cancelamento";
+export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "Agradecimento" | "BoasVindas" | "Reagendamento" | "Cancelamento";
 
 export interface WhatsAppMessageParams {
   nomeCliente: string;
@@ -42,6 +42,13 @@ Obrigada 💕
 Passando para lembrar do seu horário amanhã às [horaProcedimento].
 
 Te esperamos com muito carinho 💕
+— [nomeStudio]`,
+
+  Agradecimento: `Obrigada [nomeCliente]! 💖
+
+Foi um prazer te atender hoje!
+Espero te ver novamente em breve 🌷
+
 — [nomeStudio]`,
 
   BoasVindas: `Olá [nomeCliente]! 💫
