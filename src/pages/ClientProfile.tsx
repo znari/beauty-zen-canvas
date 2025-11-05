@@ -369,7 +369,7 @@ const ClientProfile = () => {
                 )}
               </div>
               <div className="flex gap-3">
-                <Button variant="default">
+                <Button variant="default" onClick={() => navigate(`/ficha/${id}`)}>
                   <FileText className="h-4 w-4 mr-2" />
                   Visualizar Ficha
                 </Button>

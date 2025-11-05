@@ -85,7 +85,7 @@ const AnamnesisForm = () => {
     
     // Redirecionar para página de sucesso
     setTimeout(() => {
-      navigate("/");
+      navigate("/sucesso?origem=ficha");
     }, 1500);
   };
 
