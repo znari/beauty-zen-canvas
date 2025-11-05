@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { FileText, MessageCircle, Camera } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const registrationSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
@@ -25,7 +26,15 @@ type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 export default function Registration() {
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const {
     register,
@@ -38,16 +47,36 @@ export default function Registration() {
   const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Conta criada com sucesso 💖",
-      description: "Seu teste gratuito começou!",
+    const { error } = await signUp(data.email, data.senha, {
+      full_name: data.nomeCompleto,
+      studio_name: data.nomeEstudio,
+      phone: data.telefone,
     });
     
-    setIsSubmitting(false);
-    navigate("/dashboard");
+    if (error) {
+      let errorMessage = "Erro ao criar conta. Tente novamente.";
+      
+      if (error.message.includes("already registered")) {
+        errorMessage = "Este e-mail já está cadastrado.";
+      } else if (error.message.includes("Password should be")) {
+        errorMessage = "A senha deve ter pelo menos 6 caracteres.";
+      }
+      
+      toast({
+        title: "Erro no cadastro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    } else {
+      toast({
+        title: "Conta criada com sucesso! 💖",
+        description: "Verifique seu e-mail para confirmar o cadastro e fazer login.",
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
   };
 
   return (

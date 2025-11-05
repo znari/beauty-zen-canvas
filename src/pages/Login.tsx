@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido").max(255),
@@ -19,8 +20,16 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
+  const { signIn, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const {
     register,
@@ -33,28 +42,32 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { error } = await signIn(data.email, data.senha);
     
-    // Simulate authentication check
-    const isValid = true; // In real implementation, check against database
-    
-    if (isValid) {
+    if (error) {
+      let errorMessage = "Erro ao fazer login. Tente novamente.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "E-mail ou senha inválidos.";
+      } else if (error.message.includes("Email not confirmed")) {
+        errorMessage = "Por favor, confirme seu e-mail antes de fazer login.";
+      } else if (error.message.includes("Too many requests")) {
+        errorMessage = "Muitas tentativas. Aguarde alguns minutos.";
+      }
+      
+      toast({
+        title: "Erro no login",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    } else {
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vinda de volta 💜",
       });
-      
       navigate("/dashboard");
-    } else {
-      toast({
-        title: "Credenciais inválidas",
-        description: "E-mail ou senha incorretos. Tente novamente.",
-        variant: "destructive",
-      });
     }
-    
-    setIsSubmitting(false);
   };
 
   return (

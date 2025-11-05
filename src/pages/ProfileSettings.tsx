@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,19 +7,70 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Save, User, Mail, Phone, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState({
-    nomeEmpresa: "Studio Bela",
-    email: "contato@studiobela.com.br",
-    telefone: "(11) 98765-4321",
-    metodoPagamento: "Cartão de Crédito",
+    nomeEmpresa: "",
+    email: "",
+    telefone: "",
+    metodoPagamento: "",
   });
 
-  const handleSave = () => {
-    // Aqui seria salvo no backend
-    toast.success("Perfil atualizado com sucesso!");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        toast.error("Erro ao carregar perfil");
+        console.error(error);
+      } else if (data) {
+        setProfileData({
+          nomeEmpresa: data.studio_name || "",
+          email: data.email || user.email || "",
+          telefone: data.phone_raw || "",
+          metodoPagamento: "", // This field doesn't exist in DB yet
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        studio_name: profileData.nomeEmpresa,
+        phone_raw: profileData.telefone,
+        phone_normalized: profileData.telefone, // Should use normalize_phone function
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+    
+    if (error) {
+      toast.error("Erro ao salvar perfil");
+      console.error(error);
+    } else {
+      toast.success("Perfil atualizado com sucesso!");
+    }
+    setSaving(false);
   };
 
   const getInitials = (name: string) => {
@@ -43,9 +94,9 @@ export default function ProfileSettings() {
                 Gerencie as informações do seu estúdio
               </p>
             </div>
-            <Button onClick={handleSave} className="shadow-lg">
+            <Button onClick={handleSave} className="shadow-lg" disabled={saving || loading}>
               <Save className="h-4 w-4 mr-2" />
-              Salvar Alterações
+              {saving ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </div>
         </div>
@@ -53,7 +104,12 @@ export default function ProfileSettings() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="space-y-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="space-y-6">
           {/* Avatar Card */}
           <Card className="shadow-card">
             <CardContent className="pt-6">
@@ -161,12 +217,13 @@ export default function ProfileSettings() {
             <Button variant="outline" onClick={() => navigate("/dashboard")}>
               Voltar ao Dashboard
             </Button>
-            <Button onClick={handleSave} size="lg">
+            <Button onClick={handleSave} size="lg" disabled={saving || loading}>
               <Save className="h-4 w-4 mr-2" />
-              Salvar Alterações
+              {saving ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </div>
         </div>
+        )}
       </main>
     </div>
   );

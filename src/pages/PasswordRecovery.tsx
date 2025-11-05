@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const recoverySchema = z.object({
   email: z.string().email("Por favor, insira um e-mail válido"),
@@ -18,6 +19,7 @@ type RecoveryForm = z.infer<typeof recoverySchema>;
 
 const PasswordRecovery = () => {
   const navigate = useNavigate();
+  const { resetPassword } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -31,20 +33,26 @@ const PasswordRecovery = () => {
   const onSubmit = async (data: RecoveryForm) => {
     setIsSubmitting(true);
     
-    // Simular envio de email (será substituído por integração real com Lovable Cloud)
-    setTimeout(() => {
+    const { error } = await resetPassword(data.email);
+    
+    if (error) {
       toast({
-        title: "E-mail enviado! 💌",
+        title: "Erro ao enviar e-mail",
+        description: "Não foi possível enviar o e-mail de recuperação. Tente novamente.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    } else {
+      toast({
+        title: "E-mail enviado!",
         description: "Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.",
       });
-      
       setIsSubmitting(false);
       
-      // Redirecionar para login após 3 segundos
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-    }, 1000);
+    }
   };
 
   return (

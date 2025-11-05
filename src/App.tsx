@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
@@ -29,26 +31,31 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/registro" element={<Registration />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/recuperar-senha" element={<PasswordRecovery />} />
-          <Route path="/nova-senha" element={<NewPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/cliente/:id" element={<ClientProfile />} />
-          <Route path="/cliente/:id/ficha" element={<ClientAnamnesisForm />} />
-          <Route path="/clientes" element={<ClientList />} />
-          <Route path="/clientes/novo" element={<NewClient />} />
-          <Route path="/ficha/:id" element={<AnamnesisForm />} />
-          <Route path="/sucesso" element={<Success />} />
-          <Route path="/configuracoes/perfil" element={<ProfileSettings />} />
-          <Route path="/configuracoes/procedimentos" element={<ProcedureManagement />} />
-          <Route path="/configuracoes/ficha-anamnese" element={<AnamnesisSettings />} />
-          <Route path="/configuracoes/mensagens" element={<MessageSettings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/registro" element={<Registration />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/recuperar-senha" element={<PasswordRecovery />} />
+            <Route path="/nova-senha" element={<NewPassword />} />
+            <Route path="/ficha/:id" element={<AnamnesisForm />} />
+            
+            {/* Protected routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/cliente/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
+            <Route path="/clientes" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
+            <Route path="/clientes/novo" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
+            <Route path="/cliente/:id/ficha" element={<ProtectedRoute><ClientAnamnesisForm /></ProtectedRoute>} />
+            <Route path="/sucesso" element={<ProtectedRoute><Success /></ProtectedRoute>} />
+            <Route path="/configuracoes/perfil" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+            <Route path="/configuracoes/procedimentos" element={<ProtectedRoute><ProcedureManagement /></ProtectedRoute>} />
+            <Route path="/configuracoes/ficha-anamnese" element={<ProtectedRoute><AnamnesisSettings /></ProtectedRoute>} />
+            <Route path="/configuracoes/mensagens" element={<ProtectedRoute><MessageSettings /></ProtectedRoute>} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

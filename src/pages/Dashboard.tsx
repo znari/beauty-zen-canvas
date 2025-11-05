@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,9 +81,19 @@ const mockClients = [
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logout realizado",
+      description: "Você saiu da sua conta com sucesso.",
+    });
+    navigate("/login");
+  };
 
   const handleCancelAppointment = () => {
     toast({
@@ -150,6 +161,10 @@ const Dashboard = () => {
               <DropdownMenuItem>
                 <LifeBuoy className="h-4 w-4 mr-2" />
                 Suporte
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const newPasswordSchema = z.object({
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
@@ -51,10 +52,10 @@ const NewPassword = () => {
   });
 
   const onSubmit = async (data: NewPasswordForm) => {
-    if (tokenError || !token) {
+    if (!token) {
       toast({
-        title: "Link inválido",
-        description: "Este link expirou. Solicite uma nova redefinição de senha.",
+        title: "Erro",
+        description: "Link de redefinição inválido ou expirado.",
         variant: "destructive",
       });
       return;
@@ -62,20 +63,28 @@ const NewPassword = () => {
 
     setIsSubmitting(true);
     
-    // Simular atualização de senha (será substituído por integração real com Lovable Cloud)
-    setTimeout(() => {
+    const { error } = await supabase.auth.updateUser({
+      password: data.password,
+    });
+    
+    if (error) {
       toast({
-        title: "Senha atualizada com sucesso! 🎉",
-        description: "Você será redirecionado para a página de login.",
+        title: "Erro ao redefinir senha",
+        description: "Não foi possível atualizar sua senha. O link pode ter expirado.",
+        variant: "destructive",
       });
-      
+      setIsSubmitting(false);
+    } else {
+      toast({
+        title: "Senha redefinida com sucesso! 🎉",
+        description: "Você já pode fazer login com sua nova senha.",
+      });
       setIsSubmitting(false);
       
-      // Redirecionar para login após 3 segundos
       setTimeout(() => {
         navigate("/login");
-      }, 3000);
-    }, 1000);
+      }, 2000);
+    }
   };
 
   return (
