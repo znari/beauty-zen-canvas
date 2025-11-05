@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, User, Calendar, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle } from "lucide-react";
 
 // Lista de procedimentos disponíveis (mock - futuramente virá do banco)
 const procedimentosDisponiveis = [
@@ -51,6 +52,7 @@ export default function NewClient() {
   const navigate = useNavigate();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const [enviarWhatsApp, setEnviarWhatsApp] = useState(true);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -84,10 +86,24 @@ export default function NewClient() {
   const onSubmit = (data: FormData) => {
     console.log("Salvando cliente:", data);
     
-    // Aqui futuramente salvará no banco via Lovable Cloud
+    // Gerar ID fictício para o cliente (será substituído pelo ID real do banco)
+    const clientId = Math.floor(Math.random() * 1000);
+    
+    // Enviar link da ficha via WhatsApp se marcado
+    if (enviarWhatsApp) {
+      const fichaUrl = `${window.location.origin}/ficha/${clientId}`;
+      const mensagem = encodeURIComponent(
+        `Olá ${data.nome}! 😊\n\nSeja bem-vinda ao FichaZen! 💜\n\nPara garantir o melhor atendimento, precisamos que você preencha sua ficha de anamnese.\n\nPor favor, acesse o link abaixo:\n${fichaUrl}\n\nObrigada! ✨`
+      );
+      const whatsappNumber = data.whatsapp.replace(/\D/g, "");
+      window.open(`https://wa.me/${whatsappNumber}?text=${mensagem}`, "_blank");
+    }
+    
     toast({
       title: "Cliente cadastrado com sucesso!",
-      description: `${data.nome} foi adicionado ao sistema.`,
+      description: enviarWhatsApp 
+        ? `${data.nome} foi adicionado e o link da ficha foi enviado via WhatsApp.` 
+        : `${data.nome} foi adicionado ao sistema.`,
     });
     
     navigate("/dashboard");
@@ -352,6 +368,32 @@ export default function NewClient() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Opção de envio automático via WhatsApp */}
+            <Card className="shadow-card animate-fade-in border-primary/20" style={{ animationDelay: "0.2s" }}>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="enviar-whatsapp"
+                    checked={enviarWhatsApp}
+                    onCheckedChange={(checked) => setEnviarWhatsApp(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <label
+                      htmlFor="enviar-whatsapp"
+                      className="text-sm font-semibold text-foreground cursor-pointer flex items-center gap-2"
+                    >
+                      <MessageCircle className="h-4 w-4 text-primary" />
+                      Enviar link da ficha de anamnese via WhatsApp
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Após salvar, o WhatsApp será aberto automaticamente com uma mensagem contendo o link da ficha para a cliente preencher.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
