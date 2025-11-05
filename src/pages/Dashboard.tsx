@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,12 +126,23 @@ const Dashboard = () => {
                 <Settings className="h-6 w-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>Perfil</DropdownMenuItem>
-              <DropdownMenuItem>Procedimentos</DropdownMenuItem>
-              <DropdownMenuItem>Mensagens WhatsApp</DropdownMenuItem>
-              <DropdownMenuItem>Ajuda</DropdownMenuItem>
-              <DropdownMenuItem>Suporte</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/procedimentos")}>
+                Procedimentos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/mensagens")}>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Mensagens Pré-Prontas
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Ajuda
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Suporte
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
