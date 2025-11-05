@@ -251,11 +251,7 @@ const Dashboard = () => {
                       <TableCell className="text-muted-foreground">{client.phone}</TableCell>
                       <TableCell>
                         <Badge
-                          className={
-                            client.status === "Ativa"
-                              ? "bg-[hsl(var(--status-active))] text-[hsl(var(--status-active-foreground))] hover:bg-[hsl(var(--status-active))] font-semibold"
-                              : "bg-[hsl(var(--status-pending))] text-[hsl(var(--status-pending-foreground))] hover:bg-[hsl(var(--status-pending))] font-semibold"
-                          }
+                          variant={client.status === "Ativa" ? "active" : "pending"}
                         >
                           {client.status}
                         </Badge>
