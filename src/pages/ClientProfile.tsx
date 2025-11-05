@@ -1,24 +1,16 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
-  Home,
+  ChevronLeft,
   User,
   Phone,
   Calendar,
   MessageCircle,
-  Edit,
-  Image as ImageIcon,
   FileText,
   Clock,
-  DollarSign,
-  ChevronLeft,
-  X,
-  Upload,
   Plus,
-  Trash2,
+  X,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +24,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -41,43 +43,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-
-// Lista de procedimentos (compartilhada)
-const procedimentosDisponiveis = [
-  { id: "1", nome: "Design de Sobrancelhas", preco: 80 },
-  { id: "2", nome: "Henna", preco: 40 },
-  { id: "3", nome: "Limpeza de Pele", preco: 120 },
-  { id: "4", nome: "Micropigmentação", preco: 350 },
-  { id: "5", nome: "Peeling", preco: 150 },
-  { id: "6", nome: "Hidratação Facial", preco: 100 },
-];
-
-const editClientSchema = z.object({
-  nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  whatsapp: z.string().min(10, "WhatsApp inválido"),
-  dataNascimento: z.string().optional(),
-});
-
-const newVisitSchema = z.object({
-  dataVisita: z.string().min(1, "Data da visita é obrigatória"),
-  horaVisita: z.string().min(1, "Hora da visita é obrigatória"),
-  notasGerais: z.string().optional(),
-  procedimentos: z.array(
-    z.object({
-      procedimentoId: z.string().min(1, "Selecione um procedimento"),
-      nome: z.string(),
-      preco: z.number(),
-      observacoes: z.string().optional(),
-    })
-  ).min(1, "Adicione pelo menos um procedimento"),
-});
-
-type EditClientData = z.infer<typeof editClientSchema>;
-type NewVisitData = z.infer<typeof newVisitSchema>;
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "@/hooks/use-toast";
 
 // Mock data - substituir com dados reais do backend
 const mockClientData = {
@@ -85,678 +52,428 @@ const mockClientData = {
     id: 1,
     name: "Maria Silva",
     phone: "(11) 98765-4321",
-    email: "maria.silva@email.com",
     registrationDate: "15/08/2024",
-    lastAppointment: "03/11/2025",
+    lastVisit: "03/11/2025",
     status: "Ativa",
     anamnesisStatus: "Preenchida",
     anamnesisDate: "20/08/2024",
-    appointments: [
+    visits: [
       {
         id: 1,
         date: "03/11/2025",
         time: "09:00",
-        procedure: "Design de Sobrancelhas",
-        value: "R$ 120,00",
+        procedures: ["Design de Sobrancelhas", "Henna"],
+        totalValue: 120,
+        notes: "Cliente solicitou sobrancelha mais arqueada",
         status: "Realizado",
       },
       {
         id: 2,
         date: "20/10/2025",
         time: "14:00",
-        procedure: "Micropigmentação",
-        value: "R$ 450,00",
+        procedures: ["Micropigmentação"],
+        totalValue: 450,
+        notes: "",
         status: "Realizado",
       },
       {
         id: 3,
         date: "15/09/2025",
         time: "10:30",
-        procedure: "Henna",
-        value: "R$ 80,00",
+        procedures: ["Limpeza de Pele"],
+        totalValue: 120,
+        notes: "Primeira visita",
         status: "Realizado",
       },
-    ],
-    photos: [
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400",
-      "https://images.unsplash.com/photo-1560869713-7d0a29430803?w=400",
-      "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400",
     ],
   },
   2: {
     id: 2,
     name: "Ana Costa",
     phone: "(11) 97654-3210",
-    email: "ana.costa@email.com",
     registrationDate: "10/09/2024",
-    lastAppointment: "02/11/2025",
+    lastVisit: "02/11/2025",
     status: "Ativa",
-    anamnesisStatus: "Preenchida",
-    anamnesisDate: "12/09/2024",
-    appointments: [
+    anamnesisStatus: "Pendente",
+    anamnesisDate: null,
+    visits: [
       {
         id: 4,
         date: "02/11/2025",
         time: "14:00",
-        procedure: "Lash Lifting",
-        value: "R$ 180,00",
+        procedures: ["Lash Lifting"],
+        totalValue: 180,
+        notes: "",
         status: "Realizado",
       },
     ],
-    photos: [],
   },
 };
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const client = mockClientData[Number(id) as keyof typeof mockClientData] || mockClientData[1];
 
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [newVisitDialogOpen, setNewVisitDialogOpen] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<any>(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
 
-  const editForm = useForm<EditClientData>({
-    resolver: zodResolver(editClientSchema),
-    defaultValues: {
-      nome: client.name,
-      whatsapp: client.phone,
-      dataNascimento: "",
-    },
-  });
-
-  const newVisitForm = useForm<NewVisitData>({
-    resolver: zodResolver(newVisitSchema),
-    defaultValues: {
-      dataVisita: "",
-      horaVisita: "",
-      notasGerais: "",
-      procedimentos: [{ procedimentoId: "", nome: "", preco: 0, observacoes: "" }],
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: newVisitForm.control,
-    name: "procedimentos",
-  });
-
-  const handleWhatsAppMessage = () => {
-    const message = encodeURIComponent("Olá! Tudo bem? 😊");
-    window.open(`https://wa.me/${client.phone.replace(/\D/g, "")}?text=${message}`, "_blank");
+  const handleWhatsAppMessage = (message: string) => {
+    const whatsappNumber = client.phone.replace(/\D/g, "");
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  const handleSaveEdit = (data: EditClientData) => {
-    console.log("Atualizando cliente:", data);
-    toast({
-      title: "Cliente atualizado",
-      description: "As informações do cliente foram atualizadas com sucesso.",
-    });
-    setEditDialogOpen(false);
-  };
-
-  const handleProcedimentoChange = (index: number, procedimentoId: string) => {
-    const procedimento = procedimentosDisponiveis.find(p => p.id === procedimentoId);
-    if (procedimento) {
-      newVisitForm.setValue(`procedimentos.${index}.procedimentoId`, procedimentoId);
-      newVisitForm.setValue(`procedimentos.${index}.nome`, procedimento.nome);
-      newVisitForm.setValue(`procedimentos.${index}.preco`, procedimento.preco);
-    }
-  };
-
-  const handleSaveNewVisit = (data: NewVisitData) => {
-    console.log("Criando nova visita:", data);
-    toast({
-      title: "Visita cadastrada",
-      description: "Nova visita adicionada ao histórico do cliente.",
-    });
-    setNewVisitDialogOpen(false);
-    newVisitForm.reset();
+  const handleSendAnamnesisLink = () => {
+    const fichaUrl = `${window.location.origin}/ficha/${id}`;
+    const mensagem = `Olá ${client.name}! 😊\n\nPara garantir o melhor atendimento, precisamos que você preencha sua ficha de anamnese.\n\nPor favor, acesse o link abaixo:\n${fichaUrl}\n\nObrigada! 💜`;
+    handleWhatsAppMessage(mensagem);
   };
 
   const handleReschedule = () => {
+    if (!newDate || !newTime) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha a nova data e horário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
-      title: "Agendamento reagendado",
-      description: "O agendamento foi reagendado com sucesso.",
+      title: "Visita reagendada",
+      description: `Visita reagendada para ${newDate} às ${newTime}.`,
     });
     setRescheduleDialogOpen(false);
-    setSelectedAppointment(null);
+    setSelectedVisit(null);
+    setNewDate("");
+    setNewTime("");
   };
 
-  const handleCancelAppointment = () => {
+  const handleCancelVisit = () => {
     toast({
-      title: "Agendamento cancelado",
-      description: "O agendamento foi cancelado.",
+      title: "Visita cancelada",
+      description: "A visita foi cancelada com sucesso.",
       variant: "destructive",
     });
     setCancelDialogOpen(false);
-    setSelectedAppointment(null);
+    setSelectedVisit(null);
   };
 
-  const handleAddPhotos = () => {
-    toast({
-      title: "Fotos adicionadas",
-      description: "As fotos foram adicionadas à galeria do cliente.",
-    });
-    setPhotoDialogOpen(false);
+  const openRescheduleDialog = (visit: any) => {
+    setSelectedVisit(visit);
+    setRescheduleDialogOpen(true);
+  };
+
+  const openCancelDialog = (visit: any) => {
+    setSelectedVisit(visit);
+    setCancelDialogOpen(true);
+  };
+
+  const openDetailsDialog = (visit: any) => {
+    setSelectedVisit(visit);
+    setDetailsDialogOpen(true);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
     <div className="min-h-screen gradient-hero">
-      {/* Breadcrumb Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10 shadow-sm">
+      {/* Header */}
+      <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/dashboard")}
-                className="text-secondary hover:text-primary hover:bg-primary/10"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Home className="h-4 w-4" />
-                <span>Dashboard</span>
-                <span>/</span>
-                <User className="h-4 w-4" />
-                <span className="font-semibold text-foreground">Perfil do Cliente</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-4">
             <Button
-              variant="secondary"
-              onClick={() => setEditDialogOpen(true)}
-              className="font-semibold"
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+              className="hover:bg-primary-light"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar Cliente
+              <ChevronLeft className="h-5 w-5" />
             </Button>
+            <div>
+              <h1 className="text-2xl font-semibold text-primary-dark">Perfil do Cliente</h1>
+              <p className="text-sm text-muted-foreground">Visualize e gerencie informações do cliente</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-primary mt-4">{client.name}</h1>
         </div>
-      </div>
+      </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Informações do Cliente */}
-        <Card className="bg-white shadow-card border-primary/20 animate-fade-in">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-secondary flex items-center gap-2">
-              <User className="h-6 w-6" />
-              Informações do Cliente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl">
-                  <User className="h-5 w-5 text-primary mt-1" />
+      {/* Main Content - 2 Column Layout */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Client Info */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Client Card */}
+            <Card className="shadow-card animate-fade-in">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <Avatar className="h-24 w-24 border-4 border-primary/20">
+                    <AvatarFallback className="bg-gradient-primary text-white text-2xl font-semibold">
+                      {getInitials(client.name)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <Label className="text-xs font-bold text-muted-foreground uppercase">Nome Completo</Label>
-                    <p className="text-lg font-semibold text-foreground">{client.name}</p>
+                    <h2 className="text-2xl font-bold text-primary-dark">{client.name}</h2>
+                    <Badge variant={client.status === "Ativa" ? "active" : "pending"} className="mt-2">
+                      {client.status}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl">
-                  <Phone className="h-5 w-5 text-primary mt-1" />
-                  <div className="flex-1">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase">WhatsApp</Label>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-semibold text-foreground">{client.phone}</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleWhatsAppMessage}
-                        className="ml-2"
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Enviar mensagem
-                      </Button>
+
+                <div className="mt-6 space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                    <Phone className="h-5 w-5 text-primary" />
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground uppercase">WhatsApp</Label>
+                      <p className="font-semibold">{client.phone}</p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => handleWhatsAppMessage("Olá! Tudo bem? 😊")}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar Mensagem
+                  </Button>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground uppercase">Cadastro</Label>
+                      <p className="font-semibold">{client.registrationDate}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground uppercase">Última Visita</Label>
+                      <p className="font-semibold">{client.lastVisit}</p>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl">
-                  <Calendar className="h-5 w-5 text-primary mt-1" />
+              </CardContent>
+            </Card>
+
+            {/* Anamnesis Card */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary-dark">
+                  <FileText className="h-5 w-5" />
+                  Ficha de Anamnese
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
                   <div>
-                    <Label className="text-xs font-bold text-muted-foreground uppercase">Data de Cadastro</Label>
-                    <p className="text-lg font-semibold text-foreground">{client.registrationDate}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl">
-                  <Clock className="h-5 w-5 text-primary mt-1" />
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground uppercase">Último Agendamento</Label>
-                    <p className="text-lg font-semibold text-foreground">{client.lastAppointment}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl">
-                  <FileText className="h-5 w-5 text-primary mt-1" />
-                  <div>
-                    <Label className="text-xs font-bold text-muted-foreground uppercase">Status da Ficha</Label>
-                    <div className="mt-2">
-                      <Badge variant={client.status === "Ativa" ? "active" : "pending"}>
-                        {client.status}
+                    <Label className="text-xs text-muted-foreground uppercase">Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={client.anamnesisStatus === "Preenchida" ? "active" : "pending"}>
+                        {client.anamnesisStatus}
                       </Badge>
                     </div>
+                    {client.anamnesisDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Preenchida em: {client.anamnesisDate}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Histórico de Agendamentos */}
-        <Card className="bg-white shadow-card border-primary/20 animate-fade-in-up">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-secondary flex items-center gap-2">
-                <Calendar className="h-6 w-6" />
-                Histórico de Agendamentos
-              </CardTitle>
-              <Button onClick={() => setNewVisitDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Visita
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-xl border border-primary/20 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-accent/30 hover:bg-accent/30">
-                    <TableHead className="font-bold text-secondary">Data</TableHead>
-                    <TableHead className="font-bold text-secondary">Horário</TableHead>
-                    <TableHead className="font-bold text-secondary">Procedimento</TableHead>
-                    <TableHead className="font-bold text-secondary">Valor</TableHead>
-                    <TableHead className="font-bold text-secondary">Status</TableHead>
-                    <TableHead className="font-bold text-secondary">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {client.appointments.map((appointment, idx) => (
-                    <TableRow
-                      key={appointment.id}
-                      className={`hover:bg-muted/50 transition-all ${
-                        idx % 2 === 0 ? "bg-white" : "bg-muted/20"
-                      }`}
-                    >
-                      <TableCell className="font-semibold">{appointment.date}</TableCell>
-                      <TableCell>{appointment.time}</TableCell>
-                      <TableCell>{appointment.procedure}</TableCell>
-                      <TableCell className="font-semibold text-success-foreground">
-                        {appointment.value}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            appointment.status === "Realizado"
-                              ? "active"
-                              : appointment.status === "Pendente"
-                              ? "pending"
-                              : "error"
-                          }
-                        >
-                          {appointment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setRescheduleDialogOpen(true);
-                            }}
-                          >
-                            Reagendar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setSelectedAppointment(appointment);
-                              setCancelDialogOpen(true);
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Ficha de Anamnese */}
-        <Card className="bg-white shadow-card border-primary/20 animate-fade-in-up">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-secondary flex items-center gap-2">
-              <FileText className="h-6 w-6" />
-              Ficha de Anamnese
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-muted/30 rounded-xl">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm font-bold text-muted-foreground uppercase">Status:</Label>
-                  <Badge variant={client.anamnesisStatus === "Preenchida" ? "active" : "pending"}>
-                    {client.anamnesisStatus}
-                  </Badge>
-                </div>
-                {client.anamnesisStatus === "Preenchida" && (
-                  <p className="text-sm text-muted-foreground">
-                    Preenchida em: <span className="font-semibold">{client.anamnesisDate}</span>
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <Button variant="default" onClick={() => navigate(`/ficha/${id}`)}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Visualizar Ficha
-                </Button>
-                <Button variant="outline" onClick={handleWhatsAppMessage}>
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Reenviar via WhatsApp
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Galeria */}
-        <Card className="bg-white shadow-card border-primary/20 animate-fade-in-up">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-secondary flex items-center gap-2">
-                <ImageIcon className="h-6 w-6" />
-                Fotos do Cliente
-              </CardTitle>
-              <Button onClick={() => setPhotoDialogOpen(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Adicionar Fotos
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {client.photos.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {client.photos.map((photo, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedPhoto(photo)}
-                    className="aspect-square rounded-xl overflow-hidden shadow-card hover-lift cursor-pointer"
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => navigate(`/ficha/${id}`)}
+                    variant="default"
+                    className="w-full"
                   >
-                    <img
-                      src={photo}
-                      alt={`Foto ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <ImageIcon className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                <p>Nenhuma foto adicionada ainda.</p>
-                <Button
-                  onClick={() => setPhotoDialogOpen(true)}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  Adicionar primeira foto
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Visualizar Ficha
+                  </Button>
+                  <Button
+                    onClick={handleSendAnamnesisLink}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar por WhatsApp
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Visit History */}
+          <div className="lg:col-span-2">
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-primary-dark">
+                    <Calendar className="h-5 w-5" />
+                    Histórico de Visitas
+                  </CardTitle>
+                  <Button onClick={() => navigate(`/clientes/novo?cliente=${id}`)} variant="cta">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Visita
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {client.visits.length > 0 ? (
+                  <div className="rounded-xl border border-primary/20 overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-accent/30 hover:bg-accent/30">
+                          <TableHead className="font-bold text-secondary">Data</TableHead>
+                          <TableHead className="font-bold text-secondary">Horário</TableHead>
+                          <TableHead className="font-bold text-secondary">Procedimentos</TableHead>
+                          <TableHead className="font-bold text-secondary">Valor</TableHead>
+                          <TableHead className="font-bold text-secondary">Status</TableHead>
+                          <TableHead className="font-bold text-secondary text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {client.visits.map((visit, idx) => (
+                          <TableRow
+                            key={visit.id}
+                            className={`hover:bg-muted/50 transition-all ${
+                              idx % 2 === 0 ? "bg-white" : "bg-muted/20"
+                            }`}
+                          >
+                            <TableCell className="font-semibold">{visit.date}</TableCell>
+                            <TableCell>{visit.time}</TableCell>
+                            <TableCell>
+                              <div className="max-w-[200px]">
+                                {visit.procedures.slice(0, 2).join(", ")}
+                                {visit.procedures.length > 2 && (
+                                  <span className="text-muted-foreground"> +{visit.procedures.length - 2}</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-semibold text-success-foreground">
+                              R$ {visit.totalValue.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={visit.status === "Realizado" ? "active" : "pending"}>
+                                {visit.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openDetailsDialog(visit)}
+                                >
+                                  Ver detalhes
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openRescheduleDialog(visit)}
+                                >
+                                  Reagendar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => openCancelDialog(visit)}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+                    <p className="text-muted-foreground">Nenhuma visita registrada ainda.</p>
+                    <Button
+                      onClick={() => navigate(`/clientes/novo?cliente=${id}`)}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Primeira Visita
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Footer */}
-        <footer className="text-center text-sm py-6">
+        <footer className="text-center text-sm py-6 mt-8">
           <p className="text-secondary/70 font-medium">© 2025 FichaZen — Seu estúdio, mais zen 💆‍♀️✨</p>
         </footer>
       </main>
 
-      {/* Edit Client Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl max-w-md">
+      {/* Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="bg-white border-primary/20 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">Editar Cliente</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Atualize as informações do cliente
-            </DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-primary">Detalhes da Visita</DialogTitle>
           </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleSaveEdit)} className="space-y-4 py-4">
-              <FormField
-                control={editForm.control}
-                name="nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Maria Silva" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="whatsapp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>WhatsApp</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(11) 99999-9999" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="dataNascimento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Nascimento (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="cta">
-                  Salvar Alterações
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* New Visit Dialog */}
-      <Dialog open={newVisitDialogOpen} onOpenChange={setNewVisitDialogOpen}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">Nova Visita</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Cadastre uma nova visita para {client.name}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...newVisitForm}>
-            <form onSubmit={newVisitForm.handleSubmit(handleSaveNewVisit)} className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={newVisitForm.control}
-                  name="dataVisita"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data da Visita *</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={newVisitForm.control}
-                  name="horaVisita"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hora *</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {selectedVisit && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase">Data</Label>
+                  <p className="font-semibold text-lg">{selectedVisit.date}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase">Horário</Label>
+                  <p className="font-semibold text-lg">{selectedVisit.time}</p>
+                </div>
               </div>
-
-              <div className="space-y-4">
-                <Label className="text-base font-semibold">Procedimentos</Label>
-                {fields.map((field, index) => (
-                  <Card key={field.id} className="bg-primary-light/30 border-primary/20">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={newVisitForm.control}
-                            name={`procedimentos.${index}.procedimentoId`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Procedimento *</FormLabel>
-                                <Select
-                                  onValueChange={(value) => handleProcedimentoChange(index, value)}
-                                  value={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {procedimentosDisponiveis.map((proc) => (
-                                      <SelectItem key={proc.id} value={proc.id}>
-                                        {proc.nome}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={newVisitForm.control}
-                            name={`procedimentos.${index}.preco`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Preço (R$)</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    value={field.value}
-                                    readOnly
-                                    className="bg-muted"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        {fields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => remove(index)}
-                            className="mt-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <FormField
-                        control={newVisitForm.control}
-                        name={`procedimentos.${index}.observacoes`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Observações (Opcional)</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Ex: Cliente solicitou sobrancelha mais arqueada"
-                                className="resize-none"
-                                rows={2}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => append({ procedimentoId: "", nome: "", preco: 0, observacoes: "" })}
-                  className="w-full border-dashed border-2 hover:bg-primary-light"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar outro procedimento
-                </Button>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase">Procedimentos</Label>
+                <div className="mt-2 space-y-1">
+                  {selectedVisit.procedures.map((proc: string, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <p className="font-medium">{proc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-
-              <FormField
-                control={newVisitForm.control}
-                name="notasGerais"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notas Gerais da Visita (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Ex: Cliente chegou atrasada..."
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setNewVisitDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="cta">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Cadastrar Visita
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase">Valor Total</Label>
+                <p className="font-bold text-2xl text-success-foreground">
+                  R$ {selectedVisit.totalValue.toFixed(2)}
+                </p>
+              </div>
+              {selectedVisit.notes && (
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase">Notas</Label>
+                  <p className="mt-1 p-3 bg-muted/30 rounded-lg">{selectedVisit.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -764,30 +481,34 @@ const ClientProfile = () => {
       <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
         <DialogContent className="bg-white border-primary/20 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">Reagendar</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-primary">Reagendar Visita</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Escolha uma nova data e horário
+              Escolha uma nova data e horário para a visita
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="reschedule-date" className="text-secondary font-semibold">
+              <Label htmlFor="new-date" className="text-secondary font-semibold">
                 Nova Data
               </Label>
               <Input
-                id="reschedule-date"
+                id="new-date"
                 type="date"
-                className="border-primary/30 focus:border-primary mt-1"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="reschedule-time" className="text-secondary font-semibold">
+              <Label htmlFor="new-time" className="text-secondary font-semibold">
                 Novo Horário
               </Label>
               <Input
-                id="reschedule-time"
+                id="new-time"
                 type="time"
-                className="border-primary/30 focus:border-primary mt-1"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className="mt-1"
               />
             </div>
           </div>
@@ -795,79 +516,35 @@ const ClientProfile = () => {
             <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleReschedule}>Confirmar Reagendamento</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Cancel Appointment Dialog */}
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-destructive">
-              Cancelar Agendamento
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
-              Voltar
-            </Button>
-            <Button variant="destructive" onClick={handleCancelAppointment}>
-              Sim, Cancelar
+            <Button onClick={handleReschedule} variant="cta">
+              Confirmar Reagendamento
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Add Photos Dialog */}
-      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">Adicionar Fotos</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Faça upload de fotos do cliente (antes/depois)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-8">
-            <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary transition-colors cursor-pointer">
-              <Upload className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <p className="text-foreground font-semibold mb-2">Clique para fazer upload</p>
-              <p className="text-sm text-muted-foreground">ou arraste e solte suas fotos aqui</p>
-              <p className="text-xs text-muted-foreground mt-2">PNG, JPG ou WEBP (máx. 5MB)</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPhotoDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAddPhotos}>Adicionar Fotos</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Photo Preview Dialog */}
-      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-3xl bg-white border-primary/20 shadow-xl p-0">
-          <div className="relative">
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-white shadow-lg transition-all z-10"
+      {/* Cancel Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent className="bg-white border-primary/20">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-bold text-destructive">
+              Cancelar Visita?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Tem certeza que deseja cancelar esta visita? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelVisit}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              <X className="h-5 w-5 text-foreground" />
-            </button>
-            {selectedPhoto && (
-              <img
-                src={selectedPhoto}
-                alt="Preview"
-                className="w-full h-auto rounded-xl"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              Sim, Cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
