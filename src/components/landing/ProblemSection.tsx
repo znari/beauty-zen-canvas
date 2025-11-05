@@ -46,8 +46,8 @@ export const ProblemSection = () => {
                 className="bg-card p-6 rounded-xl shadow-card hover-lift animate-fade-in-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center mb-4">
-                  <IconComponent className="w-6 h-6 text-secondary" />
+                <div className="w-12 h-12 rounded-lg bg-primary-light flex items-center justify-center mb-4">
+                  <IconComponent className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {problem.title}
