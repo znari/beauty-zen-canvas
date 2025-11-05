@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, Clock, Scissors, Mail, MessageCircle } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -328,42 +328,22 @@ const Dashboard = () => {
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4 py-4">
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                <div className="p-3 bg-accent rounded-full flex-shrink-0">
-                  <User className="h-5 w-5 text-secondary" />
-                </div>
-                <div className="flex-1">
-                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Cliente</Label>
-                  <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
-                </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Cliente</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                <div className="p-3 bg-primary/10 rounded-full flex-shrink-0">
-                  <Scissors className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Procedimento</Label>
-                  <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
-                </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Procedimento</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
               </div>
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                <div className="p-3 bg-accent rounded-full flex-shrink-0">
-                  <Clock className="h-5 w-5 text-secondary" />
-                </div>
-                <div className="flex-1">
-                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Horário</Label>
-                  <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
-                </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Horário</Label>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
               </div>
               {selectedAppointment.notes && (
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                  <div className="p-3 bg-primary/10 rounded-full flex-shrink-0">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Observações</Label>
-                    <p className="text-lg text-foreground mt-1">{selectedAppointment.notes}</p>
-                  </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Observações</Label>
+                  <p className="text-lg text-foreground mt-1">{selectedAppointment.notes}</p>
                 </div>
               )}
             </div>
@@ -391,37 +371,28 @@ const Dashboard = () => {
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="name" className="text-secondary font-semibold">Nome completo</Label>
-              <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="name" 
-                  placeholder="Digite o nome do cliente" 
-                  className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 pl-10" 
-                />
-              </div>
+              <Input 
+                id="name" 
+                placeholder="Digite o nome do cliente" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
             <div>
               <Label htmlFor="phone" className="text-secondary font-semibold">WhatsApp</Label>
-              <div className="relative mt-1">
-                <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="phone" 
-                  placeholder="(11) 98765-4321" 
-                  className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 pl-10" 
-                />
-              </div>
+              <Input 
+                id="phone" 
+                placeholder="(11) 98765-4321" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
             <div>
               <Label htmlFor="email" className="text-secondary font-semibold">E-mail</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="cliente@exemplo.com" 
-                  className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 pl-10" 
-                />
-              </div>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="cliente@exemplo.com" 
+                className="border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 mt-1" 
+              />
             </div>
           </div>
           <DialogFooter>
