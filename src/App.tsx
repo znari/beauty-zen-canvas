@@ -10,6 +10,7 @@ import PasswordRecovery from "./pages/PasswordRecovery";
 import NewPassword from "./pages/NewPassword";
 import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
+import AnamnesisForm from "./pages/AnamnesisForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/nova-senha" element={<NewPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cliente/:id" element={<ClientProfile />} />
+          <Route path="/ficha/:id" element={<AnamnesisForm />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
