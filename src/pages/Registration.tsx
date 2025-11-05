@@ -37,6 +37,7 @@ export default function Registration() {
   const { signUp, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentMask, setDocumentMask] = useState('999.999.999-999');
+  const [phoneMask, setPhoneMask] = useState('(99) 99999-9999');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -219,13 +220,30 @@ export default function Registration() {
 
               <div>
                 <Label htmlFor="telefone">Telefone/WhatsApp</Label>
-                <Input
-                  id="telefone"
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  {...register("telefone")}
-                  className="mt-1"
-                />
+                <div className="relative">
+                  <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <InputMask
+                    mask={phoneMask}
+                    {...register("telefone")}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      // Celular (11 dígitos) ou fixo (10 dígitos)
+                      setPhoneMask(value.length <= 10 ? '(99) 9999-99999' : '(99) 99999-9999');
+                      register("telefone").onChange(e);
+                    }}
+                  >
+                    {/* @ts-ignore */}
+                    {(inputProps: any) => (
+                      <Input
+                        {...inputProps}
+                        id="telefone"
+                        type="tel"
+                        placeholder="(11) 99999-9999"
+                        className="mt-1 pl-10"
+                      />
+                    )}
+                  </InputMask>
+                </div>
                 {errors.telefone && (
                   <p className="text-sm text-destructive mt-1">{errors.telefone.message}</p>
                 )}
