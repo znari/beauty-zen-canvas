@@ -1,39 +1,141 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { MessageCircle, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy } from "lucide-react";
 import { messageTemplates, gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
+import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
 import { toast } from "sonner";
 
-const messageLabels: Record<MessageType, string> = {
+const messageTypeLabels: Record<MessageType, string> = {
   ConfirmacaoAgendamento: "Confirmação de Agendamento",
-  EnvioFicha: "Envio de Ficha de Anamnese",
-  Lembrete: "Lembrete de Agendamento",
-  Agradecimento: "Mensagem de Agradecimento",
+  EnvioFicha: "Envio de Ficha",
+  Lembrete: "Lembrete",
+  Agradecimento: "Agradecimento",
   BoasVindas: "Boas-Vindas",
   Reagendamento: "Reagendamento",
   Cancelamento: "Cancelamento",
 };
 
 export default function MessageSettings() {
-  const [templates, setTemplates] = useState({ ...messageTemplates });
-  const [selectedType, setSelectedType] = useState<MessageType>("EnvioFicha");
+  const [templates, setTemplates] = useState<MessageTemplate[]>(mockTemplates);
+  const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
+  const [filterType, setFilterType] = useState<MessageType | "all">("all");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [newTemplate, setNewTemplate] = useState<Partial<MessageTemplate>>({
+    nome: "",
+    tipo: "ConfirmacaoAgendamento",
+    conteudo: "",
+  });
 
-  const handleSave = () => {
-    // Aqui seria salvo no backend/localStorage
-    // Por enquanto, apenas mostra feedback
-    toast.success("Mensagens salvas com sucesso!");
+  const filteredTemplates =
+    filterType === "all"
+      ? templates
+      : templates.filter((t) => t.tipo === filterType);
+
+  const handleAddTemplate = () => {
+    if (!newTemplate.nome || !newTemplate.conteudo || !newTemplate.tipo) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+
+    const template: MessageTemplate = {
+      id: Date.now().toString(),
+      nome: newTemplate.nome,
+      tipo: newTemplate.tipo as MessageType,
+      conteudo: newTemplate.conteudo,
+      isPadrao: false,
+      criadoEm: new Date().toISOString(),
+    };
+
+    setTemplates([...templates, template]);
+    setNewTemplate({ nome: "", tipo: "ConfirmacaoAgendamento", conteudo: "" });
+    setIsAddDialogOpen(false);
+    toast.success("Template criado com sucesso!");
   };
 
-  const handleReset = (type: MessageType) => {
-    setTemplates({
-      ...templates,
-      [type]: messageTemplates[type],
-    });
-    toast.info("Mensagem restaurada para o padrão");
+  const handleEditTemplate = () => {
+    if (!selectedTemplate) return;
+
+    setTemplates(
+      templates.map((t) =>
+        t.id === selectedTemplate.id ? selectedTemplate : t
+      )
+    );
+    setIsEditDialogOpen(false);
+    setSelectedTemplate(null);
+    toast.success("Template atualizado com sucesso!");
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    const template = templates.find((t) => t.id === id);
+    if (template?.isPadrao) {
+      toast.error("Não é possível excluir templates padrão");
+      return;
+    }
+
+    setTemplates(templates.filter((t) => t.id !== id));
+    setDeleteTemplateId(null);
+    toast.success("Template excluído com sucesso!");
+  };
+
+  const handleDuplicateTemplate = (template: MessageTemplate) => {
+    const newTemplate: MessageTemplate = {
+      ...template,
+      id: Date.now().toString(),
+      nome: `${template.nome} (Cópia)`,
+      isPadrao: false,
+      criadoEm: new Date().toISOString(),
+    };
+
+    setTemplates([...templates, newTemplate]);
+    toast.success("Template duplicado com sucesso!");
+  };
+
+  const handleSetAsDefault = (id: string) => {
+    const template = templates.find((t) => t.id === id);
+    if (!template) return;
+
+    setTemplates(
+      templates.map((t) =>
+        t.tipo === template.tipo
+          ? { ...t, isPadrao: t.id === id }
+          : t
+      )
+    );
+    toast.success("Template definido como padrão!");
   };
 
   return (
@@ -44,170 +146,345 @@ export default function MessageSettings() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-primary-dark">
-                Mensagens do WhatsApp
+                Templates de Mensagens
               </h1>
               <p className="text-sm text-muted-foreground">
-                Personalize as mensagens enviadas automaticamente via WhatsApp
+                Gerencie seus templates personalizados de WhatsApp
               </p>
             </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="shadow-lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Criar Novo Template</DialogTitle>
+                  <DialogDescription>
+                    Crie um template personalizado para suas mensagens do WhatsApp
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-nome">Nome do Template</Label>
+                      <Input
+                        id="new-nome"
+                        placeholder="Ex: Confirmação Especial"
+                        value={newTemplate.nome}
+                        onChange={(e) =>
+                          setNewTemplate({ ...newTemplate, nome: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-tipo">Tipo de Mensagem</Label>
+                      <Select
+                        value={newTemplate.tipo}
+                        onValueChange={(value) =>
+                          setNewTemplate({
+                            ...newTemplate,
+                            tipo: value as MessageType,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="new-tipo">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(messageTypeLabels).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-conteudo">Conteúdo da Mensagem</Label>
+                    <Textarea
+                      id="new-conteudo"
+                      placeholder="Digite o conteúdo da mensagem..."
+                      value={newTemplate.conteudo}
+                      onChange={(e) =>
+                        setNewTemplate({ ...newTemplate, conteudo: e.target.value })
+                      }
+                      rows={8}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Use: [nomeCliente], [dataProcedimento], [horaProcedimento], [linkFicha],
+                      [nomeStudio]
+                    </p>
+                  </div>
+                  <Card className="bg-blue-50/50 border-blue-200">
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-blue-700">
+                        <strong>Preview:</strong>
+                      </p>
+                      <p className="text-sm text-blue-900 mt-2 whitespace-pre-wrap">
+                        {newTemplate.conteudo
+                          ? gerarPreviewMensagem(newTemplate.conteudo)
+                          : "Digite o conteúdo para ver o preview..."}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddTemplate}>Criar Template</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-6">
-          <Card className="bg-blue-50/50 border-blue-200">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <MessageCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-900">
-                    💡 Como usar as variáveis
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Use as variáveis entre colchetes para personalizar suas mensagens.
-                    Elas serão substituídas automaticamente pelos dados reais do cliente
-                    quando a mensagem for enviada.
-                  </p>
-                </div>
+        {/* Info Card */}
+        <Card className="bg-blue-50/50 border-blue-200 mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <MessageCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-blue-900">💡 Como funciona</p>
+                <p className="text-sm text-blue-700">
+                  Crie múltiplos templates para cada tipo de mensagem. Ao enviar uma mensagem
+                  via WhatsApp, você poderá escolher qual template usar. O template marcado
+                  com ⭐ será usado por padrão.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Filter */}
+        <div className="mb-6 flex items-center gap-4">
+          <Label htmlFor="filter-type">Filtrar por tipo:</Label>
+          <Select
+            value={filterType}
+            onValueChange={(value) => setFilterType(value as MessageType | "all")}
+          >
+            <SelectTrigger id="filter-type" className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              {Object.entries(messageTypeLabels).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant="outline" className="ml-auto">
+            {filteredTemplates.length} template(s)
+          </Badge>
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Editor de mensagens */}
-        <div className="space-y-6">
-          {Object.entries(messageLabels).map(([type, label]) => (
-            <Card key={type}>
+        {/* Templates Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTemplates.map((template) => (
+            <Card
+              key={template.id}
+              className={`shadow-card hover:shadow-lg transition-all ${
+                template.isPadrao ? "border-2 border-primary" : ""
+              }`}
+            >
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-green-600" />
-                  {label}
-                </CardTitle>
-                <CardDescription>
-                  Use variáveis: [nomeCliente], [dataProcedimento], [horaProcedimento], [linkFicha], [nomeStudio]
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor={`msg-${type}`}>Mensagem</Label>
-                  <Textarea
-                    id={`msg-${type}`}
-                    value={templates[type as MessageType]}
-                    onChange={(e) => {
-                      setTemplates({
-                        ...templates,
-                        [type]: e.target.value,
-                      });
-                    }}
-                    onFocus={() => setSelectedType(type as MessageType)}
-                    rows={8}
-                    className="font-mono text-sm"
-                  />
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      {template.isPadrao && (
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                      {template.nome}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {messageTypeLabels[template.tipo]}
+                    </CardDescription>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="bg-muted/30 p-3 rounded-lg text-xs whitespace-pre-wrap max-h-32 overflow-y-auto">
+                  {template.conteudo.substring(0, 150)}
+                  {template.conteudo.length > 150 && "..."}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {!template.isPadrao && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSetAsDefault(template.id)}
+                      className="flex-1"
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      Tornar Padrão
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => handleReset(type as MessageType)}
+                    onClick={() => {
+                      setSelectedTemplate(template);
+                      setIsEditDialogOpen(true);
+                    }}
                   >
-                    Restaurar Padrão
+                    <Edit2 className="h-3 w-3" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDuplicateTemplate(template)}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  {!template.isPadrao && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteTemplateId(template.id)}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
-
-          <div className="flex justify-end">
-            <Button onClick={handleSave} size="lg">
-              Salvar Todas as Mensagens
-            </Button>
-          </div>
         </div>
 
-        {/* Preview */}
-        <div className="lg:sticky lg:top-6 h-fit">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Pré-visualização
-              </CardTitle>
-              <CardDescription>
-                Veja como a mensagem ficará com dados reais
-              </CardDescription>
-            </CardHeader>
+        {filteredTemplates.length === 0 && (
+          <Card className="text-center py-12">
             <CardContent>
-              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-6 rounded-xl">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="bg-green-500 text-white rounded-full p-2">
-                      <MessageCircle className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm">WhatsApp</p>
-                      <p className="text-xs text-muted-foreground">Mensagem automática</p>
-                    </div>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {messageLabels[selectedType]}
-                    </p>
-                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
-                      <p className="whitespace-pre-wrap text-sm">
-                        {gerarPreviewMensagem(templates[selectedType])}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                      💡 As variáveis serão substituídas automaticamente pelos dados reais do cliente
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+              <p className="text-muted-foreground mb-4">
+                Nenhum template encontrado para este tipo
+              </p>
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Primeiro Template
+              </Button>
             </CardContent>
           </Card>
-
-          {/* Legenda de variáveis */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-base">Variáveis Disponíveis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <code className="text-xs bg-muted px-2 py-1 rounded">[nomeCliente]</code>
-                  <span className="text-muted-foreground">Nome do cliente</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="text-xs bg-muted px-2 py-1 rounded">[dataProcedimento]</code>
-                  <span className="text-muted-foreground">Data da visita</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="text-xs bg-muted px-2 py-1 rounded">[horaProcedimento]</code>
-                  <span className="text-muted-foreground">Hora da visita</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="text-xs bg-muted px-2 py-1 rounded">[linkFicha]</code>
-                  <span className="text-muted-foreground">Link da anamnese</span>
-                </div>
-                <div className="flex justify-between">
-                  <code className="text-xs bg-muted px-2 py-1 rounded">[nomeStudio]</code>
-                  <span className="text-muted-foreground">Nome do estúdio</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        )}
       </main>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Template</DialogTitle>
+            <DialogDescription>Modifique o template de mensagem</DialogDescription>
+          </DialogHeader>
+          {selectedTemplate && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nome">Nome do Template</Label>
+                  <Input
+                    id="edit-nome"
+                    value={selectedTemplate.nome}
+                    onChange={(e) =>
+                      setSelectedTemplate({
+                        ...selectedTemplate,
+                        nome: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-tipo">Tipo de Mensagem</Label>
+                  <Select
+                    value={selectedTemplate.tipo}
+                    onValueChange={(value) =>
+                      setSelectedTemplate({
+                        ...selectedTemplate,
+                        tipo: value as MessageType,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="edit-tipo">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(messageTypeLabels).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-conteudo">Conteúdo da Mensagem</Label>
+                <Textarea
+                  id="edit-conteudo"
+                  value={selectedTemplate.conteudo}
+                  onChange={(e) =>
+                    setSelectedTemplate({
+                      ...selectedTemplate,
+                      conteudo: e.target.value,
+                    })
+                  }
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <Card className="bg-blue-50/50 border-blue-200">
+                <CardContent className="pt-4">
+                  <p className="text-xs text-blue-700">
+                    <strong>Preview:</strong>
+                  </p>
+                  <p className="text-sm text-blue-900 mt-2 whitespace-pre-wrap">
+                    {gerarPreviewMensagem(selectedTemplate.conteudo)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditTemplate}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deleteTemplateId}
+        onOpenChange={() => setDeleteTemplateId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este template? Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTemplateId && handleDeleteTemplate(deleteTemplateId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -45,7 +45,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { openWhatsAppMessage, generateAnamnesisLink } from "@/lib/whatsapp";
+import { gerarLinkWhatsApp, generateAnamnesisLink, type MessageType } from "@/lib/whatsapp";
+import TemplateSelector from "@/components/TemplateSelector";
+import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
 
 
 // Mock data - substituir com dados reais do backend
@@ -124,40 +126,31 @@ const ClientProfile = () => {
   const [selectedVisit, setSelectedVisit] = useState<any>(null);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+  const [templateType, setTemplateType] = useState<MessageType>("BoasVindas");
 
-  const handleWhatsAppMessage = (messageType?: string) => {
-    if (messageType === "anamnesis") {
-      const fichaUrl = generateAnamnesisLink(id || "");
-      openWhatsAppMessage("EnvioFicha", {
-        nomeCliente: client.name,
-        telefone: client.phone,
-        linkFicha: fichaUrl,
-        nomeStudio: "FichaZen"
-      });
-      toast({
-        title: "WhatsApp aberto",
-        description: "Link da ficha enviado via WhatsApp.",
-      });
-    } else {
-      openWhatsAppMessage("BoasVindas", {
-        nomeCliente: client.name,
-        telefone: client.phone,
-        nomeStudio: "FichaZen"
-      });
-    }
+  const handleOpenTemplateSelector = (type: MessageType) => {
+    setTemplateType(type);
+    setTemplateSelectorOpen(true);
   };
 
-  const handleSendAnamnesisLink = () => {
-    const fichaUrl = generateAnamnesisLink(id || "");
-    openWhatsAppMessage("EnvioFicha", {
-      nomeCliente: client.name,
-      telefone: client.phone,
-      linkFicha: fichaUrl,
-      nomeStudio: "FichaZen"
-    });
+  const handleSendWithTemplate = (template: MessageTemplate) => {
+    const fichaUrl = templateType === "EnvioFicha" ? generateAnamnesisLink(id || "") : undefined;
+    
+    let message = template.conteudo;
+    message = message.replace(/\[nomeCliente\]/g, client.name);
+    message = message.replace(/\[nomeStudio\]/g, "FichaZen");
+    
+    if (fichaUrl) {
+      message = message.replace(/\[linkFicha\]/g, fichaUrl);
+    }
+    
+    const whatsappUrl = gerarLinkWhatsApp(client.phone, message);
+    window.open(whatsappUrl, "_blank");
+    
     toast({
       title: "WhatsApp aberto",
-      description: "Link da ficha enviado via WhatsApp.",
+      description: `Mensagem "${template.nome}" enviada.`,
     });
   };
 
@@ -269,7 +262,7 @@ const ClientProfile = () => {
                   </div>
 
                   <Button
-                    onClick={() => handleWhatsAppMessage()}
+                    onClick={() => handleOpenTemplateSelector("BoasVindas")}
                     className="w-full"
                     variant="outline"
                   >
@@ -331,7 +324,7 @@ const ClientProfile = () => {
                     {client.anamnesisStatus === "Preenchida" ? "Ver / Editar Ficha" : "Preencher Ficha de Anamnese"}
                   </Button>
                   <Button
-                    onClick={handleSendAnamnesisLink}
+                    onClick={() => handleOpenTemplateSelector("EnvioFicha")}
                     variant="outline"
                     className="w-full"
                   >
@@ -572,6 +565,18 @@ const ClientProfile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Template Selector */}
+      <TemplateSelector
+        open={templateSelectorOpen}
+        onOpenChange={setTemplateSelectorOpen}
+        tipo={templateType}
+        templates={mockTemplates}
+        onSelect={handleSendWithTemplate}
+        clientData={{
+          nomeCliente: client.name,
+        }}
+      />
     </div>
   );
 };
