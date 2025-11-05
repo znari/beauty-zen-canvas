@@ -3,95 +3,127 @@
  * Permite envio de mensagens prontas com variáveis dinâmicas
  */
 
-export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "BoasVindas";
+export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "BoasVindas" | "Reagendamento" | "Cancelamento";
 
 export interface WhatsAppMessageParams {
   nomeCliente: string;
   telefone: string;
-  data?: string;
-  hora?: string;
+  dataProcedimento?: string;
+  horaProcedimento?: string;
   procedimentos?: string[];
   linkFicha?: string;
+  nomeStudio?: string;
 }
 
 /**
  * Templates de mensagens padrão do WhatsApp
- * Podem ser personalizados nas configurações futuramente
+ * Podem ser personalizados nas configurações
  */
-const messageTemplates: Record<MessageType, string> = {
-  ConfirmacaoAgendamento: `Olá {nomeCliente}! 🌸
+export const messageTemplates: Record<MessageType, string> = {
+  ConfirmacaoAgendamento: `Oi [nomeCliente]! ✨
 
-Seu agendamento para {data} às {hora} foi confirmado.
+Seu agendamento está confirmado para [dataProcedimento] às [horaProcedimento].
 
-Procedimento(s): {procedimentos}
+Te esperamos com muito carinho 💕
+— [nomeStudio]`,
 
-Te esperamos no estúdio 💅✨`,
-
-  EnvioFicha: `Oi {nomeCliente}! 💜
+  EnvioFicha: `Oi [nomeCliente]! 🌸
 
 Para garantir o melhor atendimento, precisamos que você preencha sua ficha de anamnese.
 
 Por favor, acesse o link abaixo:
-{linkFicha}
+[linkFicha]
 
-Obrigada! ✨`,
+Obrigada 💕
+— [nomeStudio]`,
 
-  Lembrete: `Oi {nomeCliente}! ✨
+  Lembrete: `Oi [nomeCliente]! ✨
 
-Passando para lembrar do seu horário amanhã às {hora}.
+Passando para lembrar do seu horário amanhã às [horaProcedimento].
 
-Procedimento(s): {procedimentos}
+Te esperamos com muito carinho 💕
+— [nomeStudio]`,
 
-Até logo! 💕`,
+  BoasVindas: `Olá [nomeCliente]! 💫
 
-  BoasVindas: `Olá {nomeCliente}! 😊
+Seja bem-vinda! Estamos muito felizes em te receber 🌸
 
-Seja bem-vinda ao FichaZen! 💜
+Qualquer dúvida, estamos à disposição 💕
+— [nomeStudio]`,
 
-Estamos muito felizes em te ter como cliente. Qualquer dúvida, estamos à disposição! ✨`,
+  Reagendamento: `Oi [nomeCliente]! 💫
+
+Seu agendamento foi reagendado para [dataProcedimento] às [horaProcedimento].
+Se precisar alterar novamente, é só me avisar por aqui 🌸
+
+— [nomeStudio]`,
+
+  Cancelamento: `Oi [nomeCliente]! ⚠️
+
+Seu agendamento foi cancelado com sucesso.
+Quando quiser marcar novamente, é só me chamar 💅
+
+— [nomeStudio]`,
 };
 
 /**
  * Substitui variáveis dinâmicas no template de mensagem
+ * Usa formato [variavel] para compatibilidade
  */
 function replaceVariables(template: string, params: WhatsAppMessageParams): string {
   let message = template;
 
-  // Substituir variáveis básicas
-  message = message.replace(/{nomeCliente}/g, params.nomeCliente);
+  // Substituir variáveis com formato [variavel]
+  message = message.replace(/\[nomeCliente\]/g, params.nomeCliente);
   
-  if (params.data) {
-    message = message.replace(/{data}/g, params.data);
+  if (params.dataProcedimento) {
+    message = message.replace(/\[dataProcedimento\]/g, params.dataProcedimento);
   }
   
-  if (params.hora) {
-    message = message.replace(/{hora}/g, params.hora);
+  if (params.horaProcedimento) {
+    message = message.replace(/\[horaProcedimento\]/g, params.horaProcedimento);
   }
   
   if (params.procedimentos && params.procedimentos.length > 0) {
-    message = message.replace(/{procedimentos}/g, params.procedimentos.join(", "));
+    message = message.replace(/\[procedimentos\]/g, params.procedimentos.join(", "));
   }
   
   if (params.linkFicha) {
-    message = message.replace(/{linkFicha}/g, params.linkFicha);
+    message = message.replace(/\[linkFicha\]/g, params.linkFicha);
+  }
+
+  if (params.nomeStudio) {
+    message = message.replace(/\[nomeStudio\]/g, params.nomeStudio);
   }
 
   return message;
 }
 
 /**
- * Formata número de telefone para formato WhatsApp (somente dígitos)
+ * Formata número de telefone para formato WhatsApp
+ * Remove prefixo 55 se já existir e garante formato correto
  */
 function formatPhoneNumber(phone: string): string {
   // Remove todos os caracteres não numéricos
-  const cleaned = phone.replace(/\D/g, "");
+  let cleaned = phone.replace(/\D/g, "");
   
-  // Se não tem código do país, adiciona 55 (Brasil)
-  if (cleaned.length === 11) {
-    return `55${cleaned}`;
+  // Remove o prefixo 55 caso já esteja incluso
+  if (cleaned.startsWith("55")) {
+    cleaned = cleaned.slice(2);
   }
   
+  // Retorna apenas DDD + número (sem código do país)
   return cleaned;
+}
+
+/**
+ * Gera link do WhatsApp com mensagem pré-preenchida
+ * Usa api.whatsapp.com para máxima compatibilidade
+ */
+export function gerarLinkWhatsApp(numero: string, mensagem: string): string {
+  const numeroFormatado = formatPhoneNumber(numero);
+  const textoCodificado = encodeURIComponent(mensagem);
+  return `https://api.whatsapp.com/send?phone=${numeroFormatado}&text=${textoCodificado}`;
 }
 
 /**
@@ -106,7 +138,8 @@ function formatPhoneNumber(phone: string): string {
  * openWhatsAppMessage("EnvioFicha", {
  *   nomeCliente: "Maria Silva",
  *   telefone: "(11) 98765-4321",
- *   linkFicha: "https://fichazen.com/ficha/123"
+ *   linkFicha: "https://fichazen.com/ficha/123",
+ *   nomeStudio: "Studio Bela"
  * });
  */
 export function openWhatsAppMessage(
@@ -115,6 +148,12 @@ export function openWhatsAppMessage(
   customMessage?: string
 ): void {
   try {
+    // Adicionar nome do estúdio padrão se não fornecido
+    const paramsWithDefaults = {
+      ...params,
+      nomeStudio: params.nomeStudio || "FichaZen"
+    };
+
     // Obter template ou usar mensagem customizada
     const template = customMessage || messageTemplates[messageType];
     
@@ -124,29 +163,39 @@ export function openWhatsAppMessage(
     }
 
     // Substituir variáveis no template
-    const message = replaceVariables(template, params);
+    const message = replaceVariables(template, paramsWithDefaults);
 
-    // Formatar número de telefone
-    const whatsappNumber = formatPhoneNumber(params.telefone);
-
-    // Codificar mensagem para URL
-    const encodedMessage = encodeURIComponent(message);
-
-    // Construir URL do WhatsApp
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    // Gerar link do WhatsApp
+    const whatsappUrl = gerarLinkWhatsApp(params.telefone, message);
 
     // Abrir WhatsApp em nova aba
-    // Se o app não estiver instalado, abre WhatsApp Web automaticamente
     window.open(whatsappUrl, "_blank");
 
     console.log("WhatsApp aberto com sucesso:", {
       tipo: messageType,
       destinatario: params.nomeCliente,
-      telefone: whatsappNumber,
+      telefone: formatPhoneNumber(params.telefone),
     });
   } catch (error) {
     console.error("Erro ao abrir WhatsApp:", error);
   }
+}
+
+/**
+ * Gera preview de mensagem com variáveis de exemplo
+ * Útil para visualização nas configurações
+ */
+export function gerarPreviewMensagem(template: string): string {
+  const variaveisExemplo = {
+    nomeCliente: "Ana",
+    telefone: "",
+    dataProcedimento: "12/11",
+    horaProcedimento: "14:00",
+    linkFicha: "https://fichazen.app/ficha/123",
+    nomeStudio: "Studio Bela",
+  };
+
+  return replaceVariables(template, variaveisExemplo);
 }
 
 /**
@@ -157,21 +206,20 @@ export function generateAnamnesisLink(clientId: string | number): string {
 }
 
 /**
- * Formata data para formato brasileiro (DD/MM/YYYY)
+ * Formata data para formato brasileiro (DD/MM)
  */
 export function formatDate(date: string | Date): string {
   if (typeof date === "string") {
     // Se for string no formato YYYY-MM-DD
     const [year, month, day] = date.split("-");
-    return `${day}/${month}/${year}`;
+    return `${day}/${month}`;
   }
   
   // Se for objeto Date
   const d = new Date(date);
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
+  return `${day}/${month}`;
 }
 
 /**

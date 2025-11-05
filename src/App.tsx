@@ -15,6 +15,7 @@ import Success from "./pages/Success";
 import NewClient from "./pages/NewClient";
 import ClientList from "./pages/ClientList";
 import ProcedureManagement from "./pages/ProcedureManagement";
+import MessageSettings from "./pages/MessageSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/ficha/:id" element={<AnamnesisForm />} />
           <Route path="/sucesso" element={<Success />} />
           <Route path="/configuracoes/procedimentos" element={<ProcedureManagement />} />
+          <Route path="/configuracoes/mensagens" element={<MessageSettings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

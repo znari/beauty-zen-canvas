@@ -99,6 +99,7 @@ export default function NewClient() {
         nomeCliente: data.nome,
         telefone: data.whatsapp,
         linkFicha: fichaUrl,
+        nomeStudio: "FichaZen"
       });
 
       // Também pode enviar confirmação de agendamento
@@ -107,9 +108,10 @@ export default function NewClient() {
           openWhatsAppMessage("ConfirmacaoAgendamento", {
             nomeCliente: data.nome,
             telefone: data.whatsapp,
-            data: formatDate(data.dataVisita),
-            hora: data.horaVisita,
+            dataProcedimento: formatDate(data.dataVisita),
+            horaProcedimento: data.horaVisita,
             procedimentos: procedimentosNomes,
+            nomeStudio: "FichaZen"
           });
         }, 1000);
       }

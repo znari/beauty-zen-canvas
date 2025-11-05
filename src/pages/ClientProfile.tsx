@@ -132,6 +132,7 @@ const ClientProfile = () => {
         nomeCliente: client.name,
         telefone: client.phone,
         linkFicha: fichaUrl,
+        nomeStudio: "FichaZen"
       });
       toast({
         title: "WhatsApp aberto",
@@ -141,6 +142,7 @@ const ClientProfile = () => {
       openWhatsAppMessage("BoasVindas", {
         nomeCliente: client.name,
         telefone: client.phone,
+        nomeStudio: "FichaZen"
       });
     }
   };
@@ -151,6 +153,7 @@ const ClientProfile = () => {
       nomeCliente: client.name,
       telefone: client.phone,
       linkFicha: fichaUrl,
+      nomeStudio: "FichaZen"
     });
     toast({
       title: "WhatsApp aberto",
