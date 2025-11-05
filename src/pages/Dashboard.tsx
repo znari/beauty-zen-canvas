@@ -211,15 +211,13 @@ const Dashboard = () => {
                 Meus Clientes
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1 sm:w-72">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome ou telefone..."
-                    className="pl-10 border-primary/30 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                <Button
+                  onClick={() => navigate("/clientes")}
+                  variant="outline"
+                  className="border-primary/30 hover:bg-primary/10"
+                >
+                  Ver Todos
+                </Button>
                 <Button
                   onClick={() => navigate("/clientes/novo")}
                   className="gradient-button text-white font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
@@ -242,7 +240,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.map((client, idx) => (
+                  {mockClients.slice(0, 5).map((client, idx) => (
                     <TableRow 
                       key={client.id} 
                       onClick={() => navigate(`/cliente/${client.id}`)}
@@ -265,6 +263,17 @@ const Dashboard = () => {
                 </TableBody>
               </Table>
             </div>
+            {mockClients.length > 5 && (
+              <div className="mt-4 text-center">
+                <Button
+                  onClick={() => navigate("/clientes")}
+                  variant="ghost"
+                  className="text-primary hover:text-primary-dark"
+                >
+                  Ver todos os {mockClients.length} clientes →
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
