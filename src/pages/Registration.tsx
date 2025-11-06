@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { FileText, MessageCircle, Camera } from "lucide-react";
+import { FileText, MessageCircle, Camera, CheckCircle2, XCircle, User, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import InputMask from "react-input-mask";
-import { validateCPForCNPJ, cleanDocument, getDocumentMask } from "@/lib/validateDocument";
+import { validateCPForCNPJ, cleanDocument, validateCPF, validateCNPJ } from "@/lib/validateDocument";
 import { supabase } from "@/integrations/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 const registrationSchema = z.object({
   nomeCompleto: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
@@ -36,8 +38,16 @@ export default function Registration() {
   const navigate = useNavigate();
   const { signUp, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [documentMask, setDocumentMask] = useState('999.999.999-999');
+  const [documentType, setDocumentType] = useState<'cpf' | 'cnpj'>('cpf');
+  const [documentMask, setDocumentMask] = useState('999.999.999-99');
   const [phoneMask, setPhoneMask] = useState('(99) 99999-9999');
+  const [cpfCnpjValidation, setCpfCnpjValidation] = useState<{
+    isValid: boolean | null;
+    message: string;
+  }>({
+    isValid: null,
+    message: ''
+  });
 
   // Redirect if already logged in
   useEffect(() => {
@@ -118,6 +128,42 @@ export default function Registration() {
         navigate("/login");
       }, 2000);
     }
+  };
+
+  const handleDocumentTypeChange = (value: 'cpf' | 'cnpj') => {
+    setDocumentType(value);
+    setDocumentMask(value === 'cpf' ? '999.999.999-99' : '99.999.999/9999-99');
+    setCpfCnpjValidation({ isValid: null, message: '' });
+  };
+
+  const handleCpfCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const cleanValue = cleanDocument(value);
+    
+    if (documentType === 'cpf' && cleanValue.length === 11) {
+      const isValid = validateCPF(cleanValue);
+      setCpfCnpjValidation({
+        isValid,
+        message: isValid ? 'CPF válido ✓' : 'CPF inválido'
+      });
+    } else if (documentType === 'cnpj' && cleanValue.length === 14) {
+      const isValid = validateCNPJ(cleanValue);
+      setCpfCnpjValidation({
+        isValid,
+        message: isValid ? 'CNPJ válido ✓' : 'CNPJ inválido'
+      });
+    } else if (cleanValue.length > 0) {
+      const expectedLength = documentType === 'cpf' ? 11 : 14;
+      const remaining = expectedLength - cleanValue.length;
+      setCpfCnpjValidation({
+        isValid: null,
+        message: `Faltam ${remaining} dígito${remaining > 1 ? 's' : ''}`
+      });
+    } else {
+      setCpfCnpjValidation({ isValid: null, message: '' });
+    }
+    
+    register("cpfCnpj").onChange(e);
   };
 
   return (
@@ -250,31 +296,80 @@ export default function Registration() {
               </div>
 
               <div>
-                <Label htmlFor="cpfCnpj">CPF ou CNPJ</Label>
+                <Label htmlFor="cpfCnpj" className="mb-3 block">Documento</Label>
+                
+                {/* Seletor de tipo de documento */}
+                <RadioGroup
+                  value={documentType}
+                  onValueChange={handleDocumentTypeChange}
+                  className="flex gap-4 mb-3"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cpf" id="cpf" />
+                    <Label htmlFor="cpf" className="flex items-center gap-2 cursor-pointer font-normal">
+                      <User className="w-4 h-4" />
+                      CPF
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cnpj" id="cnpj" />
+                    <Label htmlFor="cnpj" className="flex items-center gap-2 cursor-pointer font-normal">
+                      <Building2 className="w-4 h-4" />
+                      CNPJ
+                    </Label>
+                  </div>
+                </RadioGroup>
+                
+                {/* Campo de input com validação visual */}
                 <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                  
                   <InputMask
                     mask={documentMask}
                     {...register("cpfCnpj")}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setDocumentMask(getDocumentMask(value));
-                      register("cpfCnpj").onChange(e);
-                    }}
+                    onChange={handleCpfCnpjChange}
                   >
-                    {/* @ts-ignore */}
                     {(inputProps: any) => (
                       <Input
                         {...inputProps}
                         id="cpfCnpj"
-                        placeholder="000.000.000-00"
-                        className="mt-1 pl-10"
+                        placeholder={documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'}
+                        className={cn(
+                          "pl-10 pr-10",
+                          cpfCnpjValidation.isValid === true && "border-green-500 focus-visible:ring-green-500",
+                          cpfCnpjValidation.isValid === false && "border-red-500 focus-visible:ring-red-500"
+                        )}
                       />
                     )}
                   </InputMask>
+                  
+                  {/* Ícone de status à direita */}
+                  {cpfCnpjValidation.isValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {cpfCnpjValidation.isValid ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  )}
                 </div>
+                
+                {/* Mensagem de feedback em tempo real */}
+                {cpfCnpjValidation.message && !errors.cpfCnpj && (
+                  <p className={cn(
+                    "text-sm mt-1.5",
+                    cpfCnpjValidation.isValid === true && "text-green-600",
+                    cpfCnpjValidation.isValid === false && "text-red-600",
+                    cpfCnpjValidation.isValid === null && "text-muted-foreground"
+                  )}>
+                    {cpfCnpjValidation.message}
+                  </p>
+                )}
+                
+                {/* Mensagem de erro do Zod (validação no submit) */}
                 {errors.cpfCnpj && (
-                  <p className="text-sm text-destructive mt-1">{errors.cpfCnpj.message}</p>
+                  <p className="text-sm text-destructive mt-1.5">{errors.cpfCnpj.message}</p>
                 )}
               </div>
 
