@@ -107,30 +107,46 @@ function replaceVariables(template: string, params: WhatsAppMessageParams): stri
 }
 
 /**
- * Formata número de telefone para formato WhatsApp
- * Remove prefixo 55 se já existir e garante formato correto
+ * Formata número de telefone para formato WhatsApp internacional
+ * Adiciona prefixo +55 (Brasil) se não estiver presente
+ * 
+ * @param phone - Número de telefone em qualquer formato
+ * @returns Número formatado com código do país (ex: 5565993550830)
+ * 
+ * @example
+ * formatPhoneNumber("65993550830") → "5565993550830"
+ * formatPhoneNumber("5565993550830") → "5565993550830" (mantém)
+ * formatPhoneNumber("(65) 99355-0830") → "5565993550830"
  */
 function formatPhoneNumber(phone: string): string {
   // Remove todos os caracteres não numéricos
   let cleaned = phone.replace(/\D/g, "");
   
-  // Remove o prefixo 55 caso já esteja incluso
+  // Se já começa com 55 (código do Brasil), retorna direto
   if (cleaned.startsWith("55")) {
-    cleaned = cleaned.slice(2);
+    return cleaned;
   }
   
-  // Retorna apenas DDD + número (sem código do país)
-  return cleaned;
+  // Caso contrário, adiciona o prefixo 55 (Brasil)
+  return `55${cleaned}`;
 }
 
 /**
  * Gera link do WhatsApp com mensagem pré-preenchida
- * Usa api.whatsapp.com para máxima compatibilidade
+ * Usa formato oficial wa.me para máxima compatibilidade
+ * 
+ * @param numero - Número de telefone (será normalizado automaticamente)
+ * @param mensagem - Mensagem a ser enviada (será codificada automaticamente)
+ * @returns URL completa do WhatsApp Web/App
+ * 
+ * @example
+ * gerarLinkWhatsApp("65993550830", "Oi! Como vai?")
+ * → "https://wa.me/5565993550830?text=Oi!%20Como%20vai%3F"
  */
 export function gerarLinkWhatsApp(numero: string, mensagem: string): string {
   const numeroFormatado = formatPhoneNumber(numero);
   const textoCodificado = encodeURIComponent(mensagem);
-  return `https://api.whatsapp.com/send?phone=${numeroFormatado}&text=${textoCodificado}`;
+  return `https://wa.me/${numeroFormatado}?text=${textoCodificado}`;
 }
 
 /**
