@@ -14,49 +14,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-// Mock data - será substituído por dados do Lovable Cloud
-const mockClients = [
-  {
-    id: 1,
-    name: "Maria Silva",
-    phone: "(11) 98765-4321",
-    lastVisit: "03/11/2025",
-    anamnesisStatus: "Preenchida",
-  },
-  {
-    id: 2,
-    name: "Ana Costa",
-    phone: "(11) 97654-3210",
-    lastVisit: "02/11/2025",
-    anamnesisStatus: "Pendente",
-  },
-  {
-    id: 3,
-    name: "Juliana Santos",
-    phone: "(11) 96543-2109",
-    lastVisit: "01/11/2025",
-    anamnesisStatus: "Preenchida",
-  },
-  {
-    id: 4,
-    name: "Carla Mendes",
-    phone: "(11) 95432-1098",
-    lastVisit: "30/10/2025",
-    anamnesisStatus: "Preenchida",
-  },
-  {
-    id: 5,
-    name: "Beatriz Oliveira",
-    phone: "(11) 94321-0987",
-    lastVisit: "28/10/2025",
-    anamnesisStatus: "Pendente",
-  },
-];
+import { useClients } from "@/hooks/useClients";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const ClientList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: clients = [], isLoading, error } = useClients();
 
   const getInitials = (name: string) => {
     return name
@@ -67,15 +32,31 @@ const ClientList = () => {
       .slice(0, 2);
   };
 
-  const filteredClients = mockClients.filter(
+  const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone.replace(/\D/g, "").includes(searchTerm.replace(/\D/g, ""))
   );
 
-  const handleClientClick = (clientId: number) => {
+  const handleClientClick = (clientId: string) => {
     navigate(`/cliente/${clientId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen gradient-hero">
+        <LoadingSpinner message="Carregando clientes..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <ErrorMessage message={(error as Error).message} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero">

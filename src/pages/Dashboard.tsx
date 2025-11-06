@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,61 +30,69 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data
-const kpiData = [
-  { icon: Users, label: "Total de Clientes", value: 47 },
-  { icon: FileText, label: "Fichas Pendentes", value: 12 },
-  { icon: Calendar, label: "Visitas da Semana", value: 23 },
-];
-
-const mockWeekDays = [
-  { day: "Segunda", date: "04/11" },
-  { day: "Terça", date: "05/11" },
-  { day: "Quarta", date: "06/11" },
-  { day: "Quinta", date: "07/11" },
-  { day: "Sexta", date: "08/11" },
-  { day: "Sábado", date: "09/11" },
-];
-
-const mockAppointments = {
-  "04/11": [
-    { id: 1, time: "09:00", client: "Maria Silva", procedure: "Design de Sobrancelhas", notes: "Primeira sessão" },
-    { id: 2, time: "14:00", client: "Ana Costa", procedure: "Lash Lifting", notes: "Cliente regular" },
-  ],
-  "05/11": [
-    { id: 3, time: "10:00", client: "Juliana Santos", procedure: "Micropigmentação", notes: "Retoque após 30 dias" },
-    { id: 4, time: "15:30", client: "Carla Oliveira", procedure: "Henna", notes: "" },
-  ],
-  "06/11": [
-    { id: 5, time: "11:00", client: "Patrícia Lima", procedure: "Design de Sobrancelhas", notes: "" },
-  ],
-  "07/11": [],
-  "08/11": [
-    { id: 6, time: "09:30", client: "Fernanda Rocha", procedure: "Lash Lifting", notes: "Preferência por curvatura C" },
-    { id: 7, time: "13:00", client: "Beatriz Alves", procedure: "Micropigmentação", notes: "Primeira sessão - agendar retoque" },
-  ],
-  "09/11": [
-    { id: 8, time: "10:00", client: "Roberta Souza", procedure: "Design de Sobrancelhas", notes: "" },
-    { id: 9, time: "14:00", client: "Luciana Martins", procedure: "Henna", notes: "" },
-  ],
-};
-
-const mockClients = [
-  { id: 1, name: "Maria Silva", phone: "(11) 98765-4321", status: "Ativa", lastActivity: "03/11/2025" },
-  { id: 2, name: "Ana Costa", phone: "(11) 97654-3210", status: "Ativa", lastActivity: "02/11/2025" },
-  { id: 3, name: "Juliana Santos", phone: "(11) 96543-2109", status: "Pendente", lastActivity: "01/11/2025" },
-  { id: 4, name: "Carla Oliveira", phone: "(11) 95432-1098", status: "Ativa", lastActivity: "31/10/2025" },
-  { id: 5, name: "Patrícia Lima", phone: "(11) 94321-0987", status: "Ativa", lastActivity: "30/10/2025" },
-];
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useWeeklyVisits } from "@/hooks/useWeeklyVisits";
+import { useClients } from "@/hooks/useClients";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { startOfWeek, addDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch data from Supabase
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: weeklyVisits = {}, isLoading: visitsLoading } = useWeeklyVisits();
+  const { data: clients = [], isLoading: clientsLoading } = useClients();
+
+  // Generate week days dinamicamente
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const mockWeekDays = Array.from({ length: 6 }, (_, i) => {
+    const date = addDays(weekStart, i);
+    return {
+      day: format(date, "EEEE", { locale: ptBR }),
+      date: format(date, "dd/MM"),
+    };
+  });
+
+  // Realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'clients'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["clients"] });
+          queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+          queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  const kpiData = [
+    { icon: Users, label: "Total de Clientes", value: stats?.totalClients || 0 },
+    { icon: FileText, label: "Fichas Pendentes", value: stats?.pendingAnamneses || 0 },
+    { icon: Calendar, label: "Visitas da Semana", value: stats?.visitsThisWeek || 0 },
+  ];
 
   const handleLogout = async () => {
     await signOut();
@@ -119,11 +127,20 @@ const Dashboard = () => {
     setShowNewClientDialog(false);
   };
 
-  const filteredClients = mockClients.filter(
+  const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.phone.includes(searchQuery)
   );
+
+  // Loading state
+  if (statsLoading || visitsLoading || clientsLoading) {
+    return (
+      <div className="min-h-screen gradient-hero">
+        <LoadingSpinner message="Carregando dashboard..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero">
@@ -207,12 +224,12 @@ const Dashboard = () => {
               {mockWeekDays.map((day) => (
                 <div key={day.date} className="space-y-3">
                   <div className="text-center p-3 bg-primary text-white rounded-xl shadow-sm">
-                    <div className="font-semibold text-base">{day.day}</div>
+                    <div className="font-semibold text-base capitalize">{day.day}</div>
                     <div className="text-sm opacity-90">{day.date}</div>
                   </div>
                   <div className="space-y-2">
-                    {mockAppointments[day.date as keyof typeof mockAppointments].length > 0 ? (
-                      mockAppointments[day.date as keyof typeof mockAppointments].map((apt) => (
+                    {weeklyVisits[day.date]?.length > 0 ? (
+                      weeklyVisits[day.date].map((apt: any) => (
                         <button
                           key={apt.id}
                           onClick={() => setSelectedAppointment(apt)}
@@ -274,7 +291,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockClients.slice(0, 5).map((client, idx) => (
+                  {clients.slice(0, 5).map((client, idx) => (
                     <TableRow 
                       key={client.id} 
                       onClick={() => navigate(`/cliente/${client.id}`)}
@@ -286,25 +303,25 @@ const Dashboard = () => {
                       <TableCell className="text-muted-foreground">{client.phone}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={client.status === "Ativa" ? "active" : "pending"}
+                          variant={client.anamnesisStatus === "Preenchida" ? "active" : "pending"}
                         >
-                          {client.status}
+                          {client.anamnesisStatus}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{client.lastActivity}</TableCell>
+                      <TableCell className="text-muted-foreground">{client.lastVisit}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-            {mockClients.length > 5 && (
+            {clients.length > 5 && (
               <div className="mt-4 text-center">
                 <Button
                   onClick={() => navigate("/clientes")}
                   variant="ghost"
                   className="text-primary hover:text-primary-dark"
                 >
-                  Ver todos os {mockClients.length} clientes →
+                  Ver todos os {clients.length} clientes →
                 </Button>
               </div>
             )}

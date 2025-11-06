@@ -14,16 +14,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle } from "lucide-react";
 import { openWhatsAppMessage, generateAnamnesisLink, formatDate } from "@/lib/whatsapp";
-
-// Lista de procedimentos disponíveis (mock - futuramente virá do banco)
-const procedimentosDisponiveis = [
-  { id: "1", nome: "Design de Sobrancelhas", preco: 80 },
-  { id: "2", nome: "Henna", preco: 40 },
-  { id: "3", nome: "Limpeza de Pele", preco: 120 },
-  { id: "4", nome: "Micropigmentação", preco: 350 },
-  { id: "5", nome: "Peeling", preco: 150 },
-  { id: "6", nome: "Hidratação Facial", preco: 100 },
-];
+import { useCreateClient } from "@/hooks/useCreateClient";
+import { useProcedures } from "@/hooks/useProcedures";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const formSchema = z.object({
   // Dados do Cliente
@@ -54,6 +48,9 @@ export default function NewClient() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [enviarWhatsApp, setEnviarWhatsApp] = useState(true);
+  
+  const createClient = useCreateClient();
+  const { data: procedimentosDisponiveis = [], isLoading: loadingProcedures, error: proceduresError } = useProcedures();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -84,47 +81,52 @@ export default function NewClient() {
     }
   };
 
-  const onSubmit = (data: FormData) => {
-    console.log("Salvando cliente:", data);
-    
-    // Gerar ID fictício para o cliente (será substituído pelo ID real do banco)
-    const clientId = Math.floor(Math.random() * 1000);
-    
-    // Enviar link da ficha via WhatsApp se marcado
-    if (enviarWhatsApp) {
-      const fichaUrl = generateAnamnesisLink(clientId);
-      const procedimentosNomes = data.procedimentos.map(p => p.nome);
+  const onSubmit = async (data: FormData) => {
+    try {
+      const result = await createClient.mutateAsync(data);
       
-      openWhatsAppMessage("EnvioFicha", {
-        nomeCliente: data.nome,
-        telefone: data.whatsapp,
-        linkFicha: fichaUrl,
-        nomeStudio: "FichaZen"
-      });
+      // Enviar WhatsApp com ID REAL do banco
+      if (enviarWhatsApp) {
+        const fichaUrl = generateAnamnesisLink(result.client.id);
+        const procedimentosNomes = data.procedimentos.map(p => p.nome);
+        
+        openWhatsAppMessage("EnvioFicha", {
+          nomeCliente: data.nome,
+          telefone: data.whatsapp,
+          linkFicha: fichaUrl,
+          nomeStudio: "FichaZen"
+        });
 
-      // Também pode enviar confirmação de agendamento
-      if (data.dataVisita && data.horaVisita) {
-        setTimeout(() => {
-          openWhatsAppMessage("ConfirmacaoAgendamento", {
-            nomeCliente: data.nome,
-            telefone: data.whatsapp,
-            dataProcedimento: formatDate(data.dataVisita),
-            horaProcedimento: data.horaVisita,
-            procedimentos: procedimentosNomes,
-            nomeStudio: "FichaZen"
-          });
-        }, 1000);
+        // Também enviar confirmação de agendamento
+        if (data.dataVisita && data.horaVisita) {
+          setTimeout(() => {
+            openWhatsAppMessage("ConfirmacaoAgendamento", {
+              nomeCliente: data.nome,
+              telefone: data.whatsapp,
+              dataProcedimento: formatDate(data.dataVisita),
+              horaProcedimento: data.horaVisita,
+              procedimentos: procedimentosNomes,
+              nomeStudio: "FichaZen"
+            });
+          }, 1000);
+        }
       }
+      
+      toast({
+        title: "Cliente cadastrado com sucesso!",
+        description: enviarWhatsApp 
+          ? `${data.nome} foi adicionado e as mensagens foram enviadas via WhatsApp.` 
+          : `${data.nome} foi adicionado ao sistema.`,
+      });
+      
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cadastrar cliente",
+        description: error.message || "Ocorreu um erro ao salvar os dados.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Cliente cadastrado com sucesso!",
-      description: enviarWhatsApp 
-        ? `${data.nome} foi adicionado e as mensagens foram enviadas via WhatsApp.` 
-        : `${data.nome} foi adicionado ao sistema.`,
-    });
-    
-    navigate("/dashboard");
   };
 
   const handleBack = () => {
@@ -142,6 +144,42 @@ export default function NewClient() {
 
   // Marcar formulário como modificado
   form.watch(() => setIsFormDirty(true));
+
+  // Loading state
+  if (loadingProcedures) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-light via-white to-secondary-light">
+        <LoadingSpinner message="Carregando procedimentos..." />
+      </div>
+    );
+  }
+
+  // Error state
+  if (proceduresError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-light via-white to-secondary-light flex items-center justify-center">
+        <ErrorMessage message="Erro ao carregar procedimentos. Configure procedimentos em Configurações antes de cadastrar clientes." />
+      </div>
+    );
+  }
+
+  // Empty state
+  if (procedimentosDisponiveis.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-light via-white to-secondary-light flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p className="text-muted-foreground mb-4">
+              Você precisa cadastrar pelo menos um procedimento antes de adicionar clientes.
+            </p>
+            <Button onClick={() => navigate("/configuracoes/procedimentos")} variant="cta">
+              Ir para Procedimentos
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light via-white to-secondary-light">
