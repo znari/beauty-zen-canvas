@@ -12,16 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Edit, Trash2, Scissors } from "lucide-react";
-
-// Mock de procedimentos (será substituído por dados do banco)
-const procedimentosIniciais = [
-  { id: "1", nome: "Design de Sobrancelhas", preco: 80 },
-  { id: "2", nome: "Henna", preco: 40 },
-  { id: "3", nome: "Limpeza de Pele", preco: 120 },
-  { id: "4", nome: "Micropigmentação", preco: 350 },
-  { id: "5", nome: "Peeling", preco: 150 },
-  { id: "6", nome: "Hidratação Facial", preco: 100 },
-];
+import { useProcedures } from "@/hooks/useProcedures";
+import { useCreateProcedure } from "@/hooks/useCreateProcedure";
+import { useUpdateProcedure } from "@/hooks/useUpdateProcedure";
+import { useDeleteProcedure } from "@/hooks/useDeleteProcedure";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const procedureSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -32,7 +28,11 @@ type ProcedureData = z.infer<typeof procedureSchema>;
 
 export default function ProcedureManagement() {
   const navigate = useNavigate();
-  const [procedimentos, setProcedimentos] = useState(procedimentosIniciais);
+  const { data: procedimentos = [], isLoading, error } = useProcedures();
+  const createProcedure = useCreateProcedure();
+  const updateProcedure = useUpdateProcedure();
+  const deleteProcedure = useDeleteProcedure();
+  
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,53 +46,73 @@ export default function ProcedureManagement() {
     },
   });
 
-  const handleAdd = (data: ProcedureData) => {
-    const newProcedimento = {
-      id: String(procedimentos.length + 1),
-      nome: data.nome,
-      preco: data.preco,
-    };
-    setProcedimentos([...procedimentos, newProcedimento]);
-    toast({
-      title: "Procedimento adicionado",
-      description: `${data.nome} foi adicionado com sucesso.`,
-    });
-    setAddDialogOpen(false);
-    form.reset();
+  const handleAdd = async (data: ProcedureData) => {
+    try {
+      await createProcedure.mutateAsync({
+        name: data.nome,
+        price: data.preco,
+      });
+      toast({
+        title: "Procedimento adicionado",
+        description: `${data.nome} foi adicionado com sucesso.`,
+      });
+      setAddDialogOpen(false);
+      form.reset();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao adicionar procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEdit = (data: ProcedureData) => {
-    setProcedimentos(
-      procedimentos.map((proc) =>
-        proc.id === selectedProcedimento.id
-          ? { ...proc, nome: data.nome, preco: data.preco }
-          : proc
-      )
-    );
-    toast({
-      title: "Procedimento atualizado",
-      description: `${data.nome} foi atualizado com sucesso.`,
-    });
-    setEditDialogOpen(false);
-    setSelectedProcedimento(null);
-    form.reset();
+  const handleEdit = async (data: ProcedureData) => {
+    try {
+      await updateProcedure.mutateAsync({
+        id: selectedProcedimento.id,
+        name: data.nome,
+        price: data.preco,
+      });
+      toast({
+        title: "Procedimento atualizado",
+        description: `${data.nome} foi atualizado com sucesso.`,
+      });
+      setEditDialogOpen(false);
+      setSelectedProcedimento(null);
+      form.reset();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = () => {
-    setProcedimentos(procedimentos.filter((proc) => proc.id !== selectedProcedimento.id));
-    toast({
-      title: "Procedimento removido",
-      description: `${selectedProcedimento.nome} foi removido.`,
-      variant: "destructive",
-    });
-    setDeleteDialogOpen(false);
-    setSelectedProcedimento(null);
+  const handleDelete = async () => {
+    try {
+      await deleteProcedure.mutateAsync(selectedProcedimento.id);
+      toast({
+        title: "Procedimento removido",
+        description: `${selectedProcedimento.nome} foi removido.`,
+        variant: "destructive",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedProcedimento(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover procedimento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditDialog = (procedimento: any) => {
     setSelectedProcedimento(procedimento);
     form.setValue("nome", procedimento.nome);
-    form.setValue("preco", procedimento.preco);
+    form.setValue("preco", Number(procedimento.preco));
     setEditDialogOpen(true);
   };
 
@@ -139,52 +159,70 @@ export default function ProcedureManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-xl border border-primary/20 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-accent/30 hover:bg-accent/30">
-                    <TableHead className="font-bold text-secondary">Procedimento</TableHead>
-                    <TableHead className="font-bold text-secondary">Preço</TableHead>
-                    <TableHead className="font-bold text-secondary text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {procedimentos.map((procedimento, idx) => (
-                    <TableRow
-                      key={procedimento.id}
-                      className={`hover:bg-muted/50 transition-all ${
-                        idx % 2 === 0 ? "bg-white" : "bg-muted/20"
-                      }`}
-                    >
-                      <TableCell className="font-semibold">{procedimento.nome}</TableCell>
-                      <TableCell className="text-success-foreground font-semibold">
-                        R$ {procedimento.preco.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(procedimento)}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => openDeleteDialog(procedimento)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remover
-                          </Button>
-                        </div>
-                      </TableCell>
+            {isLoading ? (
+              <LoadingSpinner message="Carregando procedimentos..." />
+            ) : error ? (
+              <ErrorMessage message={error.message} />
+            ) : procedimentos.length === 0 ? (
+              <div className="text-center py-12">
+                <Scissors className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground font-medium mb-2">Nenhum procedimento cadastrado</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Comece adicionando seus serviços para cadastrar clientes
+                </p>
+                <Button onClick={() => setAddDialogOpen(true)} variant="cta">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Adicionar Primeiro Procedimento
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-primary/20 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-accent/30 hover:bg-accent/30">
+                      <TableHead className="font-bold text-secondary">Procedimento</TableHead>
+                      <TableHead className="font-bold text-secondary">Preço</TableHead>
+                      <TableHead className="font-bold text-secondary text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {procedimentos.map((procedimento, idx) => (
+                      <TableRow
+                        key={procedimento.id}
+                        className={`hover:bg-muted/50 transition-all ${
+                          idx % 2 === 0 ? "bg-white" : "bg-muted/20"
+                        }`}
+                      >
+                        <TableCell className="font-semibold">{procedimento.nome}</TableCell>
+                        <TableCell className="text-success-foreground font-semibold">
+                          R$ {procedimento.preco.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditDialog(procedimento)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openDeleteDialog(procedimento)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remover
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -235,9 +273,15 @@ export default function ProcedureManagement() {
                 <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" variant="cta">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
+                <Button type="submit" variant="cta" disabled={createProcedure.isPending}>
+                  {createProcedure.isPending ? (
+                    <>Adicionando...</>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -286,8 +330,8 @@ export default function ProcedureManagement() {
                 <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" variant="cta">
-                  Salvar Alterações
+                <Button type="submit" variant="cta" disabled={updateProcedure.isPending}>
+                  {updateProcedure.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </DialogFooter>
             </form>
@@ -306,8 +350,12 @@ export default function ProcedureManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Remover
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              disabled={deleteProcedure.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteProcedure.isPending ? "Removendo..." : "Remover"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -13,7 +13,7 @@ export const useProcedures = () => {
         .select("*")
         .eq("professional_id", user.id)
         .eq("active", true)
-        .order("name", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
