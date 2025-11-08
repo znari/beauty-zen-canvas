@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -48,77 +48,24 @@ import { toast } from "@/hooks/use-toast";
 import { gerarLinkWhatsApp, generateAnamnesisLink, type MessageType } from "@/lib/whatsapp";
 import TemplateSelector from "@/components/TemplateSelector";
 import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
+import { useClientProfile } from "@/hooks/useClientProfile";
+import { useUpdateVisit } from "@/hooks/useUpdateVisit";
+import { useCancelVisit } from "@/hooks/useCancelVisit";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 
-
-// Mock data - substituir com dados reais do backend
-const mockClientData = {
-  1: {
-    id: 1,
-    name: "Maria Silva",
-    phone: "(11) 98765-4321",
-    registrationDate: "15/08/2024",
-    lastVisit: "03/11/2025",
-    status: "Ativa",
-    anamnesisStatus: "Preenchida",
-    anamnesisDate: "20/08/2024",
-    visits: [
-      {
-        id: 1,
-        date: "03/11/2025",
-        time: "09:00",
-        procedures: ["Design de Sobrancelhas", "Henna"],
-        totalValue: 120,
-        notes: "Cliente solicitou sobrancelha mais arqueada",
-        status: "Realizado",
-      },
-      {
-        id: 2,
-        date: "20/10/2025",
-        time: "14:00",
-        procedures: ["Micropigmentação"],
-        totalValue: 450,
-        notes: "",
-        status: "Realizado",
-      },
-      {
-        id: 3,
-        date: "15/09/2025",
-        time: "10:30",
-        procedures: ["Limpeza de Pele"],
-        totalValue: 120,
-        notes: "Primeira visita",
-        status: "Realizado",
-      },
-    ],
-  },
-  2: {
-    id: 2,
-    name: "Ana Costa",
-    phone: "(11) 97654-3210",
-    registrationDate: "10/09/2024",
-    lastVisit: "02/11/2025",
-    status: "Ativa",
-    anamnesisStatus: "Pendente",
-    anamnesisDate: null,
-    visits: [
-      {
-        id: 4,
-        date: "02/11/2025",
-        time: "14:00",
-        procedures: ["Lash Lifting"],
-        totalValue: 180,
-        notes: "",
-        status: "Realizado",
-      },
-    ],
-  },
-};
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const client = mockClientData[Number(id) as keyof typeof mockClientData] || mockClientData[1];
+  const { data: client, isLoading, error } = useClientProfile(id || "");
+  const updateVisit = useUpdateVisit();
+  const cancelVisit = useCancelVisit();
 
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -135,7 +82,8 @@ const ClientProfile = () => {
   };
 
   const handleSendWithTemplate = (template: MessageTemplate) => {
-    const fichaUrl = templateType === "EnvioFicha" ? generateAnamnesisLink(id || "") : undefined;
+    if (!client) return;
+    const fichaUrl = templateType === "EnvioFicha" ? generateAnamnesisLink(client.id) : undefined;
     
     let message = template.conteudo;
     message = message.replace(/\[nomeCliente\]/g, client.name);
@@ -154,8 +102,8 @@ const ClientProfile = () => {
     });
   };
 
-  const handleReschedule = () => {
-    if (!newDate || !newTime) {
+  const handleReschedule = async () => {
+    if (!newDate || !newTime || !selectedVisit) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha a nova data e horário.",
@@ -164,24 +112,52 @@ const ClientProfile = () => {
       return;
     }
 
-    toast({
-      title: "Visita reagendada",
-      description: `Visita reagendada para ${newDate} às ${newTime}.`,
-    });
-    setRescheduleDialogOpen(false);
-    setSelectedVisit(null);
-    setNewDate("");
-    setNewTime("");
+    try {
+      await updateVisit.mutateAsync({
+        visitId: selectedVisit.id,
+        visit_date: newDate,
+        visit_time: newTime,
+      });
+
+      toast({
+        title: "Visita reagendada",
+        description: `Visita reagendada para ${format(new Date(newDate), "dd/MM/yyyy")} às ${newTime}.`,
+      });
+
+      setRescheduleDialogOpen(false);
+      setSelectedVisit(null);
+      setNewDate("");
+      setNewTime("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reagendar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancelVisit = () => {
-    toast({
-      title: "Visita cancelada",
-      description: "A visita foi cancelada com sucesso.",
-      variant: "destructive",
-    });
-    setCancelDialogOpen(false);
-    setSelectedVisit(null);
+  const handleCancelVisit = async () => {
+    if (!selectedVisit) return;
+
+    try {
+      await cancelVisit.mutateAsync(selectedVisit.id);
+
+      toast({
+        title: "Visita cancelada",
+        description: "A visita foi cancelada com sucesso.",
+        variant: "destructive",
+      });
+
+      setCancelDialogOpen(false);
+      setSelectedVisit(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const openRescheduleDialog = (visit: any) => {
@@ -207,6 +183,46 @@ const ClientProfile = () => {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Realtime updates para visitas
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel('client-visits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'visits',
+          filter: `client_id=eq.${id}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["client-profile", id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, queryClient]);
+
+  if (isLoading) {
+    return <LoadingSpinner message="Carregando perfil do cliente..." />;
+  }
+
+  if (error || !client) {
+    return (
+      <div className="min-h-screen gradient-hero p-8">
+        <ErrorMessage message="Cliente não encontrado ou você não tem permissão para visualizá-lo." />
+        <Button onClick={() => navigate("/dashboard")} className="mt-4">
+          Voltar ao Dashboard
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero">
