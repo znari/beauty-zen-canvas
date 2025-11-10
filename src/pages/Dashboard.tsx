@@ -397,7 +397,7 @@ const Dashboard = () => {
 
       {/* Appointment Details Dialog */}
       <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl max-w-md">
+        <DialogContent className="bg-white border-primary/20 shadow-xl w-full max-w-md sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Detalhes do Agendamento</DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -439,21 +439,21 @@ const Dashboard = () => {
               )}
             </div>
           )}
-          <DialogFooter className="flex flex-col gap-2 mt-4">
+          <DialogFooter className="flex flex-col gap-3 mt-6 pt-4 border-t border-primary/10">
             {selectedAppointment?.status === "scheduled" && (
               <>
                 <Button 
                   onClick={handleCompleteVisit}
                   disabled={completeVisit.isPending}
-                  className="gradient-button text-white font-semibold shadow-md hover:shadow-lg w-full"
+                  className="w-full gradient-button text-white font-semibold shadow-md hover:shadow-lg"
                 >
                   {completeVisit.isPending ? "Confirmando..." : "✅ Confirmar Realização"}
                 </Button>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <Button 
                     variant="outline" 
                     onClick={handleReschedule}
-                    className="border-primary/30 hover:bg-primary/10 flex-1"
+                    className="border-primary/30 hover:bg-primary/10"
                   >
                     📅 Reagendar
                   </Button>
@@ -461,7 +461,6 @@ const Dashboard = () => {
                     variant="destructive" 
                     onClick={handleCancelAppointment}
                     disabled={cancelVisit.isPending}
-                    className="flex-1"
                   >
                     {cancelVisit.isPending ? "Cancelando..." : "❌ Cancelar"}
                   </Button>
@@ -470,14 +469,17 @@ const Dashboard = () => {
             )}
             
             {selectedAppointment?.status === "completed" && (
-              <div className="w-full text-center text-green-700 font-semibold py-2">
-                Este procedimento já foi realizado
+              <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                <p className="text-green-700 font-semibold">✅ Procedimento já realizado</p>
+                {selectedAppointment.completedAt && (
+                  <p className="text-green-600 text-sm mt-1">Confirmado em {selectedAppointment.completedAt}</p>
+                )}
               </div>
             )}
             
             {selectedAppointment?.status === "cancelled" && (
-              <div className="w-full text-center text-red-700 font-semibold py-2">
-                Este agendamento foi cancelado
+              <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg text-center">
+                <p className="text-red-700 font-semibold">❌ Agendamento cancelado</p>
               </div>
             )}
           </DialogFooter>
