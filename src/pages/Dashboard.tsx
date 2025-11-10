@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -52,6 +52,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
+  const [showRescheduleForm, setShowRescheduleForm] = useState(false);
 
   // Mutation hooks
   const completeVisit = useCompleteVisit();
@@ -157,11 +158,42 @@ const Dashboard = () => {
   };
 
   const handleReschedule = () => {
-    toast({
-      title: "Reagendamento",
-      description: "Funcionalidade de reagendamento em desenvolvimento.",
-    });
-    setSelectedAppointment(null);
+    setShowRescheduleForm(true);
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!selectedAppointment || !rescheduleDate || !rescheduleTime) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha a nova data e horário",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateVisit.mutateAsync({
+        visitId: selectedAppointment.id,
+        visit_date: rescheduleDate,
+        visit_time: rescheduleTime,
+      });
+
+      toast({
+        title: "✅ Visita reagendada",
+        description: `Nova data: ${format(new Date(rescheduleDate), "dd/MM/yyyy")} às ${rescheduleTime}`,
+      });
+
+      setShowRescheduleForm(false);
+      setSelectedAppointment(null);
+      setRescheduleDate("");
+      setRescheduleTime("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reagendar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNewClient = () => {
@@ -439,6 +471,53 @@ const Dashboard = () => {
               )}
             </div>
           )}
+          
+          {showRescheduleForm && selectedAppointment?.status === "scheduled" && (
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border-2 border-primary/20 mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-primary">Reagendar Visita</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowRescheduleForm(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="reschedule-date">Nova Data</Label>
+                  <Input
+                    id="reschedule-date"
+                    type="date"
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reschedule-time">Novo Horário</Label>
+                  <Input
+                    id="reschedule-time"
+                    type="time"
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleConfirmReschedule}
+                disabled={updateVisit.isPending}
+                className="w-full gradient-button"
+              >
+                {updateVisit.isPending ? "Reagendando..." : "✅ Confirmar Reagendamento"}
+              </Button>
+            </div>
+          )}
+          
           <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-primary/10">
             {selectedAppointment?.status === "scheduled" && (
               <>

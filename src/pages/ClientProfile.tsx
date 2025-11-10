@@ -361,10 +361,25 @@ const ClientProfile = () => {
                     <Calendar className="h-5 w-5" />
                     Histórico de Visitas
                   </CardTitle>
-                  <Button onClick={() => navigate(`/clientes/novo?cliente=${id}`)} variant="cta">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Visita
-                  </Button>
+                  <div className="flex gap-2">
+                    {client.visits.some(visit => visit.status === "Agendado") && (
+                      <Button
+                        onClick={() => {
+                          const nextVisit = client.visits.find(v => v.status === "Agendado");
+                          if (nextVisit) openRescheduleDialog(nextVisit);
+                        }}
+                        variant="outline"
+                        className="border-primary hover:bg-primary/10"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Reagendar Próxima
+                      </Button>
+                    )}
+                    <Button onClick={() => navigate(`/clientes/novo?cliente=${id}`)} variant="cta">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Visita
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
