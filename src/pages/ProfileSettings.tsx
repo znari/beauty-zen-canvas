@@ -1,14 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Save, User, Mail, Phone, Building2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Save, User, Mail, Phone, Building2, Camera, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useUploadAvatar } from "@/hooks/useUploadAvatar";
+import { useDeleteAvatar } from "@/hooks/useDeleteAvatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -21,6 +33,12 @@ export default function ProfileSettings() {
     telefone: "",
     metodoPagamento: "",
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAvatar = useUploadAvatar();
+  const deleteAvatar = useDeleteAvatar();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -43,6 +61,7 @@ export default function ProfileSettings() {
           telefone: data.phone_raw || "",
           metodoPagamento: "", // This field doesn't exist in DB yet
         });
+        setAvatarUrl(data.avatar_url || null);
       }
       setLoading(false);
     };
@@ -82,6 +101,24 @@ export default function ProfileSettings() {
       .slice(0, 2);
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await uploadAvatar.mutateAsync(file);
+      // Limpar input para permitir upload do mesmo arquivo novamente
+      event.target.value = '';
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    await deleteAvatar.mutateAsync();
+    setShowDeleteDialog(false);
+  };
+
   return (
     <div className="min-h-screen gradient-hero">
       {/* Header */}
@@ -114,16 +151,62 @@ export default function ProfileSettings() {
           <Card className="shadow-card">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center space-y-4">
-                <Avatar className="h-32 w-32 border-4 border-primary/20">
-                  <AvatarFallback className="bg-gradient-primary text-white text-3xl font-semibold">
-                    {getInitials(profileData.nomeEmpresa)}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar com controles de upload/delete */}
+                <div className="relative group">
+                  <Avatar className="h-32 w-32 border-4 border-primary/20">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt={profileData.nomeEmpresa} className="object-cover" />
+                    ) : null}
+                    <AvatarFallback className="bg-gradient-primary text-white text-3xl font-semibold">
+                      {getInitials(profileData.nomeEmpresa)}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  {/* Overlay com botões */}
+                  <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="h-10 w-10 rounded-full"
+                      onClick={handleAvatarClick}
+                      disabled={uploadAvatar.isPending}
+                      title="Editar foto"
+                    >
+                      <Camera className="h-5 w-5" />
+                    </Button>
+                    
+                    {avatarUrl && (
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-10 w-10 rounded-full"
+                        onClick={() => setShowDeleteDialog(true)}
+                        disabled={deleteAvatar.isPending}
+                        title="Excluir foto"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Input file oculto */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
                 <div>
                   <h2 className="text-2xl font-bold text-primary-dark">
                     {profileData.nomeEmpresa}
                   </h2>
                   <p className="text-muted-foreground">{profileData.email}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Passe o mouse sobre a foto para editar ou excluir
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -225,6 +308,27 @@ export default function ProfileSettings() {
         </div>
         )}
       </main>
+
+      {/* Alert Dialog para confirmar exclusão */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir foto de perfil?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Sua foto de perfil será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAvatar}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteAvatar.isPending ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
