@@ -41,6 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatLocalDate } from "@/lib/dateUtils";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -180,7 +181,7 @@ const Dashboard = () => {
 
       toast({
         title: "✅ Visita reagendada",
-        description: `Nova data: ${format(new Date(rescheduleDate), "dd/MM/yyyy")} às ${rescheduleTime}`,
+        description: `Nova data: ${formatLocalDate(rescheduleDate, "dd/MM/yyyy")} às ${rescheduleTime}`,
       });
 
       setShowRescheduleForm(false);

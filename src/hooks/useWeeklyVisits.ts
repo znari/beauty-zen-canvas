@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatLocalDate } from "@/lib/dateUtils";
 
 export const useWeeklyVisits = () => {
   return useQuery({
@@ -34,7 +35,7 @@ export const useWeeklyVisits = () => {
       const grouped: Record<string, any[]> = {};
       
       data.forEach((visit) => {
-        const date = format(new Date(visit.visit_date), "dd/MM");
+        const date = formatLocalDate(visit.visit_date, "dd/MM");
         if (!grouped[date]) grouped[date] = [];
         
         grouped[date].push({

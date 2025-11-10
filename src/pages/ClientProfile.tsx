@@ -56,6 +56,7 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { formatLocalDate } from "@/lib/dateUtils";
 
 
 const ClientProfile = () => {
@@ -121,7 +122,7 @@ const ClientProfile = () => {
 
       toast({
         title: "Visita reagendada",
-        description: `Visita reagendada para ${format(new Date(newDate), "dd/MM/yyyy")} às ${newTime}.`,
+        description: `Visita reagendada para ${formatLocalDate(newDate, "dd/MM/yyyy")} às ${newTime}.`,
       });
 
       setRescheduleDialogOpen(false);
