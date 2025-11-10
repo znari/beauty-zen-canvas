@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -42,6 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatLocalDate } from "@/lib/dateUtils";
+import { openWhatsAppMessage, generateAnamnesisLink } from "@/lib/whatsapp";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -152,6 +153,52 @@ const Dashboard = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao cancelar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendAnamnesisForm = () => {
+    if (!selectedAppointment?.clientId) return;
+    
+    const anamnesisLink = generateAnamnesisLink(selectedAppointment.clientId);
+    
+    openWhatsAppMessage("EnvioFicha", {
+      nomeCliente: selectedAppointment.client,
+      telefone: "",
+      linkFicha: anamnesisLink,
+      nomeStudio: "FichaZen"
+    });
+    
+    toast({
+      title: "📲 WhatsApp aberto",
+      description: `Ficha de anamnese pronta para enviar para ${selectedAppointment.client}`,
+    });
+  };
+
+  const handleDeleteAppointment = async () => {
+    if (!selectedAppointment?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("visits")
+        .delete()
+        .eq("id", selectedAppointment.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "🗑️ Agendamento excluído",
+        description: "O agendamento foi removido permanentemente.",
+      });
+
+      setSelectedAppointment(null);
+      queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir",
         description: error.message,
         variant: "destructive",
       });
@@ -307,34 +354,49 @@ const Dashboard = () => {
                   </div>
                   <div className="space-y-2">
                     {weeklyVisits[day.date]?.length > 0 ? (
-                      weeklyVisits[day.date].map((apt: any) => (
-                        <button
-                          key={apt.id}
-                          onClick={() => setSelectedAppointment(apt)}
-                          className={`
-                            w-full p-3 border rounded-xl text-left transition-all hover:scale-[1.02] hover:shadow-md
-                            ${apt.status === "completed" 
-                              ? "bg-green-50 border-green-400 hover:bg-green-100" 
-                              : apt.status === "cancelled"
-                              ? "bg-red-50 border-red-400 hover:bg-red-100 opacity-60"
-                              : "bg-white border-primary/20 hover:bg-accent/30"
-                            }
-                          `}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs font-bold text-secondary flex items-center gap-1">
-                              <span>🕓</span> {apt.time}
+                      weeklyVisits[day.date].map((apt: any) => {
+                        // Definir classes CSS baseado no visualStatus
+                        let cardClasses = "w-full p-3 rounded-xl text-left transition-all hover:scale-[1.02] hover:shadow-md border-2";
+                        
+                        if (apt.visualStatus === "completed") {
+                          cardClasses += " bg-green-50 border-green-400 hover:bg-green-100";
+                        } else if (apt.visualStatus === "cancelled") {
+                          cardClasses += " bg-red-50 border-red-400 hover:bg-red-100 opacity-60";
+                        } else if (apt.visualStatus === "pending") {
+                          cardClasses += " bg-yellow-50 border-yellow-400 hover:bg-yellow-100";
+                        } else if (apt.visualStatus === "confirmed") {
+                          cardClasses += " bg-green-50 border-green-400 hover:bg-green-100";
+                        } else {
+                          cardClasses += " bg-white border-primary/20 hover:bg-accent/30";
+                        }
+                        
+                        return (
+                          <button
+                            key={apt.id}
+                            onClick={() => setSelectedAppointment(apt)}
+                            className={cardClasses}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-bold text-secondary flex items-center gap-1">
+                                <span>🕓</span> {apt.time}
+                              </div>
+                              {apt.visualStatus === "completed" && (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              )}
+                              {apt.visualStatus === "cancelled" && (
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              )}
+                              {apt.visualStatus === "pending" && (
+                                <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                              )}
+                              {apt.visualStatus === "confirmed" && (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              )}
                             </div>
-                            {apt.status === "completed" && (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            )}
-                            {apt.status === "cancelled" && (
-                              <XCircle className="h-4 w-4 text-red-600" />
-                            )}
-                          </div>
-                          <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
-                        </button>
-                      ))
+                            <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
+                          </button>
+                        );
+                      })
                     ) : (
                       <div className="p-4 text-center text-sm text-muted-foreground border-2 border-dashed border-primary/30 rounded-xl bg-muted/30">
                         Nenhum agendamento
@@ -438,11 +500,24 @@ const Dashboard = () => {
             </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs font-bold text-primary uppercase tracking-wide">Cliente</Label>
-                <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
-              </div>
+            <>
+              {/* Indicador de status da ficha */}
+              {selectedAppointment.visualStatus === "pending" && (
+                <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-yellow-500 animate-pulse" />
+                    <p className="text-sm font-semibold text-yellow-700">
+                      ⚠️ Ficha de anamnese pendente
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs font-bold text-primary uppercase tracking-wide">Cliente</Label>
+                  <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
+                </div>
               <div>
                 <Label className="text-xs font-bold text-primary uppercase tracking-wide">Procedimento</Label>
                 <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
@@ -470,7 +545,8 @@ const Dashboard = () => {
                   <p className="text-base font-semibold text-red-700 mt-1">❌ Agendamento Cancelado</p>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
           
           {showRescheduleForm && selectedAppointment?.status === "scheduled" && (
@@ -520,8 +596,21 @@ const Dashboard = () => {
           )}
           
           <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-primary/10">
+            {/* BOTÕES PARA AGENDAMENTOS AGENDADOS */}
             {selectedAppointment?.status === "scheduled" && (
               <>
+                {/* Se ficha pendente: botão para enviar WhatsApp */}
+                {selectedAppointment?.visualStatus === "pending" && (
+                  <Button 
+                    onClick={handleSendAnamnesisForm}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow-md hover:shadow-lg"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    📲 Enviar Ficha WhatsApp
+                  </Button>
+                )}
+                
+                {/* Botões padrão para agendados */}
                 <Button 
                   onClick={handleCompleteVisit}
                   disabled={completeVisit.isPending}
@@ -549,6 +638,7 @@ const Dashboard = () => {
               </>
             )}
             
+            {/* BOTÕES PARA AGENDAMENTOS CONCLUÍDOS */}
             {selectedAppointment?.status === "completed" && (
               <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg text-center">
                 <p className="text-green-700 font-semibold">✅ Procedimento já realizado</p>
@@ -558,10 +648,30 @@ const Dashboard = () => {
               </div>
             )}
             
+            {/* BOTÕES PARA AGENDAMENTOS CANCELADOS */}
             {selectedAppointment?.status === "cancelled" && (
-              <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg text-center">
-                <p className="text-red-700 font-semibold">❌ Agendamento cancelado</p>
-              </div>
+              <>
+                <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg text-center mb-3">
+                  <p className="text-red-700 font-semibold">❌ Agendamento cancelado</p>
+                </div>
+                
+                {/* Ações específicas para cancelados */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleReschedule}
+                    className="border-primary/30 hover:bg-primary/10"
+                  >
+                    📅 Reagendar
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleDeleteAppointment}
+                  >
+                    🗑️ Excluir
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </DialogContent>

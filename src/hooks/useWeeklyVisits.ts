@@ -20,7 +20,13 @@ export const useWeeklyVisits = () => {
         .select(`
           *,
           clients (
-            name
+            name,
+            id,
+            anamneses (
+              id,
+              filled_at,
+              consent
+            )
           )
         `)
         .eq("professional_id", user.id)
@@ -38,13 +44,33 @@ export const useWeeklyVisits = () => {
         const date = formatLocalDate(visit.visit_date, "dd/MM");
         if (!grouped[date]) grouped[date] = [];
         
+        // Verificar status da anamnese
+        const hasFilledAnamnesis = visit.clients?.anamneses?.some(
+          (a: any) => a.filled_at && a.consent
+        );
+        
+        // Determinar status visual
+        let visualStatus = "scheduled"; // padrão
+        if (visit.status === "cancelled") {
+          visualStatus = "cancelled";
+        } else if (visit.status === "completed") {
+          visualStatus = "completed";
+        } else if (!hasFilledAnamnesis) {
+          visualStatus = "pending"; // amarelo - ficha não preenchida
+        } else {
+          visualStatus = "confirmed"; // verde - tudo ok
+        }
+        
         grouped[date].push({
           id: visit.id,
+          clientId: visit.clients?.id,
           time: visit.visit_time.slice(0, 5),
           client: visit.clients?.name || "Cliente desconhecido",
           procedure: visit.procedures?.[0]?.nome || "Sem procedimento",
           notes: visit.notes || "",
           status: visit.status,
+          visualStatus: visualStatus,
+          hasFilledAnamnesis: hasFilledAnamnesis,
           completedAt: visit.completed_at 
             ? format(new Date(visit.completed_at), "dd/MM/yyyy 'às' HH:mm")
             : null,
