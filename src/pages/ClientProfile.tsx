@@ -11,6 +11,7 @@ import {
   Plus,
   X,
   AlertCircle,
+  Camera,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { formatLocalDate } from "@/lib/dateUtils";
+import { VisitPhotoGallery } from "@/components/VisitPhotoGallery";
+import { VisitPhotoUpload } from "@/components/VisitPhotoUpload";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const ClientProfile = () => {
@@ -76,6 +80,8 @@ const ClientProfile = () => {
   const [newTime, setNewTime] = useState("");
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [templateType, setTemplateType] = useState<MessageType>("BoasVindas");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedVisitForUpload, setSelectedVisitForUpload] = useState<any>(null);
 
   const handleOpenTemplateSelector = (type: MessageType) => {
     setTemplateType(type);
@@ -428,6 +434,17 @@ const ClientProfile = () => {
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  onClick={() => {
+                                    setSelectedVisitForUpload(visit);
+                                    setUploadDialogOpen(true);
+                                  }}
+                                  title="Adicionar fotos"
+                                >
+                                  <Camera className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
                                   onClick={() => openDetailsDialog(visit)}
                                 >
                                   Ver detalhes
@@ -519,6 +536,30 @@ const ClientProfile = () => {
                   <p className="mt-1 p-3 bg-muted/30 rounded-lg">{selectedVisit.notes}</p>
                 </div>
               )}
+
+              {/* Galeria de Fotos */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-xs text-muted-foreground uppercase">Fotos do Procedimento</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedVisitForUpload(selectedVisit);
+                      setUploadDialogOpen(true);
+                    }}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Adicionar Fotos
+                  </Button>
+                </div>
+                
+                <VisitPhotoGallery
+                  visitId={selectedVisit.id}
+                  photos={selectedVisit.photos || []}
+                  editable={true}
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -526,6 +567,33 @@ const ClientProfile = () => {
               Fechar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Photos Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-3xl bg-white border-primary/20 shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary">
+              Upload de Fotos
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Adicione fotos antes e depois do procedimento
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedVisitForUpload && (
+            <VisitPhotoUpload
+              visitId={selectedVisitForUpload.id}
+              onUploadComplete={() => {
+                setUploadDialogOpen(false);
+                // Refresh selected visit data
+                if (selectedVisit?.id === selectedVisitForUpload.id) {
+                  queryClient.invalidateQueries({ queryKey: ["client-profile"] });
+                }
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

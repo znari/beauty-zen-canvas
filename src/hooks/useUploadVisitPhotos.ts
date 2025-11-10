@@ -1,0 +1,111 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface UploadPhotoData {
+  visitId: string;
+  file: File;
+  type: "before" | "after";
+}
+
+export const useUploadVisitPhotos = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ visitId, file, type }: UploadPhotoData) => {
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${visitId}/${type}_${Date.now()}.${fileExt}`;
+
+      // Upload para o Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('visit-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('visit-photos')
+        .getPublicUrl(fileName);
+
+      // Buscar fotos atuais da visita
+      const { data: visit, error: fetchError } = await supabase
+        .from('visits')
+        .select('photos')
+        .eq('id', visitId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Atualizar array de fotos
+      const currentPhotos = (visit.photos as any[]) || [];
+      const updatedPhotos = [
+        ...currentPhotos,
+        {
+          url: publicUrl,
+          type: type,
+          uploadedAt: new Date().toISOString(),
+          path: fileName
+        }
+      ];
+
+      // Salvar no banco
+      const { error: updateError } = await supabase
+        .from('visits')
+        .update({ photos: updatedPhotos })
+        .eq('id', visitId);
+
+      if (updateError) throw updateError;
+
+      return { publicUrl, path: fileName };
+    },
+    onSuccess: (_, variables) => {
+      // Invalidar cache do perfil do cliente
+      queryClient.invalidateQueries({ queryKey: ["client-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+    }
+  });
+};
+
+export const useDeleteVisitPhoto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ visitId, photoPath }: { visitId: string; photoPath: string }) => {
+      // Deletar do Storage
+      const { error: deleteError } = await supabase.storage
+        .from('visit-photos')
+        .remove([photoPath]);
+
+      if (deleteError) throw deleteError;
+
+      // Buscar fotos atuais
+      const { data: visit, error: fetchError } = await supabase
+        .from('visits')
+        .select('photos')
+        .eq('id', visitId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Remover foto do array
+      const currentPhotos = (visit.photos as any[]) || [];
+      const updatedPhotos = currentPhotos.filter((photo: any) => photo.path !== photoPath);
+
+      // Atualizar banco
+      const { error: updateError } = await supabase
+        .from('visits')
+        .update({ photos: updatedPhotos })
+        .eq('id', visitId);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+    }
+  });
+};

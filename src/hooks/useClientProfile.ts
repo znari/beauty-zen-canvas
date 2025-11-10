@@ -21,7 +21,8 @@ export const useClientProfile = (clientId: string) => {
             procedures,
             price_total,
             notes,
-            status
+            status,
+            photos
           ),
           anamneses (
             id,
@@ -60,6 +61,7 @@ export const useClientProfile = (clientId: string) => {
           totalValue: Number(visit.price_total || 0),
           notes: visit.notes || "",
           status: visit.status === "scheduled" ? "Agendado" : "Realizado",
+          photos: visit.photos || [],
         }))
         .sort((a, b) => {
           // Ordenar por data decrescente (mais recente primeiro)
