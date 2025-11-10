@@ -288,8 +288,9 @@ const ClientProfile = () => {
                     {client.visits.some(visit => visit.status === "Agendado") && <Button onClick={() => {
                     const nextVisit = client.visits.find(v => v.status === "Agendado");
                     if (nextVisit) openRescheduleDialog(nextVisit);
-                  }} variant="outline" className="border-primary hover:bg-primary/10">Reagendar Visita<Calendar className="h-4 w-4 mr-2" />
-                        Reagendar Próxima
+                  }} variant="outline" className="border-primary hover:bg-primary/10">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Reagendar Visita
                       </Button>}
                 <Button onClick={() => navigate(`/cliente/${id}/nova-visita`)} variant="cta">
                   <Plus className="h-4 w-4 mr-2" />
