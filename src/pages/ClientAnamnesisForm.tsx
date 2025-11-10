@@ -52,19 +52,11 @@ const ClientAnamnesisForm = () => {
   const { data: client, isLoading, error } = useClientAnamnesis(id!);
   const saveMutation = useSaveAnamnesis();
 
-  // Estados de loading e erro
-  if (isLoading) {
-    return <LoadingSpinner message="Carregando ficha de anamnese..." />;
-  }
-
-  if (error || !client) {
-    return <ErrorMessage message="Erro ao carregar dados do cliente" />;
-  }
-
+  // useForm sempre ANTES de qualquer return condicional
   const form = useForm<AnamnesisFormData>({
     resolver: zodResolver(anamnesisSchema),
-    defaultValues: (client.anamnesis?.responses as Partial<AnamnesisFormData>) || {
-      dataNascimento: client.dateOfBirth || "",
+    defaultValues: {
+      dataNascimento: client?.dateOfBirth || "",
       q1_alergia: "nao",
       q1_alergia_details: "",
       q2_medicamento: "nao",
@@ -74,7 +66,8 @@ const ClientAnamnesisForm = () => {
       q4_gravida: "nao",
       q5_observacao: "nao",
       q5_observacao_details: "",
-      consentimento: client.anamnesis?.consent || false,
+      consentimento: client?.anamnesis?.consent || false,
+      ...(client?.anamnesis?.responses as Partial<AnamnesisFormData>)
     },
   });
 
@@ -115,6 +108,15 @@ const ClientAnamnesisForm = () => {
   const handleCancel = () => {
     navigate(`/cliente/${id}`);
   };
+
+  // Agora sim, returns condicionais DEPOIS de todos os hooks
+  if (isLoading) {
+    return <LoadingSpinner message="Carregando ficha de anamnese..." />;
+  }
+
+  if (error || !client) {
+    return <ErrorMessage message="Erro ao carregar dados do cliente" />;
+  }
 
   return (
     <div className="min-h-screen gradient-hero">
