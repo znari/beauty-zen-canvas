@@ -1,47 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  ChevronLeft,
-  User,
-  Phone,
-  Calendar,
-  MessageCircle,
-  FileText,
-  Clock,
-  Plus,
-  X,
-  AlertCircle,
-  Camera,
-} from "lucide-react";
+import { ChevronLeft, User, Phone, Calendar, MessageCircle, FileText, Clock, Plus, X, AlertCircle, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -61,17 +26,19 @@ import { formatLocalDate } from "@/lib/dateUtils";
 import { VisitPhotoGallery } from "@/components/VisitPhotoGallery";
 import { VisitPhotoUpload } from "@/components/VisitPhotoUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-
 const ClientProfile = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const { data: client, isLoading, error } = useClientProfile(id || "");
+  const {
+    data: client,
+    isLoading,
+    error
+  } = useClientProfile(id || "");
   const updateVisit = useUpdateVisit();
   const cancelVisit = useCancelVisit();
-
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -82,55 +49,45 @@ const ClientProfile = () => {
   const [templateType, setTemplateType] = useState<MessageType>("BoasVindas");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedVisitForUpload, setSelectedVisitForUpload] = useState<any>(null);
-
   const handleOpenTemplateSelector = (type: MessageType) => {
     setTemplateType(type);
     setTemplateSelectorOpen(true);
   };
-
   const handleSendWithTemplate = (template: MessageTemplate) => {
     if (!client) return;
     const fichaUrl = templateType === "EnvioFicha" ? generateAnamnesisLink(client.id) : undefined;
-    
     let message = template.conteudo;
     message = message.replace(/\[nomeCliente\]/g, client.name);
     message = message.replace(/\[nomeStudio\]/g, "FichaZen");
-    
     if (fichaUrl) {
       message = message.replace(/\[linkFicha\]/g, fichaUrl);
     }
-    
     const whatsappUrl = gerarLinkWhatsApp(client.phone, message);
     window.open(whatsappUrl, "_blank");
-    
     toast({
       title: "WhatsApp aberto",
-      description: `Mensagem "${template.nome}" enviada.`,
+      description: `Mensagem "${template.nome}" enviada.`
     });
   };
-
   const handleReschedule = async () => {
     if (!newDate || !newTime || !selectedVisit) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha a nova data e horário.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     try {
       await updateVisit.mutateAsync({
         visitId: selectedVisit.id,
         visit_date: newDate,
-        visit_time: newTime,
+        visit_time: newTime
       });
-
       toast({
         title: "Visita reagendada",
-        description: `Visita reagendada para ${formatLocalDate(newDate, "dd/MM/yyyy")} às ${newTime}.`,
+        description: `Visita reagendada para ${formatLocalDate(newDate, "dd/MM/yyyy")} às ${newTime}.`
       });
-
       setRescheduleDialogOpen(false);
       setSelectedVisit(null);
       setNewDate("");
@@ -139,110 +96,79 @@ const ClientProfile = () => {
       toast({
         title: "Erro ao reagendar",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleCancelVisit = async () => {
     if (!selectedVisit) return;
-
     try {
       await cancelVisit.mutateAsync(selectedVisit.id);
-
       toast({
         title: "Visita cancelada",
         description: "A visita foi cancelada com sucesso.",
-        variant: "destructive",
+        variant: "destructive"
       });
-
       setCancelDialogOpen(false);
       setSelectedVisit(null);
     } catch (error: any) {
       toast({
         title: "Erro ao cancelar",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const openRescheduleDialog = (visit: any) => {
     setSelectedVisit(visit);
     setRescheduleDialogOpen(true);
   };
-
   const openCancelDialog = (visit: any) => {
     setSelectedVisit(visit);
     setCancelDialogOpen(true);
   };
-
   const openDetailsDialog = (visit: any) => {
     setSelectedVisit(visit);
     setDetailsDialogOpen(true);
   };
-
   const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   // Realtime updates para visitas
   useEffect(() => {
     if (!id) return;
-
-    const channel = supabase
-      .channel('client-visits-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visits',
-          filter: `client_id=eq.${id}`
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["client-profile", id] });
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel('client-visits-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'visits',
+      filter: `client_id=eq.${id}`
+    }, () => {
+      queryClient.invalidateQueries({
+        queryKey: ["client-profile", id]
+      });
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [id, queryClient]);
-
   if (isLoading) {
     return <LoadingSpinner message="Carregando perfil do cliente..." />;
   }
-
   if (error || !client) {
-    return (
-      <div className="min-h-screen gradient-hero p-8">
+    return <div className="min-h-screen gradient-hero p-8">
         <ErrorMessage message="Cliente não encontrado ou você não tem permissão para visualizá-lo." />
         <Button onClick={() => navigate("/dashboard")} className="mt-4">
           Voltar ao Dashboard
         </Button>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen gradient-hero">
+  return <div className="min-h-screen gradient-hero">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/dashboard")}
-              className="hover:bg-primary-light"
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="hover:bg-primary-light">
               <ChevronLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -284,11 +210,7 @@ const ClientProfile = () => {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => handleOpenTemplateSelector("BoasVindas")}
-                    className="w-full"
-                    variant="outline"
-                  >
+                  <Button onClick={() => handleOpenTemplateSelector("BoasVindas")} className="w-full" variant="outline">
                     <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar Mensagem
                   </Button>
@@ -313,7 +235,9 @@ const ClientProfile = () => {
             </Card>
 
             {/* Anamnesis Card */}
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.1s" }}>
+            <Card className="shadow-card animate-fade-in" style={{
+            animationDelay: "0.1s"
+          }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary-dark">
                   <FileText className="h-5 w-5" />
@@ -329,28 +253,18 @@ const ClientProfile = () => {
                         {client.anamnesisStatus}
                       </Badge>
                     </div>
-                    {client.anamnesisDate && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                    {client.anamnesisDate && <p className="text-xs text-muted-foreground mt-1">
                         Preenchida em: {client.anamnesisDate}
-                      </p>
-                    )}
+                      </p>}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => navigate(`/cliente/${id}/ficha`)}
-                    variant="default"
-                    className="w-full"
-                  >
+                  <Button onClick={() => navigate(`/cliente/${id}/ficha`)} variant="default" className="w-full">
                     <FileText className="h-4 w-4 mr-2" />
                     {client.anamnesisStatus === "Preenchida" ? "Ver / Editar Ficha" : "Preencher Ficha de Anamnese"}
                   </Button>
-                  <Button
-                    onClick={() => handleOpenTemplateSelector("EnvioFicha")}
-                    variant="outline"
-                    className="w-full"
-                  >
+                  <Button onClick={() => handleOpenTemplateSelector("EnvioFicha")} variant="outline" className="w-full">
                     <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar por WhatsApp
                   </Button>
@@ -361,7 +275,9 @@ const ClientProfile = () => {
 
           {/* Right Column - Visit History */}
           <div className="lg:col-span-2">
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <Card className="shadow-card animate-fade-in" style={{
+            animationDelay: "0.2s"
+          }}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-primary-dark">
@@ -369,19 +285,12 @@ const ClientProfile = () => {
                     Histórico de Visitas
                   </CardTitle>
                   <div className="flex gap-2">
-                    {client.visits.some(visit => visit.status === "Agendado") && (
-                      <Button
-                        onClick={() => {
-                          const nextVisit = client.visits.find(v => v.status === "Agendado");
-                          if (nextVisit) openRescheduleDialog(nextVisit);
-                        }}
-                        variant="outline"
-                        className="border-primary hover:bg-primary/10"
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
+                    {client.visits.some(visit => visit.status === "Agendado") && <Button onClick={() => {
+                    const nextVisit = client.visits.find(v => v.status === "Agendado");
+                    if (nextVisit) openRescheduleDialog(nextVisit);
+                  }} variant="outline" className="border-primary hover:bg-primary/10">Reagendar Visita<Calendar className="h-4 w-4 mr-2" />
                         Reagendar Próxima
-                      </Button>
-                    )}
+                      </Button>}
                 <Button onClick={() => navigate(`/cliente/${id}/nova-visita`)} variant="cta">
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Visita
@@ -390,8 +299,7 @@ const ClientProfile = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {client.visits.length > 0 ? (
-                  <div className="rounded-xl border border-primary/20 overflow-hidden">
+                {client.visits.length > 0 ? <div className="rounded-xl border border-primary/20 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-accent/30 hover:bg-accent/30">
@@ -404,21 +312,13 @@ const ClientProfile = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {client.visits.map((visit, idx) => (
-                          <TableRow
-                            key={visit.id}
-                            className={`hover:bg-muted/50 transition-all ${
-                              idx % 2 === 0 ? "bg-white" : "bg-muted/20"
-                            }`}
-                          >
+                        {client.visits.map((visit, idx) => <TableRow key={visit.id} className={`hover:bg-muted/50 transition-all ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"}`}>
                             <TableCell className="font-semibold">{visit.date}</TableCell>
                             <TableCell>{visit.time}</TableCell>
                             <TableCell>
                               <div className="max-w-[200px]">
                                 {visit.procedures.slice(0, 2).join(", ")}
-                                {visit.procedures.length > 2 && (
-                                  <span className="text-muted-foreground"> +{visit.procedures.length - 2}</span>
-                                )}
+                                {visit.procedures.length > 2 && <span className="text-muted-foreground"> +{visit.procedures.length - 2}</span>}
                               </div>
                             </TableCell>
                             <TableCell className="font-semibold text-success-foreground">
@@ -431,59 +331,34 @@ const ClientProfile = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-2 justify-end">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setSelectedVisitForUpload(visit);
-                                    setUploadDialogOpen(true);
-                                  }}
-                                  title="Adicionar fotos"
-                                >
+                                <Button size="sm" variant="ghost" onClick={() => {
+                            setSelectedVisitForUpload(visit);
+                            setUploadDialogOpen(true);
+                          }} title="Adicionar fotos">
                                   <Camera className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => openDetailsDialog(visit)}
-                                >
+                                <Button size="sm" variant="ghost" onClick={() => openDetailsDialog(visit)}>
                                   Ver detalhes
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openRescheduleDialog(visit)}
-                                >
+                                <Button size="sm" variant="outline" onClick={() => openRescheduleDialog(visit)}>
                                   Reagendar
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => openCancelDialog(visit)}
-                                >
+                                <Button size="sm" variant="destructive" onClick={() => openCancelDialog(visit)}>
                                   Cancelar
                                 </Button>
                               </div>
                             </TableCell>
-                          </TableRow>
-                        ))}
+                          </TableRow>)}
                       </TableBody>
                     </Table>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
+                  </div> : <div className="text-center py-12">
                     <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-30" />
                     <p className="text-muted-foreground">Nenhuma visita registrada ainda.</p>
-                    <Button
-                      onClick={() => navigate(`/clientes/novo?cliente=${id}`)}
-                      variant="outline"
-                      className="mt-4"
-                    >
+                    <Button onClick={() => navigate(`/clientes/novo?cliente=${id}`)} variant="outline" className="mt-4">
                       <Plus className="h-4 w-4 mr-2" />
                       Adicionar Primeira Visita
                     </Button>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </div>
@@ -501,8 +376,7 @@ const ClientProfile = () => {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Detalhes da Visita</DialogTitle>
           </DialogHeader>
-          {selectedVisit && (
-            <div className="space-y-4 py-4">
+          {selectedVisit && <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs text-muted-foreground uppercase">Data</Label>
@@ -516,12 +390,10 @@ const ClientProfile = () => {
               <div>
                 <Label className="text-xs text-muted-foreground uppercase">Procedimentos</Label>
                 <div className="mt-2 space-y-1">
-                  {selectedVisit.procedures.map((proc: string, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2">
+                  {selectedVisit.procedures.map((proc: string, idx: number) => <div key={idx} className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                       <p className="font-medium">{proc}</p>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
               <div>
@@ -530,38 +402,27 @@ const ClientProfile = () => {
                   R$ {selectedVisit.totalValue.toFixed(2)}
                 </p>
               </div>
-              {selectedVisit.notes && (
-                <div>
+              {selectedVisit.notes && <div>
                   <Label className="text-xs text-muted-foreground uppercase">Notas</Label>
                   <p className="mt-1 p-3 bg-muted/30 rounded-lg">{selectedVisit.notes}</p>
-                </div>
-              )}
+                </div>}
 
               {/* Galeria de Fotos */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <Label className="text-xs text-muted-foreground uppercase">Fotos do Procedimento</Label>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedVisitForUpload(selectedVisit);
-                      setUploadDialogOpen(true);
-                    }}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => {
+                setSelectedVisitForUpload(selectedVisit);
+                setUploadDialogOpen(true);
+              }}>
                     <Camera className="h-4 w-4 mr-2" />
                     Adicionar Fotos
                   </Button>
                 </div>
                 
-                <VisitPhotoGallery
-                  visitId={selectedVisit.id}
-                  photos={selectedVisit.photos || []}
-                  editable={true}
-                />
+                <VisitPhotoGallery visitId={selectedVisit.id} photos={selectedVisit.photos || []} editable={true} />
               </div>
-            </div>
-          )}
+            </div>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
               Fechar
@@ -582,18 +443,15 @@ const ClientProfile = () => {
             </DialogDescription>
           </DialogHeader>
           
-          {selectedVisitForUpload && (
-            <VisitPhotoUpload
-              visitId={selectedVisitForUpload.id}
-              onUploadComplete={() => {
-                setUploadDialogOpen(false);
-                // Refresh selected visit data
-                if (selectedVisit?.id === selectedVisitForUpload.id) {
-                  queryClient.invalidateQueries({ queryKey: ["client-profile"] });
-                }
-              }}
-            />
-          )}
+          {selectedVisitForUpload && <VisitPhotoUpload visitId={selectedVisitForUpload.id} onUploadComplete={() => {
+          setUploadDialogOpen(false);
+          // Refresh selected visit data
+          if (selectedVisit?.id === selectedVisitForUpload.id) {
+            queryClient.invalidateQueries({
+              queryKey: ["client-profile"]
+            });
+          }
+        }} />}
         </DialogContent>
       </Dialog>
 
@@ -611,25 +469,13 @@ const ClientProfile = () => {
               <Label htmlFor="new-date" className="text-secondary font-semibold">
                 Nova Data
               </Label>
-              <Input
-                id="new-date"
-                type="date"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                className="mt-1"
-              />
+              <Input id="new-date" type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="mt-1" />
             </div>
             <div>
               <Label htmlFor="new-time" className="text-secondary font-semibold">
                 Novo Horário
               </Label>
-              <Input
-                id="new-time"
-                type="time"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                className="mt-1"
-              />
+              <Input id="new-time" type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="mt-1" />
             </div>
           </div>
           <DialogFooter>
@@ -656,10 +502,7 @@ const ClientProfile = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelVisit}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleCancelVisit} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Sim, Cancelar
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -667,18 +510,9 @@ const ClientProfile = () => {
       </AlertDialog>
 
       {/* Template Selector */}
-      <TemplateSelector
-        open={templateSelectorOpen}
-        onOpenChange={setTemplateSelectorOpen}
-        tipo={templateType}
-        templates={mockTemplates}
-        onSelect={handleSendWithTemplate}
-        clientData={{
-          nomeCliente: client.name,
-        }}
-      />
-    </div>
-  );
+      <TemplateSelector open={templateSelectorOpen} onOpenChange={setTemplateSelectorOpen} tipo={templateType} templates={mockTemplates} onSelect={handleSendWithTemplate} clientData={{
+      nomeCliente: client.name
+    }} />
+    </div>;
 };
-
 export default ClientProfile;
