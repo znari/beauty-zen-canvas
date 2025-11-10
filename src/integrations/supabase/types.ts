@@ -392,18 +392,21 @@ export type Database = {
     Views: {
       v_dashboard_stats: {
         Row: {
+          pending_anamneses: number | null
           professional_id: string | null
           total_anamneses: number | null
           total_clients: number | null
           visits_next_7_days: number | null
         }
         Insert: {
+          pending_anamneses?: never
           professional_id?: string | null
           total_anamneses?: never
           total_clients?: never
           visits_next_7_days?: never
         }
         Update: {
+          pending_anamneses?: never
           professional_id?: string | null
           total_anamneses?: never
           total_clients?: never

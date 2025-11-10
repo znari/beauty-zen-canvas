@@ -28,7 +28,7 @@ export const useDashboardStats = () => {
 
       return {
         totalClients: data.total_clients || 0,
-        pendingAnamneses: data.total_anamneses || 0,
+        pendingAnamneses: data.pending_anamneses || 0,
         visitsThisWeek: data.visits_next_7_days || 0,
       };
     },
