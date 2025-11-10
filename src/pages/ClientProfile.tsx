@@ -382,10 +382,10 @@ const ClientProfile = () => {
                         Reagendar Próxima
                       </Button>
                     )}
-                    <Button onClick={() => navigate(`/clientes/novo?cliente=${id}`)} variant="cta">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Visita
-                    </Button>
+                <Button onClick={() => navigate(`/cliente/${id}/nova-visita`)} variant="cta">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Visita
+                </Button>
                   </div>
                 </div>
               </CardHeader>

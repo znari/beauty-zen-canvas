@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
 import AnamnesisForm from "./pages/AnamnesisForm";
+import NewVisit from "./pages/NewVisit";
 import Success from "./pages/Success";
 import NewClient from "./pages/NewClient";
 import ClientList from "./pages/ClientList";
@@ -44,6 +45,7 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/cliente/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
+            <Route path="/cliente/:id/nova-visita" element={<ProtectedRoute><NewVisit /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
             <Route path="/clientes/novo" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
             <Route path="/cliente/:id/ficha" element={<ProtectedRoute><ClientAnamnesisForm /></ProtectedRoute>} />
