@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ChevronLeft, Save, X, Calendar, User } from "lucide-react";
+import { ChevronLeft, Save, Calendar, User } from "lucide-react";
+import { useClientAnamnesis } from "@/hooks/useClientAnamnesis";
+import { useSaveAnamnesis } from "@/hooks/useSaveAnamnesis";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,50 +43,28 @@ const anamnesisSchema = z.object({
 
 type AnamnesisFormData = z.infer<typeof anamnesisSchema>;
 
-// Mock data - substituir com dados reais do backend
-const mockClientData: Record<string, any> = {
-  "1": {
-    id: 1,
-    name: "Maria Silva",
-    lastProcedureDate: "03/11/2025",
-    lastProcedureTime: "09:00",
-    anamnesis: {
-      dataNascimento: "15/03/1990",
-      q1_alergia: "sim",
-      q1_alergia_details: "Alergia a crustáceos",
-      q2_medicamento: "nao",
-      q2_medicamento_details: "",
-      q3_doenca: "nao",
-      q3_doenca_details: "",
-      q4_gravida: "nao",
-      q5_observacao: "sim",
-      q5_observacao_details: "Prefiro procedimentos mais rápidos",
-      consentimento: true,
-      dataPreenchimento: "20/08/2024",
-      ultimaAtualizacao: "20/08/2024 10:30",
-    },
-  },
-  "2": {
-    id: 2,
-    name: "Ana Costa",
-    lastProcedureDate: "02/11/2025",
-    lastProcedureTime: "14:00",
-    anamnesis: null,
-  },
-};
-
 const ClientAnamnesisForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const client = mockClientData[id || "1"] || mockClientData["1"];
-  const existingAnamnesis = client.anamnesis;
+  // Buscar dados reais do banco
+  const { data: client, isLoading, error } = useClientAnamnesis(id!);
+  const saveMutation = useSaveAnamnesis();
+
+  // Estados de loading e erro
+  if (isLoading) {
+    return <LoadingSpinner message="Carregando ficha de anamnese..." />;
+  }
+
+  if (error || !client) {
+    return <ErrorMessage message="Erro ao carregar dados do cliente" />;
+  }
 
   const form = useForm<AnamnesisFormData>({
     resolver: zodResolver(anamnesisSchema),
-    defaultValues: existingAnamnesis || {
-      dataNascimento: "",
+    defaultValues: (client.anamnesis?.responses as Partial<AnamnesisFormData>) || {
+      dataNascimento: client.dateOfBirth || "",
       q1_alergia: "nao",
       q1_alergia_details: "",
       q2_medicamento: "nao",
@@ -92,7 +74,7 @@ const ClientAnamnesisForm = () => {
       q4_gravida: "nao",
       q5_observacao: "nao",
       q5_observacao_details: "",
-      consentimento: false,
+      consentimento: client.anamnesis?.consent || false,
     },
   });
 
@@ -106,8 +88,12 @@ const ClientAnamnesisForm = () => {
   const onSubmit = async (data: AnamnesisFormData) => {
     setIsSubmitting(true);
     try {
-      // Simular salvamento no banco
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await saveMutation.mutateAsync({
+        clientId: id!,
+        responses: data,
+        dataNascimento: data.dataNascimento,
+        consent: data.consentimento
+      });
 
       toast({
         title: "Ficha salva com sucesso!",
@@ -532,7 +518,6 @@ const ClientAnamnesisForm = () => {
                 onClick={handleCancel}
                 disabled={isSubmitting}
               >
-                <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
