@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyVisits } from "@/hooks/useWeeklyVisits";
+import { useMonthlyVisits } from "@/hooks/useMonthlyVisits";
 import { useClients } from "@/hooks/useClients";
 import { useCompleteVisit } from "@/hooks/useCompleteVisit";
 import { useUpdateVisit } from "@/hooks/useUpdateVisit";
@@ -39,10 +40,11 @@ import { useCancelVisit } from "@/hooks/useCancelVisit";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfWeek, addDays, format } from "date-fns";
+import { startOfWeek, addDays, format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatLocalDate } from "@/lib/dateUtils";
 import { openWhatsAppMessage, generateAnamnesisLink } from "@/lib/whatsapp";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -55,6 +57,9 @@ const Dashboard = () => {
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
+  const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
+  const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
+  const [selectedDayInMonth, setSelectedDayInMonth] = useState<Date | undefined>();
 
   // Mutation hooks
   const completeVisit = useCompleteVisit();
@@ -65,6 +70,7 @@ const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: weeklyVisits = {}, isLoading: visitsLoading } = useWeeklyVisits();
   const { data: clients = [], isLoading: clientsLoading } = useClients();
+  const { data: monthlyVisits = {}, isLoading: monthlyLoading } = useMonthlyVisits(selectedMonthDate);
 
   // Generate week days dinamicamente
   const today = new Date();
@@ -258,6 +264,16 @@ const Dashboard = () => {
       client.phone.includes(searchQuery)
   );
 
+  const getDaysWithAppointments = (): Date[] => {
+    return Object.keys(monthlyVisits).map(dateStr => parseISO(dateStr));
+  };
+
+  const getAppointmentsForDay = (date: Date | undefined) => {
+    if (!date) return [];
+    const dateKey = format(date, "yyyy-MM-dd");
+    return monthlyVisits[dateKey] || [];
+  };
+
   // Loading state
   if (statsLoading || visitsLoading || clientsLoading) {
     return (
@@ -339,10 +355,20 @@ const Dashboard = () => {
         {/* Weekly Calendar */}
         <Card className="bg-white shadow-card border-0 animate-fade-in-up">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-              <Calendar className="h-6 w-6" />
-              Calendário de Agendamentos
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+                <Calendar className="h-6 w-6" />
+                Agenda Semanal
+              </CardTitle>
+              <Button
+                onClick={() => setShowMonthlyCalendar(true)}
+                variant="outline"
+                className="border-primary hover:bg-primary/10 font-semibold"
+              >
+                <CalendarDays className="h-5 w-5 mr-2" />
+                Agendamentos do Mês
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -728,6 +754,155 @@ const Dashboard = () => {
               Cadastrar Cliente
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Monthly Calendar Dialog */}
+      <Dialog open={showMonthlyCalendar} onOpenChange={setShowMonthlyCalendar}>
+        <DialogContent className="bg-white border-primary/20 shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              <CalendarDays className="h-6 w-6" />
+              Agendamentos do Mês
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Visualize todos os seus agendamentos do mês
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
+            {/* Calendário */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <h3 className="font-semibold text-lg text-primary capitalize">
+                  {format(selectedMonthDate, "MMMM yyyy", { locale: ptBR })}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="border rounded-lg p-4 bg-muted/20">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDayInMonth}
+                  onSelect={setSelectedDayInMonth}
+                  month={selectedMonthDate}
+                  onMonthChange={setSelectedMonthDate}
+                  modifiers={{
+                    hasAppointment: getDaysWithAppointments(),
+                  }}
+                  modifiersStyles={{
+                    hasAppointment: {
+                      backgroundColor: "hsl(var(--primary))",
+                      color: "white",
+                      fontWeight: "bold",
+                      borderRadius: "50%",
+                    },
+                  }}
+                  className="pointer-events-auto"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="h-3 w-3 rounded-full bg-primary" />
+                  <span>Dias com agendamentos</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Agendamentos do Dia Selecionado */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg text-primary">
+                {selectedDayInMonth 
+                  ? `Agendamentos de ${format(selectedDayInMonth, "dd/MM/yyyy", { locale: ptBR })}`
+                  : "Selecione um dia"}
+              </h3>
+
+              {monthlyLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner message="Carregando..." />
+                </div>
+              ) : selectedDayInMonth ? (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                  {getAppointmentsForDay(selectedDayInMonth).length > 0 ? (
+                    getAppointmentsForDay(selectedDayInMonth).map((apt) => (
+                      <Card 
+                        key={apt.id} 
+                        className={`shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 ${
+                          apt.status === "completed" ? "border-l-green-500 bg-green-50/50" :
+                          apt.status === "cancelled" ? "border-l-red-500 bg-red-50/50" :
+                          !apt.anamnesis_filled ? "border-l-yellow-500 bg-yellow-50/50" :
+                          "border-l-primary bg-white"
+                        }`}
+                        onClick={() => {
+                          setShowMonthlyCalendar(false);
+                          // Aqui você pode abrir o dialog de detalhes se quiser
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold text-secondary">
+                                  🕓 {apt.visit_time.slice(0, 5)}
+                                </span>
+                                {apt.status === "completed" && (
+                                  <Badge variant="default" className="text-xs bg-green-600">Realizado</Badge>
+                                )}
+                                {apt.status === "cancelled" && (
+                                  <Badge variant="destructive" className="text-xs">Cancelado</Badge>
+                                )}
+                                {!apt.anamnesis_filled && apt.status === "scheduled" && (
+                                  <Badge variant="secondary" className="text-xs bg-yellow-500 text-white">Ficha Pendente</Badge>
+                                )}
+                              </div>
+                              <p className="font-semibold text-foreground">{apt.client_name}</p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {apt.procedures.map((p: any) => p.nome).join(", ")}
+                              </p>
+                            </div>
+                            {apt.status === "completed" && (
+                              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            )}
+                            {apt.status === "cancelled" && (
+                              <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center border-2 border-dashed border-primary/30 rounded-xl bg-muted/30">
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">
+                        Nenhum agendamento neste dia
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-8 text-center border-2 border-dashed border-primary/30 rounded-xl bg-muted/30">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">
+                    Clique em um dia no calendário para ver os agendamentos
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
