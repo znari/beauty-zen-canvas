@@ -439,7 +439,7 @@ const Dashboard = () => {
               )}
             </div>
           )}
-          <DialogFooter className="flex flex-col gap-3 mt-6 pt-4 border-t border-primary/10">
+          <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-primary/10">
             {selectedAppointment?.status === "scheduled" && (
               <>
                 <Button 
@@ -449,6 +449,7 @@ const Dashboard = () => {
                 >
                   {completeVisit.isPending ? "Confirmando..." : "✅ Confirmar Realização"}
                 </Button>
+                
                 <div className="grid grid-cols-2 gap-3">
                   <Button 
                     variant="outline" 
@@ -482,7 +483,7 @@ const Dashboard = () => {
                 <p className="text-red-700 font-semibold">❌ Agendamento cancelado</p>
               </div>
             )}
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
