@@ -321,6 +321,7 @@ export type Database = {
       visits: {
         Row: {
           client_id: string
+          completed_at: string | null
           created_at: string | null
           id: string
           notes: string | null
@@ -335,6 +336,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          completed_at?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null
@@ -349,6 +351,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          completed_at?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null

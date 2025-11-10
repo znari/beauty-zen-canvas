@@ -43,6 +43,10 @@ export const useWeeklyVisits = () => {
           client: visit.clients?.name || "Cliente desconhecido",
           procedure: visit.procedures?.[0]?.nome || "Sem procedimento",
           notes: visit.notes || "",
+          status: visit.status,
+          completedAt: visit.completed_at 
+            ? format(new Date(visit.completed_at), "dd/MM/yyyy 'às' HH:mm")
+            : null,
         });
       });
 

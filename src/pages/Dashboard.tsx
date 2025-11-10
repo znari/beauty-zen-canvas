@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -33,6 +33,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyVisits } from "@/hooks/useWeeklyVisits";
 import { useClients } from "@/hooks/useClients";
+import { useCompleteVisit } from "@/hooks/useCompleteVisit";
+import { useUpdateVisit } from "@/hooks/useUpdateVisit";
+import { useCancelVisit } from "@/hooks/useCancelVisit";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +50,13 @@ const Dashboard = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+
+  // Mutation hooks
+  const completeVisit = useCompleteVisit();
+  const updateVisit = useUpdateVisit();
+  const cancelVisit = useCancelVisit();
 
   // Fetch data from Supabase
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -103,12 +113,47 @@ const Dashboard = () => {
     navigate("/login");
   };
 
-  const handleCancelAppointment = () => {
-    toast({
-      title: "Agendamento cancelado",
-      description: "O agendamento foi cancelado com sucesso.",
-    });
-    setSelectedAppointment(null);
+  const handleCompleteVisit = async () => {
+    if (!selectedAppointment?.id) return;
+
+    try {
+      await completeVisit.mutateAsync(selectedAppointment.id);
+      
+      toast({
+        title: "✅ Procedimento realizado!",
+        description: `${selectedAppointment.client} - ${selectedAppointment.procedure} marcado como concluído.`,
+      });
+      
+      setSelectedAppointment(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao confirmar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!selectedAppointment?.id) return;
+
+    try {
+      await cancelVisit.mutateAsync(selectedAppointment.id);
+      
+      toast({
+        title: "Agendamento cancelado",
+        description: "O agendamento foi cancelado com sucesso.",
+        variant: "destructive",
+      });
+      
+      setSelectedAppointment(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReschedule = () => {
@@ -233,10 +278,26 @@ const Dashboard = () => {
                         <button
                           key={apt.id}
                           onClick={() => setSelectedAppointment(apt)}
-                          className="w-full p-3 bg-white border border-primary/20 hover:bg-accent/30 rounded-xl text-left transition-all hover:scale-[1.02] hover:shadow-md"
+                          className={`
+                            w-full p-3 border rounded-xl text-left transition-all hover:scale-[1.02] hover:shadow-md
+                            ${apt.status === "completed" 
+                              ? "bg-green-50 border-green-400 hover:bg-green-100" 
+                              : apt.status === "cancelled"
+                              ? "bg-red-50 border-red-400 hover:bg-red-100 opacity-60"
+                              : "bg-white border-primary/20 hover:bg-accent/30"
+                            }
+                          `}
                         >
-                          <div className="text-xs font-bold text-secondary flex items-center gap-1">
-                            <span>🕓</span> {apt.time}
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs font-bold text-secondary flex items-center gap-1">
+                              <span>🕓</span> {apt.time}
+                            </div>
+                            {apt.status === "completed" && (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            )}
+                            {apt.status === "cancelled" && (
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            )}
                           </div>
                           <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
                         </button>
@@ -363,15 +424,59 @@ const Dashboard = () => {
                   <p className="text-lg text-foreground mt-1">{selectedAppointment.notes}</p>
                 </div>
               )}
+              {selectedAppointment.status === "completed" && selectedAppointment.completedAt && (
+                <div className="p-4 bg-green-50 border-2 border-green-500 rounded-lg">
+                  <Label className="text-sm font-bold text-green-700 uppercase tracking-wide">Status</Label>
+                  <p className="text-lg font-semibold text-green-700 mt-1">✅ Procedimento Realizado</p>
+                  <p className="text-sm text-green-600 mt-1">Confirmado em {selectedAppointment.completedAt}</p>
+                </div>
+              )}
+              {selectedAppointment.status === "cancelled" && (
+                <div className="p-4 bg-red-50 border-2 border-red-500 rounded-lg">
+                  <Label className="text-sm font-bold text-red-700 uppercase tracking-wide">Status</Label>
+                  <p className="text-lg font-semibold text-red-700 mt-1">❌ Agendamento Cancelado</p>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleReschedule} className="border-primary/30 hover:bg-primary/10">
-              Reagendar
-            </Button>
-            <Button variant="destructive" onClick={handleCancelAppointment} className="shadow-md">
-              Cancelar Agendamento
-            </Button>
+            {selectedAppointment?.status === "scheduled" && (
+              <>
+                <Button 
+                  onClick={handleCompleteVisit}
+                  disabled={completeVisit.isPending}
+                  className="gradient-button text-white font-semibold shadow-md hover:shadow-lg flex-1"
+                >
+                  {completeVisit.isPending ? "Confirmando..." : "✅ Confirmar Realização"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleReschedule}
+                  className="border-primary/30 hover:bg-primary/10"
+                >
+                  📅 Reagendar
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleCancelAppointment}
+                  disabled={cancelVisit.isPending}
+                >
+                  {cancelVisit.isPending ? "Cancelando..." : "❌ Cancelar"}
+                </Button>
+              </>
+            )}
+            
+            {selectedAppointment?.status === "completed" && (
+              <div className="w-full text-center text-green-700 font-semibold">
+                Este procedimento já foi realizado
+              </div>
+            )}
+            
+            {selectedAppointment?.status === "cancelled" && (
+              <div className="w-full text-center text-red-700 font-semibold">
+                Este agendamento foi cancelado
+              </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
