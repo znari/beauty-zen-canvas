@@ -397,7 +397,7 @@ const Dashboard = () => {
 
       {/* Appointment Details Dialog */}
       <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
-        <DialogContent className="bg-white border-primary/20 shadow-xl">
+        <DialogContent className="bg-white border-primary/20 shadow-xl max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Detalhes do Agendamento</DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -405,75 +405,78 @@ const Dashboard = () => {
             </DialogDescription>
           </DialogHeader>
           {selectedAppointment && (
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Cliente</Label>
-                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs font-bold text-primary uppercase tracking-wide">Cliente</Label>
+                <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.client}</p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Procedimento</Label>
-                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
+              <div>
+                <Label className="text-xs font-bold text-primary uppercase tracking-wide">Procedimento</Label>
+                <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.procedure}</p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Horário</Label>
-                <p className="text-lg font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
+              <div>
+                <Label className="text-xs font-bold text-primary uppercase tracking-wide">Horário</Label>
+                <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
               </div>
               {selectedAppointment.notes && (
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <Label className="text-sm font-bold text-secondary uppercase tracking-wide">Observações</Label>
-                  <p className="text-lg text-foreground mt-1">{selectedAppointment.notes}</p>
+                <div>
+                  <Label className="text-xs font-bold text-primary uppercase tracking-wide">Observações</Label>
+                  <p className="text-base text-foreground mt-1">{selectedAppointment.notes}</p>
                 </div>
               )}
               {selectedAppointment.status === "completed" && selectedAppointment.completedAt && (
-                <div className="p-4 bg-green-50 border-2 border-green-500 rounded-lg">
-                  <Label className="text-sm font-bold text-green-700 uppercase tracking-wide">Status</Label>
-                  <p className="text-lg font-semibold text-green-700 mt-1">✅ Procedimento Realizado</p>
+                <div className="p-3 bg-green-50 border border-green-500 rounded-lg mt-4">
+                  <Label className="text-xs font-bold text-green-700 uppercase tracking-wide">Status</Label>
+                  <p className="text-base font-semibold text-green-700 mt-1">✅ Procedimento Realizado</p>
                   <p className="text-sm text-green-600 mt-1">Confirmado em {selectedAppointment.completedAt}</p>
                 </div>
               )}
               {selectedAppointment.status === "cancelled" && (
-                <div className="p-4 bg-red-50 border-2 border-red-500 rounded-lg">
-                  <Label className="text-sm font-bold text-red-700 uppercase tracking-wide">Status</Label>
-                  <p className="text-lg font-semibold text-red-700 mt-1">❌ Agendamento Cancelado</p>
+                <div className="p-3 bg-red-50 border border-red-500 rounded-lg mt-4">
+                  <Label className="text-xs font-bold text-red-700 uppercase tracking-wide">Status</Label>
+                  <p className="text-base font-semibold text-red-700 mt-1">❌ Agendamento Cancelado</p>
                 </div>
               )}
             </div>
           )}
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col gap-2 mt-4">
             {selectedAppointment?.status === "scheduled" && (
               <>
                 <Button 
                   onClick={handleCompleteVisit}
                   disabled={completeVisit.isPending}
-                  className="gradient-button text-white font-semibold shadow-md hover:shadow-lg flex-1"
+                  className="gradient-button text-white font-semibold shadow-md hover:shadow-lg w-full"
                 >
                   {completeVisit.isPending ? "Confirmando..." : "✅ Confirmar Realização"}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleReschedule}
-                  className="border-primary/30 hover:bg-primary/10"
-                >
-                  📅 Reagendar
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={handleCancelAppointment}
-                  disabled={cancelVisit.isPending}
-                >
-                  {cancelVisit.isPending ? "Cancelando..." : "❌ Cancelar"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleReschedule}
+                    className="border-primary/30 hover:bg-primary/10 flex-1"
+                  >
+                    📅 Reagendar
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleCancelAppointment}
+                    disabled={cancelVisit.isPending}
+                    className="flex-1"
+                  >
+                    {cancelVisit.isPending ? "Cancelando..." : "❌ Cancelar"}
+                  </Button>
+                </div>
               </>
             )}
             
             {selectedAppointment?.status === "completed" && (
-              <div className="w-full text-center text-green-700 font-semibold">
+              <div className="w-full text-center text-green-700 font-semibold py-2">
                 Este procedimento já foi realizado
               </div>
             )}
             
             {selectedAppointment?.status === "cancelled" && (
-              <div className="w-full text-center text-red-700 font-semibold">
+              <div className="w-full text-center text-red-700 font-semibold py-2">
                 Este agendamento foi cancelado
               </div>
             )}
