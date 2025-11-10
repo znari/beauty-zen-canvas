@@ -53,7 +53,7 @@ export const useClientProfile = (clientId: string) => {
         .map(visit => ({
           id: visit.id,
           date: format(new Date(visit.visit_date), "dd/MM/yyyy"),
-          time: visit.visit_time,
+          time: visit.visit_time.slice(0, 5),
           procedures: Array.isArray(visit.procedures) 
             ? visit.procedures.map((p: any) => p.nome || p.name || 'Procedimento')
             : [],

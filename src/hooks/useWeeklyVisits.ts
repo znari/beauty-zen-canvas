@@ -40,7 +40,7 @@ export const useWeeklyVisits = () => {
         
         grouped[date].push({
           id: visit.id,
-          time: visit.visit_time,
+          time: visit.visit_time.slice(0, 5),
           client: visit.clients?.name || "Cliente desconhecido",
           procedure: visit.procedures?.[0]?.nome || "Sem procedimento",
           notes: visit.notes || "",
