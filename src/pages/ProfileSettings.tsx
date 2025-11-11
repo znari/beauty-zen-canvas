@@ -76,23 +76,27 @@ export default function ProfileSettings() {
     if (!user) return;
     
     setSaving(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        studio_name: profileData.nomeEmpresa,
-        phone_raw: profileData.telefone,
-        phone_normalized: profileData.telefone, // Should use normalize_phone function
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
     
-    if (error) {
-      toast.error("Erro ao salvar perfil");
-      console.error(error);
-    } else {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          studio_name: profileData.nomeEmpresa,
+          phone_raw: profileData.telefone,
+          phone_normalized: normalizePhone(profileData.telefone),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
       toast.success("Perfil atualizado com sucesso!");
+    } catch (error: any) {
+      toast.error("Erro ao salvar perfil");
+      console.error("Erro detalhado:", error);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const getInitials = (name: string) => {
@@ -102,6 +106,23 @@ export default function ProfileSettings() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const normalizePhone = (phone: string): string => {
+    if (!phone) return "";
+    
+    // Remove tudo que não for dígito
+    let normalized = phone.replace(/\D/g, '');
+    
+    // Remove zeros no início
+    normalized = normalized.replace(/^0+/, '');
+    
+    // Remove código do país (55) se presente
+    if (normalized.startsWith('55')) {
+      normalized = normalized.substring(2);
+    }
+    
+    return normalized;
   };
 
   const handleCropComplete = async (croppedFile: File) => {
