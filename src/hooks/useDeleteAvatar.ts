@@ -20,14 +20,7 @@ export const useDeleteAvatar = () => {
         throw new Error("Nenhuma foto de perfil para excluir");
       }
 
-      const avatarUrl = profile.avatar_url;
-      const pathParts = avatarUrl.split('/profile-avatars/');
-      
-      if (pathParts.length < 2) {
-        throw new Error("URL do avatar inválida");
-      }
-      
-      const filePath = pathParts[1];
+      const avatarPath = profile.avatar_url;
 
       const { error: updateError } = await supabase
         .from('profiles')
@@ -41,7 +34,7 @@ export const useDeleteAvatar = () => {
 
       const { error: deleteError } = await supabase.storage
         .from('profile-avatars')
-        .remove([filePath]);
+        .remove([avatarPath]);
 
       if (deleteError) {
         console.warn("Erro ao deletar arquivo do storage:", deleteError);
@@ -51,6 +44,7 @@ export const useDeleteAvatar = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["avatar-url"] });
       toast.success("Foto de perfil removida com sucesso!");
     },
     onError: (error: Error) => {

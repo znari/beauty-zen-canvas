@@ -10,32 +10,17 @@ export const useUploadAvatar = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Validar tipo de arquivo
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        throw new Error("Formato inválido. Use JPG, PNG ou WEBP");
-      }
-
-      // Validar tamanho (máximo 2MB)
-      const maxSize = 2 * 1024 * 1024; // 2MB
-      if (file.size > maxSize) {
-        throw new Error("Arquivo muito grande. Tamanho máximo: 2MB");
-      }
-
-      // Gerar nome único para o arquivo
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
-      // 1. Buscar avatar atual para deletar depois
       const { data: profile } = await supabase
         .from('profiles')
         .select('avatar_url')
         .eq('id', user.id)
         .single();
 
-      const oldAvatarUrl = profile?.avatar_url;
+      const oldAvatarPath = profile?.avatar_url;
 
-      // 2. Upload do novo arquivo
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-avatars')
         .upload(fileName, file, {
@@ -45,40 +30,29 @@ export const useUploadAvatar = () => {
 
       if (uploadError) throw uploadError;
 
-      // 3. Obter URL pública
-      const { data: urlData } = supabase.storage
-        .from('profile-avatars')
-        .getPublicUrl(uploadData.path);
+      const storagePath = uploadData.path;
 
-      const publicUrl = urlData.publicUrl;
-
-      // 4. Atualizar perfil com nova URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
-          avatar_url: publicUrl,
+          avatar_url: storagePath,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
-      // 5. Deletar avatar antigo se existir
-      if (oldAvatarUrl) {
+      if (oldAvatarPath) {
         try {
-          const oldPath = oldAvatarUrl.split('/profile-avatars/')[1];
-          if (oldPath) {
-            await supabase.storage
-              .from('profile-avatars')
-              .remove([oldPath]);
-          }
+          await supabase.storage
+            .from('profile-avatars')
+            .remove([oldAvatarPath]);
         } catch (error) {
           console.warn("Erro ao deletar avatar antigo:", error);
-          // Não falhar a operação se não conseguir deletar o antigo
         }
       }
 
-      return publicUrl;
+      return storagePath;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });

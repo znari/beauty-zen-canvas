@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUploadAvatar } from "@/hooks/useUploadAvatar";
 import { useDeleteAvatar } from "@/hooks/useDeleteAvatar";
+import { useAvatarUrl } from "@/hooks/useAvatarUrl";
+import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,10 +35,11 @@ export default function ProfileSettings() {
     telefone: "",
     metodoPagamento: "",
   });
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: avatarUrl } = useAvatarUrl(avatarPath);
   const uploadAvatar = useUploadAvatar();
   const deleteAvatar = useDeleteAvatar();
 
@@ -61,7 +64,7 @@ export default function ProfileSettings() {
           telefone: data.phone_raw || "",
           metodoPagamento: "", // This field doesn't exist in DB yet
         });
-        setAvatarUrl(data.avatar_url || null);
+        setAvatarPath(data.avatar_url || null);
       }
       setLoading(false);
     };
@@ -101,21 +104,19 @@ export default function ProfileSettings() {
       .slice(0, 2);
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await uploadAvatar.mutateAsync(file);
-      // Limpar input para permitir upload do mesmo arquivo novamente
-      event.target.value = '';
+  const handleCropComplete = async (croppedFile: File) => {
+    try {
+      const path = await uploadAvatar.mutateAsync(croppedFile);
+      setAvatarPath(path);
+      setShowCropDialog(false);
+    } catch (error) {
+      console.error("Erro no upload:", error);
     }
   };
 
   const handleDeleteAvatar = async () => {
     await deleteAvatar.mutateAsync();
+    setAvatarPath(null);
     setShowDeleteDialog(false);
   };
 
@@ -168,14 +169,14 @@ export default function ProfileSettings() {
                       size="icon"
                       variant="secondary"
                       className="h-10 w-10 rounded-full"
-                      onClick={handleAvatarClick}
+                      onClick={() => setShowCropDialog(true)}
                       disabled={uploadAvatar.isPending}
                       title="Editar foto"
                     >
                       <Camera className="h-5 w-5" />
                     </Button>
                     
-                    {avatarUrl && (
+                    {avatarPath && (
                       <Button
                         size="icon"
                         variant="destructive"
@@ -190,22 +191,13 @@ export default function ProfileSettings() {
                   </div>
                 </div>
 
-                {/* Input file oculto */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-
                 <div>
                   <h2 className="text-2xl font-bold text-primary-dark">
                     {profileData.nomeEmpresa}
                   </h2>
                   <p className="text-muted-foreground">{profileData.email}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Passe o mouse sobre a foto para editar ou excluir
+                    🔒 Suas fotos são privadas e seguras
                   </p>
                 </div>
               </div>
@@ -308,6 +300,14 @@ export default function ProfileSettings() {
         </div>
         )}
       </main>
+
+      {/* Avatar Crop Dialog */}
+      <AvatarCropDialog
+        open={showCropDialog}
+        onOpenChange={setShowCropDialog}
+        onCropComplete={handleCropComplete}
+        isUploading={uploadAvatar.isPending}
+      />
 
       {/* Alert Dialog para confirmar exclusão */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
