@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Download, TrendingUp, Calendar, DollarSign, Users, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -37,8 +38,27 @@ const Billing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [studioName, setStudioName] = useState<string>("Studio");
   
   const { data: stats, isLoading } = useBillingStats(selectedMonth);
+
+  useEffect(() => {
+    const fetchStudioName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('studio_name')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (data?.studio_name) {
+          setStudioName(data.studio_name);
+        }
+      }
+    };
+    fetchStudioName();
+  }, []);
 
   const handlePreviousMonth = () => {
     setSelectedMonth((prev) => subMonths(prev, 1));
@@ -52,7 +72,7 @@ const Billing = () => {
     if (!stats) return;
     
     try {
-      exportBillingToPDF(stats, selectedMonth, "FichaZen");
+      exportBillingToPDF(stats, selectedMonth, studioName);
       toast({
         title: "PDF exportado com sucesso!",
         description: "O relatório foi baixado.",
