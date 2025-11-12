@@ -22,6 +22,7 @@ import ProcedureManagement from "./pages/ProcedureManagement";
 import MessageSettings from "./pages/MessageSettings";
 import AnamnesisSettings from "./pages/AnamnesisSettings";
 import ProfileSettings from "./pages/ProfileSettings";
+import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/configuracoes/procedimentos" element={<ProtectedRoute><ProcedureManagement /></ProtectedRoute>} />
             <Route path="/configuracoes/ficha-anamnese" element={<ProtectedRoute><AnamnesisSettings /></ProtectedRoute>} />
             <Route path="/configuracoes/mensagens" element={<ProtectedRoute><MessageSettings /></ProtectedRoute>} />
+            <Route path="/faturamento" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

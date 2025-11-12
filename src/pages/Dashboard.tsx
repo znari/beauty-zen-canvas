@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -311,6 +311,10 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => navigate("/configuracoes/mensagens")}>
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Mensagens do WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/faturamento")}>
+                <DollarSign className="h-4 w-4 mr-2" />
+                Faturamento
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <HelpCircle className="h-4 w-4 mr-2" />
