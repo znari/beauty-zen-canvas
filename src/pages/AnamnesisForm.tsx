@@ -11,6 +11,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { Calendar, User, Sparkles, Heart, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { usePublicClientVisit } from "@/hooks/usePublicClientVisit";
+import { usePublicSaveAnamnesis } from "@/hooks/usePublicSaveAnamnesis";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
+import { formatLocalDate } from "@/lib/dateUtils";
 
 const formSchema = z.object({
   isPregnantOrBreastfeeding: z.enum(["yes", "no"], {
@@ -36,20 +41,14 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-// Mock data - substituir por dados reais do backend
-const mockClientData = {
-  id: "1",
-  name: "Ana Carolina Silva",
-  appointmentDate: "15/04/2025",
-  procedure: "Limpeza de Pele Profunda",
-  professional: "Dra. Mariana Costa",
-  isSubmitted: false,
-};
-
 const AnamnesisForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Buscar dados reais da visita
+  const { data: visitData, isLoading, error } = usePublicClientVisit(id || "");
+  const saveMutation = usePublicSaveAnamnesis();
 
   const {
     register,
@@ -58,6 +57,13 @@ const AnamnesisForm = () => {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: (visitData?.anamnesisResponses as FormData) || {
+      isPregnantOrBreastfeeding: "no",
+      useContinuousMedication: "no",
+      hasAllergies: "no",
+      previousProcedure: "no",
+      skinConditions: "no",
+    }
   });
 
   const watchFields = {
@@ -69,27 +75,56 @@ const AnamnesisForm = () => {
   };
 
   const onSubmit = async (data: FormData) => {
+    if (!visitData) return;
+    
     setIsSubmitting(true);
     
-    // Simular envio ao backend
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    console.log("Dados da ficha:", data);
-    
-    toast({
-      title: "Ficha enviada com sucesso! 💜",
-      description: "Obrigado por preencher sua ficha de anamnese.",
-    });
-    
-    setIsSubmitting(false);
-    
-    // Redirecionar para página de sucesso
-    setTimeout(() => {
-      navigate("/sucesso?origem=ficha");
-    }, 1500);
+    try {
+      await saveMutation.mutateAsync({
+        clientId: visitData.clientId,
+        responses: data,
+        anamnesisId: visitData.anamnesisId
+      });
+
+      toast({
+        title: "Ficha enviada com sucesso! 💜",
+        description: "Obrigado por preencher sua ficha de anamnese.",
+      });
+
+      setTimeout(() => {
+        navigate("/sucesso?origem=ficha");
+      }, 1500);
+    } catch (error) {
+      console.error("Erro ao enviar ficha:", error);
+      toast({
+        title: "Erro ao enviar ficha",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (mockClientData.isSubmitted) {
+  // Estados de loading e erro
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <LoadingSpinner message="Carregando suas informações..." />
+      </div>
+    );
+  }
+
+  if (error || !visitData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <ErrorMessage message="Não foi possível carregar os dados da visita. Verifique o link enviado." />
+      </div>
+    );
+  }
+
+  // Verificar se já foi preenchida
+  if (visitData.isAlreadyFilled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
@@ -99,7 +134,7 @@ const AnamnesisForm = () => {
             </div>
             <CardTitle>Ficha já preenchida!</CardTitle>
             <CardDescription>
-              Esta ficha de anamnese já foi enviada anteriormente.
+              Esta ficha foi preenchida em {formatLocalDate(visitData.anamnesisFilledAt!, "dd/MM/yyyy 'às' HH:mm")}.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -118,13 +153,13 @@ const AnamnesisForm = () => {
           </div>
           <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <h2 className="text-2xl font-semibold text-foreground">
-              Ficha de Anamnese — {mockClientData.name}
+              Ficha de Anamnese — {visitData.clientName}
             </h2>
             <p className="text-muted-foreground">
-              Data do procedimento: <span className="font-medium text-foreground">{mockClientData.appointmentDate}</span>
+              Data do procedimento: <span className="font-medium text-foreground">{formatLocalDate(visitData.visitDate, "dd/MM/yyyy")} às {visitData.visitTime}</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Procedimento: <span className="text-primary font-medium">{mockClientData.procedure}</span>
+              Procedimento: <span className="text-primary font-medium">{visitData.procedureName}</span>
             </p>
           </div>
         </div>
@@ -147,7 +182,7 @@ const AnamnesisForm = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Cliente</p>
-                <p className="font-medium">{mockClientData.name}</p>
+                <p className="font-medium">{visitData.clientName}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -156,7 +191,7 @@ const AnamnesisForm = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Data</p>
-                <p className="font-medium">{mockClientData.appointmentDate}</p>
+                <p className="font-medium">{formatLocalDate(visitData.visitDate, "dd/MM/yyyy")} às {visitData.visitTime}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -165,7 +200,7 @@ const AnamnesisForm = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Procedimento</p>
-                <p className="font-medium">{mockClientData.procedure}</p>
+                <p className="font-medium">{visitData.procedureName}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -174,7 +209,7 @@ const AnamnesisForm = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Profissional</p>
-                <p className="font-medium">{mockClientData.professional}</p>
+                <p className="font-medium">{visitData.professionalName}</p>
               </div>
             </div>
           </CardContent>
