@@ -22,6 +22,7 @@ export const useWeeklyVisits = () => {
           clients (
             name,
             id,
+            whatsapp_normalized,
             anamneses (
               id,
               filled_at,
@@ -64,6 +65,7 @@ export const useWeeklyVisits = () => {
         grouped[date].push({
           id: visit.id,
           clientId: visit.clients?.id,
+          clientPhone: visit.clients?.whatsapp_normalized || "",
           time: visit.visit_time.slice(0, 5),
           client: visit.clients?.name || "Cliente desconhecido",
           procedure: visit.procedures?.[0]?.nome || "Sem procedimento",

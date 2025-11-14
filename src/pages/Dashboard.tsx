@@ -168,11 +168,21 @@ const Dashboard = () => {
   const handleSendAnamnesisForm = () => {
     if (!selectedAppointment?.clientId) return;
     
+    // Validar se o telefone existe
+    if (!selectedAppointment?.clientPhone) {
+      toast({
+        title: "⚠️ Telefone não encontrado",
+        description: "Cadastre o WhatsApp do cliente antes de enviar a ficha.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const anamnesisLink = generateAnamnesisLink(selectedAppointment.clientId);
     
     openWhatsAppMessage("EnvioFicha", {
       nomeCliente: selectedAppointment.client,
-      telefone: "",
+      telefone: selectedAppointment.clientPhone,
       linkFicha: anamnesisLink,
       nomeStudio: "FichaZen"
     });
