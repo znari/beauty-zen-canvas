@@ -8,6 +8,7 @@ export interface MonthlyVisit {
   visit_time: string;
   status: string;
   client_name: string;
+  client_phone: string;
   procedures: any[];
   anamnesis_filled: boolean;
 }
@@ -32,6 +33,7 @@ export const useMonthlyVisits = (selectedMonth: Date) => {
           procedures,
           clients (
             name,
+            whatsapp_normalized,
             anamneses (
               filled_at,
               consent
@@ -62,6 +64,7 @@ export const useMonthlyVisits = (selectedMonth: Date) => {
           visit_time: visit.visit_time,
           status: visit.status,
           client_name: visit.clients?.name || "Cliente",
+          client_phone: visit.clients?.whatsapp_normalized || "",
           procedures: visit.procedures || [],
           anamnesis_filled: visit.clients?.anamneses?.some((a: any) => a.filled_at && a.consent) || false,
         });

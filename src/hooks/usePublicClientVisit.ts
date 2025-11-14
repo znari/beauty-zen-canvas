@@ -7,7 +7,7 @@ export const usePublicClientVisit = (clientId: string) => {
     queryKey: ["public-client-visit", clientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_public_visit_info', { client_uuid: clientId });
+        .rpc('get_public_visit_info' as any, { client_uuid: clientId });
 
       if (error) throw error;
       
@@ -15,9 +15,9 @@ export const usePublicClientVisit = (clientId: string) => {
         throw new Error("Visita não encontrada");
       }
 
-      const visit = data[0];
+      const visit = data[0] as any;
       
-      // Extrair nome do primeiro procedimento com type assertion
+      // Extrair nome do primeiro procedimento
       const procedures = visit.procedures as any[];
       const procedureName = procedures && procedures.length > 0 
         ? procedures[0]?.nome || procedures[0]?.name 
