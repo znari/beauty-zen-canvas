@@ -419,6 +419,21 @@ export type Database = {
       }
     }
     Functions: {
+      get_public_visit_info: {
+        Args: { client_uuid: string }
+        Returns: {
+          anamnesis_consent: boolean
+          anamnesis_filled_at: string
+          anamnesis_id: string
+          anamnesis_responses: Json
+          client_id: string
+          client_name: string
+          procedures: Json
+          professional_name: string
+          visit_date: string
+          visit_time: string
+        }[]
+      }
       normalize_phone: { Args: { input_text: string }; Returns: string }
     }
     Enums: {

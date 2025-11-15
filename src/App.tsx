@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
 import AnamnesisForm from "./pages/AnamnesisForm";
+import ExpiredVisit from "./pages/ExpiredVisit";
+import AnamnesisSuccess from "./pages/AnamnesisSuccess";
 import NewVisit from "./pages/NewVisit";
 import Success from "./pages/Success";
 import NewClient from "./pages/NewClient";
@@ -42,6 +44,8 @@ const App = () => (
             <Route path="/recuperar-senha" element={<PasswordRecovery />} />
             <Route path="/nova-senha" element={<NewPassword />} />
             <Route path="/ficha/:id" element={<AnamnesisForm />} />
+            <Route path="/ficha/expirada" element={<ExpiredVisit />} />
+            <Route path="/ficha/sucesso" element={<AnamnesisSuccess />} />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
