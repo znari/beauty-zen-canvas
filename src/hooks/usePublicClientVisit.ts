@@ -23,6 +23,13 @@ export const usePublicClientVisit = (clientId: string) => {
         ? procedures[0]?.nome || procedures[0]?.name 
         : "Procedimento não especificado";
       
+      // Verificar se a visita já passou
+      const visitDateTime = visit.visit_date && visit.visit_time 
+        ? new Date(`${visit.visit_date}T${visit.visit_time}`)
+        : null;
+      const now = new Date();
+      const hasExpired = visitDateTime ? visitDateTime < now : false;
+      
       return {
         clientId: visit.client_id,
         clientName: visit.client_name,
@@ -34,7 +41,8 @@ export const usePublicClientVisit = (clientId: string) => {
         anamnesisResponses: visit.anamnesis_responses,
         anamnesisFilledAt: visit.anamnesis_filled_at,
         anamnesisConsent: visit.anamnesis_consent,
-        isAlreadyFilled: !!visit.anamnesis_filled_at && visit.anamnesis_consent
+        isAlreadyFilled: !!visit.anamnesis_filled_at && visit.anamnesis_consent,
+        hasExpired
       };
     },
     enabled: !!clientId,

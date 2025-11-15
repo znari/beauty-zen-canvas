@@ -50,6 +50,12 @@ const AnamnesisForm = () => {
   const { data: visitData, isLoading, error } = usePublicClientVisit(id || "");
   const saveMutation = usePublicSaveAnamnesis();
 
+  // Redirecionar se a visita já passou
+  if (visitData?.hasExpired) {
+    navigate("/ficha/expirada");
+    return null;
+  }
+
   const {
     register,
     handleSubmit,
@@ -91,8 +97,16 @@ const AnamnesisForm = () => {
         description: "Obrigado por preencher sua ficha de anamnese.",
       });
 
+      // Redirecionar para página de sucesso com dados da visita
+      const formattedDate = visitData.visitDate ? formatLocalDate(visitData.visitDate, "dd/MM/yyyy") : "";
+      const queryParams = new URLSearchParams({
+        date: formattedDate,
+        time: visitData.visitTime || "",
+        professional: visitData.professionalName || ""
+      });
+      
       setTimeout(() => {
-        navigate("/sucesso?origem=ficha");
+        navigate(`/ficha/sucesso?${queryParams.toString()}`);
       }, 1500);
     } catch (error) {
       console.error("Erro ao enviar ficha:", error);
