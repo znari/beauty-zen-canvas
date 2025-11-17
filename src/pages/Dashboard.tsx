@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationButton } from "@/components/NotificationButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -299,12 +300,14 @@ const Dashboard = () => {
       <header className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-primary">FichaZen</h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-secondary hover:text-primary hover:bg-primary/10">
-                <Settings className="h-6 w-6" />
-              </Button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center gap-2">
+            <NotificationButton />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-secondary hover:text-primary hover:bg-primary/10">
+                  <Settings className="h-6 w-6" />
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuItem onClick={() => navigate("/configuracoes/perfil")}>
                 <User className="h-4 w-4 mr-2" />
@@ -338,8 +341,9 @@ const Dashboard = () => {
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
