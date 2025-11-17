@@ -222,6 +222,60 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          anamnesis_id: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          message: string
+          professional_id: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          anamnesis_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          professional_id: string
+          read?: boolean
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          anamnesis_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          professional_id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_anamnesis_id_fkey"
+            columns: ["anamnesis_id"]
+            isOneToOne: false
+            referencedRelation: "anamneses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedures: {
         Row: {
           active: boolean | null
