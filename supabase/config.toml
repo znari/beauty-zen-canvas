@@ -1,1 +1,4 @@
 project_id = "ldjgujvxbkclpijtgsdm"
+
+[functions.send-visit-reminders]
+verify_jwt = false

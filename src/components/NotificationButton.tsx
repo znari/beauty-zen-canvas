@@ -1,4 +1,4 @@
-import { Bell } from "lucide-react";
+import { Bell, Calendar, X, RefreshCw, Clock, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -16,6 +16,24 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+
+// Função helper para ícone por tipo
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'visit_created':
+      return <Calendar className="h-4 w-4 text-primary" />;
+    case 'visit_cancelled':
+      return <X className="h-4 w-4 text-destructive" />;
+    case 'visit_rescheduled':
+      return <RefreshCw className="h-4 w-4 text-orange-500" />;
+    case 'visit_reminder':
+      return <Clock className="h-4 w-4 text-blue-500" />;
+    case 'anamnesis_filled':
+      return <FileCheck className="h-4 w-4 text-green-500" />;
+    default:
+      return <Bell className="h-4 w-4 text-muted-foreground" />;
+  }
+};
 
 export const NotificationButton = () => {
   const navigate = useNavigate();
@@ -123,6 +141,7 @@ export const NotificationButton = () => {
                   }`}
                 >
                   <div className="flex items-start gap-3">
+                    {getNotificationIcon(notification.type)}
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium leading-none">
