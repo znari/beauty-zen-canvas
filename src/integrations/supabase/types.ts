@@ -234,6 +234,7 @@ export type Database = {
           title: string
           type: string
           updated_at: string | null
+          visit_id: string | null
         }
         Insert: {
           anamnesis_id?: string | null
@@ -246,6 +247,7 @@ export type Database = {
           title: string
           type?: string
           updated_at?: string | null
+          visit_id?: string | null
         }
         Update: {
           anamnesis_id?: string | null
@@ -258,6 +260,7 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string | null
+          visit_id?: string | null
         }
         Relationships: [
           {
@@ -272,6 +275,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
             referencedColumns: ["id"]
           },
         ]
@@ -473,6 +483,10 @@ export type Database = {
       }
     }
     Functions: {
+      format_visit_datetime: {
+        Args: { p_date: string; p_time: string }
+        Returns: string
+      }
       get_public_visit_info: {
         Args: { client_uuid: string }
         Returns: {
