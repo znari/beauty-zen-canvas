@@ -167,6 +167,21 @@ export const NotificationButton = () => {
             </div>
           )}
         </ScrollArea>
+        
+        {notifications.length > 0 && (
+          <div className="p-4 border-t">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                navigate('/notificacoes');
+                setOpen(false);
+              }}
+            >
+              Ver todas as notificações
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
