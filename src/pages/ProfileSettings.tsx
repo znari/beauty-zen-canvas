@@ -49,6 +49,20 @@ export default function ProfileSettings() {
     cidade: "",
     estado: "",
   });
+  const [originalProfileData, setOriginalProfileData] = useState({
+    nomeEmpresa: "",
+    cpfCnpj: "",
+    email: "",
+    telefone: "",
+    metodoPagamento: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
+  });
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -80,7 +94,7 @@ export default function ProfileSettings() {
         toast.error("Erro ao carregar perfil");
         console.error(error);
       } else if (data) {
-        setProfileData({
+        const loadedData = {
           nomeEmpresa: data.studio_name || "",
           cpfCnpj: data.cpf_cnpj || "",
           email: data.email || user.email || "",
@@ -93,7 +107,10 @@ export default function ProfileSettings() {
           bairro: data.address_neighborhood || "",
           cidade: data.address_city || "",
           estado: data.address_state || "",
-        });
+        };
+        
+        setProfileData(loadedData);
+        setOriginalProfileData(loadedData);
         setAvatarPath(data.avatar_url || null);
       }
       setLoading(false);
@@ -101,6 +118,57 @@ export default function ProfileSettings() {
 
     fetchProfile();
   }, [user]);
+
+  // Função para detectar quais campos foram modificados
+  const getChangedFields = () => {
+    const changes: Record<string, any> = {};
+    
+    // Mapeamento: campo do state -> campo do banco
+    const fieldMapping: Record<string, string> = {
+      nomeEmpresa: 'studio_name',
+      telefone: 'phone_raw',
+      cep: 'address_cep',
+      logradouro: 'address_street',
+      numero: 'address_number',
+      complemento: 'address_complement',
+      bairro: 'address_neighborhood',
+      cidade: 'address_city',
+      estado: 'address_state',
+    };
+    
+    // Comparar cada campo editável
+    Object.entries(fieldMapping).forEach(([stateKey, dbKey]) => {
+      const currentValue = profileData[stateKey as keyof typeof profileData];
+      const originalValue = originalProfileData[stateKey as keyof typeof originalProfileData];
+      
+      // Normalizar valores vazios para comparação
+      const normalizedCurrent = currentValue?.trim() || null;
+      const normalizedOriginal = originalValue?.trim() || null;
+      
+      // Se os valores são diferentes, adicionar ao objeto de mudanças
+      if (normalizedCurrent !== normalizedOriginal) {
+        changes[dbKey] = normalizedCurrent;
+      }
+    });
+    
+    return changes;
+  };
+
+  // Função para obter nomes amigáveis dos campos
+  const getFieldLabel = (dbFieldName: string): string => {
+    const labels: Record<string, string> = {
+      studio_name: 'Nome da Empresa',
+      phone_raw: 'Telefone',
+      address_cep: 'CEP',
+      address_street: 'Logradouro',
+      address_number: 'Número',
+      address_complement: 'Complemento',
+      address_neighborhood: 'Bairro',
+      address_city: 'Cidade',
+      address_state: 'Estado',
+    };
+    return labels[dbFieldName] || dbFieldName;
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -111,22 +179,26 @@ export default function ProfileSettings() {
       return;
     }
     
+    // Detectar campos alterados
+    const changedFields = getChangedFields();
+    
+    // Se não há alterações, avisar o usuário
+    if (Object.keys(changedFields).length === 0) {
+      toast.info("Nenhuma alteração foi detectada");
+      setShowSaveConfirmDialog(false);
+      return;
+    }
+    
+    // Log para debug
+    console.log("📝 Campos alterados:", Object.keys(changedFields).map(getFieldLabel).join(", "));
+    console.log("📊 Valores:", changedFields);
+    
     setSaving(true);
     
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({
-          studio_name: profileData.nomeEmpresa.trim(),
-          phone_raw: profileData.telefone || null,
-          address_cep: profileData.cep || null,
-          address_street: profileData.logradouro || null,
-          address_number: profileData.numero || null,
-          address_complement: profileData.complemento || null,
-          address_neighborhood: profileData.bairro || null,
-          address_city: profileData.cidade || null,
-          address_state: profileData.estado || null,
-        })
+        .update(changedFields)
         .eq('id', user.id);
       
       if (error) {
@@ -134,7 +206,13 @@ export default function ProfileSettings() {
         throw new Error(error.message);
       }
       
-      toast.success("Perfil atualizado com sucesso!");
+      // Atualizar os dados originais após salvar com sucesso
+      setOriginalProfileData(profileData);
+      
+      // Fechar o dialog e mostrar mensagem de sucesso
+      setShowSaveConfirmDialog(false);
+      toast.success(`✅ ${Object.keys(changedFields).length} campo(s) atualizado(s) com sucesso!`);
+      
     } catch (error: any) {
       console.error("Erro detalhado:", error);
       
@@ -631,40 +709,57 @@ export default function ProfileSettings() {
       <AlertDialog open={showSaveConfirmDialog} onOpenChange={setShowSaveConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar alterações?</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar alterações</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está prestes a salvar as seguintes alterações no seu perfil:
-              <ul className="mt-3 space-y-1 text-sm">
-                <li className="flex items-center gap-2">
-                  <Building2 className="h-3 w-3" />
-                  <strong>Nome da Empresa:</strong> {profileData.nomeEmpresa}
-                </li>
-                {profileData.telefone && (
-                  <li className="flex items-center gap-2">
-                    <Phone className="h-3 w-3" />
-                    <strong>Telefone:</strong> {profileData.telefone}
-                  </li>
-                )}
-                {profileData.cidade && profileData.estado && (
-                  <li className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3" />
-                    <strong>Endereço:</strong> {profileData.cidade}/{profileData.estado}
-                  </li>
-                )}
-              </ul>
+              {(() => {
+                const changes = getChangedFields();
+                const changedCount = Object.keys(changes).length;
+                
+                if (changedCount === 0) {
+                  return "Nenhuma alteração foi detectada.";
+                }
+                
+                return (
+                  <div className="space-y-3 mt-4">
+                    <p className="font-medium text-sm">
+                      {changedCount === 1 
+                        ? "1 campo será atualizado:" 
+                        : `${changedCount} campos serão atualizados:`}
+                    </p>
+                    <ul className="space-y-2 text-sm">
+                      {Object.keys(changes).map((dbFieldName) => (
+                        <li key={dbFieldName} className="flex items-start gap-2">
+                          <span className="text-primary mt-0.5">✓</span>
+                          <div>
+                            <strong>{getFieldLabel(dbFieldName)}</strong>
+                            {changes[dbFieldName] && (
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Novo valor: "{changes[dbFieldName]}"
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                      ℹ️ Apenas os campos listados acima serão atualizados no banco de dados
+                    </p>
+                  </div>
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                setShowSaveConfirmDialog(false);
+              onClick={(e) => {
+                e.preventDefault();
                 handleSave();
               }}
+              disabled={saving}
               className="bg-primary hover:bg-primary/90"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? "Salvando..." : "Sim, salvar"}
+              {saving ? "Salvando..." : "Confirmar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
