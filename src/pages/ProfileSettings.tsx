@@ -119,7 +119,6 @@ export default function ProfileSettings() {
         .update({
           studio_name: profileData.nomeEmpresa.trim(),
           phone_raw: profileData.telefone || null,
-          phone_normalized: normalizePhone(profileData.telefone),
           address_cep: profileData.cep || null,
           address_street: profileData.logradouro || null,
           address_number: profileData.numero || null,
