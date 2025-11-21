@@ -1,14 +1,21 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CreditCard } from "lucide-react";
+import { AlertTriangle, CreditCard, LogOut } from "lucide-react";
 
 export const SubscriptionBlocker = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { data: subscription, isLoading } = useSubscriptionStatus();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   useEffect(() => {
     // Se bloqueado, redirecionar para página de pagamento
@@ -56,7 +63,17 @@ export const SubscriptionBlocker = ({ children }: { children: React.ReactNode })
   // Se bloqueado, mostrar página de bloqueio
   if (subscription?.isBlocked) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+      <div className="min-h-screen gradient-hero flex items-center justify-center p-4 relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="absolute top-4 right-4 gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Sair
+        </Button>
+        
         <Card className="max-w-2xl w-full shadow-card">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
