@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, User, Mail, Phone, Building2, Camera, Trash2 } from "lucide-react";
+import { Save, User, Mail, Phone, Building2, Camera, Trash2, FileText, MapPin } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import InputMask from "react-input-mask";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,14 +37,23 @@ export default function ProfileSettings() {
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "perfil");
   const [profileData, setProfileData] = useState({
     nomeEmpresa: "",
+    cpfCnpj: "",
     email: "",
     telefone: "",
     metodoPagamento: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
   });
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSaveConfirmDialog, setShowSaveConfirmDialog] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   const { data: avatarUrl } = useAvatarUrl(avatarPath);
   const uploadAvatar = useUploadAvatar();
@@ -71,9 +82,17 @@ export default function ProfileSettings() {
       } else if (data) {
         setProfileData({
           nomeEmpresa: data.studio_name || "",
+          cpfCnpj: data.cpf_cnpj || "",
           email: data.email || user.email || "",
           telefone: data.phone_raw || "",
-          metodoPagamento: "", // This field doesn't exist in DB yet
+          metodoPagamento: "",
+          cep: data.address_cep || "",
+          logradouro: data.address_street || "",
+          numero: data.address_number || "",
+          complemento: data.address_complement || "",
+          bairro: data.address_neighborhood || "",
+          cidade: data.address_city || "",
+          estado: data.address_state || "",
         });
         setAvatarPath(data.avatar_url || null);
       }
@@ -101,6 +120,13 @@ export default function ProfileSettings() {
           studio_name: profileData.nomeEmpresa.trim(),
           phone_raw: profileData.telefone || null,
           phone_normalized: normalizePhone(profileData.telefone),
+          address_cep: profileData.cep || null,
+          address_street: profileData.logradouro || null,
+          address_number: profileData.numero || null,
+          address_complement: profileData.complemento || null,
+          address_neighborhood: profileData.bairro || null,
+          address_city: profileData.cidade || null,
+          address_state: profileData.estado || null,
         })
         .eq('id', user.id);
       
@@ -135,8 +161,8 @@ export default function ProfileSettings() {
       .slice(0, 2);
   };
 
-  const normalizePhone = (phone: string): string => {
-    if (!phone) return "";
+  const normalizePhone = (phone: string): string | null => {
+    if (!phone) return null;
     
     // Remove tudo que não for dígito
     let normalized = phone.replace(/\D/g, '');
@@ -150,6 +176,52 @@ export default function ProfileSettings() {
     }
     
     return normalized;
+  };
+
+  const formatCpfCnpj = (value: string): string => {
+    if (!value) return "";
+    const clean = value.replace(/\D/g, '');
+    
+    if (clean.length === 11) {
+      return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (clean.length === 14) {
+      return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    }
+    
+    return value;
+  };
+
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    
+    if (cleanCep.length !== 8) return;
+    
+    setLoadingCep(true);
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      
+      setProfileData(prev => ({
+        ...prev,
+        logradouro: data.logradouro || prev.logradouro,
+        bairro: data.bairro || prev.bairro,
+        cidade: data.localidade || prev.cidade,
+        estado: data.uf || prev.estado,
+      }));
+      
+      toast.success("Endereço encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP");
+    } finally {
+      setLoadingCep(false);
+    }
   };
 
   const handleCropComplete = async (croppedFile: File) => {
@@ -284,6 +356,50 @@ export default function ProfileSettings() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="telefone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Telefone / WhatsApp
+                </Label>
+                <InputMask
+                  mask="(99) 99999-9999"
+                  value={profileData.telefone}
+                  onChange={(e) =>
+                    setProfileData({ ...profileData, telefone: e.target.value })
+                  }
+                  disabled={saving}
+                >
+                  {(inputProps: any) => (
+                    <Input
+                      {...inputProps}
+                      id="telefone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                    />
+                  )}
+                </InputMask>
+                <p className="text-xs text-muted-foreground">
+                  Este número será usado nas mensagens automáticas do WhatsApp
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpfCnpj" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  CPF/CNPJ
+                </Label>
+                <Input
+                  id="cpfCnpj"
+                  value={formatCpfCnpj(profileData.cpfCnpj)}
+                  disabled
+                  className="bg-muted cursor-not-allowed"
+                  placeholder="Não cadastrado"
+                />
+                <p className="text-xs text-muted-foreground">
+                  🔒 O CPF/CNPJ não pode ser alterado. Entre em contato com o suporte se necessário.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
                   E-mail
@@ -300,24 +416,142 @@ export default function ProfileSettings() {
                   📧 O e-mail não pode ser alterado aqui. Entre em contato com o suporte se precisar mudar.
                 </p>
               </div>
+            </CardContent>
+          </Card>
 
+          {/* Card de Endereço */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Endereço
+              </CardTitle>
+              <CardDescription>
+                Dados opcionais do seu estúdio (usado para documentos e notas fiscais)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cep">CEP</Label>
+                  <InputMask
+                    mask="99999-999"
+                    value={profileData.cep}
+                    onChange={(e) => setProfileData({ ...profileData, cep: e.target.value })}
+                    onBlur={(e) => handleCepBlur(e.target.value)}
+                    disabled={saving}
+                  >
+                    {(inputProps: any) => (
+                      <Input
+                        {...inputProps}
+                        id="cep"
+                        placeholder="00000-000"
+                      />
+                    )}
+                  </InputMask>
+                  {loadingCep && (
+                    <p className="text-xs text-muted-foreground">🔍 Buscando endereço...</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número</Label>
+                  <Input
+                    id="numero"
+                    value={profileData.numero}
+                    onChange={(e) => setProfileData({ ...profileData, numero: e.target.value })}
+                    placeholder="123"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="telefone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Telefone / WhatsApp
-                </Label>
+                <Label htmlFor="logradouro">Logradouro/Rua</Label>
                 <Input
-                  id="telefone"
-                  value={profileData.telefone}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, telefone: e.target.value })
-                  }
-                  placeholder="(00) 00000-0000"
+                  id="logradouro"
+                  value={profileData.logradouro}
+                  onChange={(e) => setProfileData({ ...profileData, logradouro: e.target.value })}
+                  placeholder="Rua das Flores"
                   disabled={saving}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Este número será usado nas mensagens automáticas do WhatsApp
-                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="complemento">Complemento</Label>
+                <Input
+                  id="complemento"
+                  value={profileData.complemento}
+                  onChange={(e) => setProfileData({ ...profileData, complemento: e.target.value })}
+                  placeholder="Apto 101, Bloco A, Sala 5..."
+                  disabled={saving}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bairro">Bairro</Label>
+                  <Input
+                    id="bairro"
+                    value={profileData.bairro}
+                    onChange={(e) => setProfileData({ ...profileData, bairro: e.target.value })}
+                    placeholder="Centro"
+                    disabled={saving}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    value={profileData.cidade}
+                    onChange={(e) => setProfileData({ ...profileData, cidade: e.target.value })}
+                    placeholder="São Paulo"
+                    disabled={saving}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="estado">Estado</Label>
+                  <Select
+                    value={profileData.estado}
+                    onValueChange={(value) => setProfileData({ ...profileData, estado: value })}
+                    disabled={saving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="UF" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AC">AC</SelectItem>
+                      <SelectItem value="AL">AL</SelectItem>
+                      <SelectItem value="AP">AP</SelectItem>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="BA">BA</SelectItem>
+                      <SelectItem value="CE">CE</SelectItem>
+                      <SelectItem value="DF">DF</SelectItem>
+                      <SelectItem value="ES">ES</SelectItem>
+                      <SelectItem value="GO">GO</SelectItem>
+                      <SelectItem value="MA">MA</SelectItem>
+                      <SelectItem value="MT">MT</SelectItem>
+                      <SelectItem value="MS">MS</SelectItem>
+                      <SelectItem value="MG">MG</SelectItem>
+                      <SelectItem value="PA">PA</SelectItem>
+                      <SelectItem value="PB">PB</SelectItem>
+                      <SelectItem value="PR">PR</SelectItem>
+                      <SelectItem value="PE">PE</SelectItem>
+                      <SelectItem value="PI">PI</SelectItem>
+                      <SelectItem value="RJ">RJ</SelectItem>
+                      <SelectItem value="RN">RN</SelectItem>
+                      <SelectItem value="RS">RS</SelectItem>
+                      <SelectItem value="RO">RO</SelectItem>
+                      <SelectItem value="RR">RR</SelectItem>
+                      <SelectItem value="SC">SC</SelectItem>
+                      <SelectItem value="SP">SP</SelectItem>
+                      <SelectItem value="SE">SE</SelectItem>
+                      <SelectItem value="TO">TO</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -410,6 +644,12 @@ export default function ProfileSettings() {
                   <li className="flex items-center gap-2">
                     <Phone className="h-3 w-3" />
                     <strong>Telefone:</strong> {profileData.telefone}
+                  </li>
+                )}
+                {profileData.cidade && profileData.estado && (
+                  <li className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3" />
+                    <strong>Endereço:</strong> {profileData.cidade}/{profileData.estado}
                   </li>
                 )}
               </ul>
