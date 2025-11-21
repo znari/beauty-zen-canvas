@@ -286,6 +286,48 @@ export type Database = {
           },
         ]
       }
+      plan_definitions: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_anamneses: number | null
+          max_clients: number | null
+          max_professionals: number | null
+          max_storage_gb: number | null
+          name: string
+          price_monthly: number
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id: string
+          is_active?: boolean | null
+          max_anamneses?: number | null
+          max_clients?: number | null
+          max_professionals?: number | null
+          max_storage_gb?: number | null
+          name: string
+          price_monthly: number
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_anamneses?: number | null
+          max_clients?: number | null
+          max_professionals?: number | null
+          max_storage_gb?: number | null
+          name?: string
+          price_monthly?: number
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           active: boolean | null
@@ -345,11 +387,17 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          last_payment_date: string | null
           metadata: Json | null
           phone_normalized: string | null
           phone_raw: string | null
           plan: string | null
+          professionals_count: number | null
+          storage_used_mb: number | null
           studio_name: string | null
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
+          subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string | null
         }
@@ -360,11 +408,17 @@ export type Database = {
           email?: string | null
           full_name: string
           id: string
+          last_payment_date?: string | null
           metadata?: Json | null
           phone_normalized?: string | null
           phone_raw?: string | null
           plan?: string | null
+          professionals_count?: number | null
+          storage_used_mb?: number | null
           studio_name?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }
@@ -375,11 +429,17 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          last_payment_date?: string | null
           metadata?: Json | null
           phone_normalized?: string | null
           phone_raw?: string | null
           plan?: string | null
+          professionals_count?: number | null
+          storage_used_mb?: number | null
           studio_name?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string | null
         }

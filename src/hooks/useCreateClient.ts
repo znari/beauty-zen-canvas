@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCanCreateResource } from "./useCanCreateResource";
+import { toast } from "sonner";
 
 export interface CreateClientData {
   nome?: string;
@@ -18,9 +20,15 @@ export interface CreateClientData {
 
 export const useCreateClient = () => {
   const queryClient = useQueryClient();
+  const { canCreate } = useCanCreateResource();
   
   return useMutation({
     mutationFn: async (data: CreateClientData) => {
+      // Verificar limites ANTES de criar
+      if (!canCreate('client')) {
+        throw new Error("Limite de clientes atingido");
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -72,6 +80,15 @@ export const useCreateClient = () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      toast.success("Cliente cadastrado com sucesso!");
+    },
+    onError: (error: Error) => {
+      if (error.message !== "Limite de clientes atingido") {
+        toast.error("Erro ao cadastrar cliente", {
+          description: error.message,
+        });
+      }
     },
   });
 };
