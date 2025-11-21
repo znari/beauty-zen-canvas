@@ -42,6 +42,7 @@ export default function ProfileSettings() {
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showSaveConfirmDialog, setShowSaveConfirmDialog] = useState(false);
 
   const { data: avatarUrl } = useAvatarUrl(avatarPath);
   const uploadAvatar = useUploadAvatar();
@@ -85,25 +86,41 @@ export default function ProfileSettings() {
   const handleSave = async () => {
     if (!user) return;
     
+    // Validações
+    if (!profileData.nomeEmpresa?.trim()) {
+      toast.error("O nome da empresa é obrigatório");
+      return;
+    }
+    
     setSaving(true);
     
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          studio_name: profileData.nomeEmpresa,
-          phone_raw: profileData.telefone,
+          studio_name: profileData.nomeEmpresa.trim(),
+          phone_raw: profileData.telefone || null,
           phone_normalized: normalizePhone(profileData.telefone),
-          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro do Supabase:", error);
+        throw new Error(error.message);
+      }
       
       toast.success("Perfil atualizado com sucesso!");
     } catch (error: any) {
-      toast.error("Erro ao salvar perfil");
       console.error("Erro detalhado:", error);
+      
+      // Mensagens de erro mais específicas
+      if (error.message?.includes('unique')) {
+        toast.error("Já existe outro registro com esses dados");
+      } else if (error.message?.includes('foreign key')) {
+        toast.error("Erro de referência no banco de dados");
+      } else {
+        toast.error(`Erro ao salvar perfil: ${error.message || 'Erro desconhecido'}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -163,7 +180,7 @@ export default function ProfileSettings() {
                 Gerencie as informações do seu estúdio
               </p>
             </div>
-            <Button onClick={handleSave} className="shadow-lg" disabled={saving || loading}>
+            <Button onClick={() => setShowSaveConfirmDialog(true)} className="shadow-lg" disabled={saving || loading}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -262,6 +279,7 @@ export default function ProfileSettings() {
                     setProfileData({ ...profileData, nomeEmpresa: e.target.value })
                   }
                   placeholder="Digite o nome do seu estúdio"
+                  disabled={saving}
                 />
               </div>
 
@@ -274,11 +292,13 @@ export default function ProfileSettings() {
                   id="email"
                   type="email"
                   value={profileData.email}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, email: e.target.value })
-                  }
+                  disabled
+                  className="bg-muted cursor-not-allowed"
                   placeholder="seu@email.com"
                 />
+                <p className="text-xs text-muted-foreground">
+                  📧 O e-mail não pode ser alterado aqui. Entre em contato com o suporte se precisar mudar.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -293,6 +313,7 @@ export default function ProfileSettings() {
                     setProfileData({ ...profileData, telefone: e.target.value })
                   }
                   placeholder="(00) 00000-0000"
+                  disabled={saving}
                 />
                 <p className="text-xs text-muted-foreground">
                   Este número será usado nas mensagens automáticas do WhatsApp
@@ -301,7 +322,7 @@ export default function ProfileSettings() {
             </CardContent>
           </Card>
 
-          {/* Payment Information */}
+          {/* TEMPORARIAMENTE DESABILITADO - será substituído pela integração de pagamento
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Método de Pagamento</CardTitle>
@@ -323,13 +344,14 @@ export default function ProfileSettings() {
               </div>
             </CardContent>
           </Card>
+          */}
 
               {/* Action Buttons */}
               <div className="flex justify-between pt-6">
                 <Button variant="outline" onClick={() => navigate("/dashboard")}>
                   Voltar ao Dashboard
                 </Button>
-                <Button onClick={handleSave} size="lg" disabled={saving || loading}>
+                <Button onClick={() => setShowSaveConfirmDialog(true)} size="lg" disabled={saving || loading}>
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
@@ -367,6 +389,43 @@ export default function ProfileSettings() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteAvatar.isPending ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert Dialog para confirmar salvamento */}
+      <AlertDialog open={showSaveConfirmDialog} onOpenChange={setShowSaveConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a salvar as seguintes alterações no seu perfil:
+              <ul className="mt-3 space-y-1 text-sm">
+                <li className="flex items-center gap-2">
+                  <Building2 className="h-3 w-3" />
+                  <strong>Nome da Empresa:</strong> {profileData.nomeEmpresa}
+                </li>
+                {profileData.telefone && (
+                  <li className="flex items-center gap-2">
+                    <Phone className="h-3 w-3" />
+                    <strong>Telefone:</strong> {profileData.telefone}
+                  </li>
+                )}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowSaveConfirmDialog(false);
+                handleSave();
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Salvando..." : "Sim, salvar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
