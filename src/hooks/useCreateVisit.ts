@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCanCreateResource } from "./useCanCreateResource";
+import { toast } from "sonner";
 
 interface CreateVisitData {
   clientId: string;
@@ -16,9 +18,15 @@ interface CreateVisitData {
 
 export const useCreateVisit = () => {
   const queryClient = useQueryClient();
+  const { canCreate } = useCanCreateResource();
 
   return useMutation({
     mutationFn: async (data: CreateVisitData) => {
+      // Verificar limites ANTES de criar
+      if (!canCreate('anamnesis')) {
+        throw new Error("Limite de fichas atingido");
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
 
@@ -51,6 +59,14 @@ export const useCreateVisit = () => {
       queryClient.invalidateQueries({ queryKey: ["client-profile"] });
       queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+    },
+    onError: (error: Error) => {
+      if (error.message !== "Limite de fichas atingido") {
+        toast.error("Erro ao criar visita", {
+          description: error.message,
+        });
+      }
     },
   });
 };

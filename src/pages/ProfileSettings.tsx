@@ -4,15 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, User, Mail, Phone, Building2, Camera, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUploadAvatar } from "@/hooks/useUploadAvatar";
 import { useDeleteAvatar } from "@/hooks/useDeleteAvatar";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
+import { PlansManagement } from "@/components/PlansManagement";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,9 +28,11 @@ import {
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "perfil");
   const [profileData, setProfileData] = useState({
     nomeEmpresa: "",
     email: "",
@@ -42,6 +46,12 @@ export default function ProfileSettings() {
   const { data: avatarUrl } = useAvatarUrl(avatarPath);
   const uploadAvatar = useUploadAvatar();
   const deleteAvatar = useDeleteAvatar();
+
+  // Sincronizar tab com URL
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -162,13 +172,19 @@ export default function ProfileSettings() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="perfil">Perfil</TabsTrigger>
+              <TabsTrigger value="pagamento">Plano e Pagamento</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="perfil" className="space-y-6">
           {/* Avatar Card */}
           <Card className="shadow-card">
             <CardContent className="pt-6">
@@ -308,17 +324,22 @@ export default function ProfileSettings() {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between pt-6">
-            <Button variant="outline" onClick={() => navigate("/dashboard")}>
-              Voltar ao Dashboard
-            </Button>
-            <Button onClick={handleSave} size="lg" disabled={saving || loading}>
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? "Salvando..." : "Salvar Alterações"}
-            </Button>
-          </div>
-        </div>
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-6">
+                <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                  Voltar ao Dashboard
+                </Button>
+                <Button onClick={handleSave} size="lg" disabled={saving || loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pagamento">
+              <PlansManagement />
+            </TabsContent>
+          </Tabs>
         )}
       </main>
 

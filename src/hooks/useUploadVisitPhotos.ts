@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCanCreateResource } from "./useCanCreateResource";
+import { toast } from "sonner";
 
 interface UploadPhotoData {
   visitId: string;
@@ -9,9 +11,15 @@ interface UploadPhotoData {
 
 export const useUploadVisitPhotos = () => {
   const queryClient = useQueryClient();
+  const { canCreate } = useCanCreateResource();
 
   return useMutation({
     mutationFn: async ({ visitId, file, type }: UploadPhotoData) => {
+      // Verificar limites de armazenamento
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (!canCreate('photo', fileSizeMB)) {
+        throw new Error("Limite de armazenamento atingido");
+      }
       // Gerar nome único para o arquivo
       const fileExt = file.name.split('.').pop();
       const fileName = `${visitId}/${type}_${Date.now()}.${fileExt}`;
@@ -66,6 +74,14 @@ export const useUploadVisitPhotos = () => {
       // Invalidar cache do perfil do cliente
       queryClient.invalidateQueries({ queryKey: ["client-profile"] });
       queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+    },
+    onError: (error: Error) => {
+      if (error.message !== "Limite de armazenamento atingido") {
+        toast.error("Erro ao fazer upload da foto", {
+          description: error.message,
+        });
+      }
     }
   });
 };
