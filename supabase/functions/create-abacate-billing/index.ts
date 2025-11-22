@@ -93,12 +93,12 @@ serve(async (req) => {
     const amountInCents = Math.round(planDef.price_monthly * 100);
     
     const billingData = {
-      frequency: "ONE_TIME",
+      frequency: "MULTIPLE_PAYMENTS",
       methods: ["PIX"],
       products: [{
         externalId: planDef.id,
         name: `FichaZen ${planDef.name}`,
-        description: `Plano ${planDef.name} - Assinatura mensal`,
+        description: `Assinatura mensal do plano ${planDef.name}`,
         quantity: 1,
         price: amountInCents
       }],
@@ -110,12 +110,18 @@ serve(async (req) => {
         email: profile.email,
         taxId: profile.cpf_cnpj
       },
+      recurrence: {
+        interval: "MONTHLY",
+        maxPayments: 12,
+        startDate: new Date().toISOString()
+      },
       allowCoupons: false,
       externalId: `fichazen_${user.id}_${Date.now()}`,
       metadata: {
         userId: user.id,
         planId: planId,
-        environment: 'production'
+        environment: 'production',
+        subscriptionType: 'monthly'
       }
     };
 
@@ -150,6 +156,7 @@ serve(async (req) => {
         plan_id: planId,
         amount: amountInCents,
         status: 'pending',
+        frequency: 'MONTHLY',
         customer_data: {
           name: profile.full_name,
           email: profile.email,

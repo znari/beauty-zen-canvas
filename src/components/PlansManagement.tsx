@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import { celebratePayment } from "@/lib/confetti";
 
 export const PlansManagement = () => {
+  const navigate = useNavigate();
   const { data: subscription, isLoading } = useSubscriptionStatus();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -190,6 +192,18 @@ export const PlansManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Botão para Histórico de Pagamentos */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/pagamentos')}
+          className="gap-2"
+        >
+          <History className="h-4 w-4" />
+          Ver Histórico de Pagamentos
+        </Button>
+      </div>
 
       {/* Planos Disponíveis */}
       <div>
