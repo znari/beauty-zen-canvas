@@ -109,13 +109,20 @@ serve(async (req) => {
     console.log('📨 Webhook recebido do Abacate Pay');
     console.log('📊 Dados:', JSON.stringify(webhookData, null, 2));
 
-    // Extrair dados do webhook
-    const billId = webhookData.data?.id;
-    const status = webhookData.data?.status;
+    // Extrair dados do webhook (estrutura correta: data.billing.id e data.billing.status)
+    const billId = webhookData.data?.billing?.id;
+    const status = webhookData.data?.billing?.status;
     
     if (!billId) {
       console.error('❌ Bill ID não encontrado no webhook');
+      console.error('📊 Estrutura recebida:', JSON.stringify(webhookData, null, 2));
       throw new Error('Bill ID não encontrado no webhook');
+    }
+
+    if (!status) {
+      console.error('❌ Status não encontrado no webhook');
+      console.error('📊 Estrutura recebida:', JSON.stringify(webhookData, null, 2));
+      throw new Error('Status não encontrado no webhook');
     }
 
     console.log(`🔍 Processando bill_id: ${billId}, status: ${status}`);
@@ -163,7 +170,13 @@ serve(async (req) => {
       .update({
         status: newStatus,
         paid_at: paidAt,
-        metadata: webhookData.data,
+        metadata: {
+          billing: webhookData.data?.billing,
+          payment: webhookData.data?.payment,
+          event: webhookData.event,
+          webhookId: webhookData.id,
+          receivedAt: new Date().toISOString()
+        },
         updated_at: new Date().toISOString()
       })
       .eq('id', transaction.id);
