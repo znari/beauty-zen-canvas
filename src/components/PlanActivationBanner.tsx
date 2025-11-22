@@ -1,4 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { usePlanActivationDetector } from "@/hooks/usePlanActivationDetector";
 
@@ -7,14 +8,27 @@ export const PlanActivationBanner = () => {
 
   if (!isWaitingActivation) return null;
 
+  const handleClearAndReload = () => {
+    localStorage.removeItem('pendingPlanActivation');
+    window.location.reload();
+  };
+
   return (
     <Alert className="border-blue-200 bg-blue-50">
       <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
       <AlertTitle className="text-blue-900 font-semibold">
         Processando ativação do plano...
       </AlertTitle>
-      <AlertDescription className="text-blue-800">
-        Aguarde enquanto confirmamos seu pagamento. Isso pode levar alguns segundos.
+      <AlertDescription className="text-blue-800 flex items-center justify-between">
+        <span>Aguarde enquanto confirmamos seu pagamento. Isso pode levar alguns segundos.</span>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleClearAndReload}
+          className="ml-4"
+        >
+          Limpar e Recarregar
+        </Button>
       </AlertDescription>
     </Alert>
   );
