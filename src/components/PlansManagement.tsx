@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,12 +6,17 @@ import { Progress } from "@/components/ui/progress";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCreatePayment } from "@/hooks/useCreatePayment";
+import { toast } from "sonner";
 
 export const PlansManagement = () => {
   const { data: subscription, isLoading } = useSubscriptionStatus();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const createPayment = useCreatePayment();
+  const queryClient = useQueryClient();
 
   // Buscar definições de planos
   const { data: planDefinitions = [] } = useQuery({
@@ -27,6 +32,44 @@ export const PlansManagement = () => {
       return data;
     },
   });
+
+  // Detectar retorno do pagamento
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      toast.success('✅ Pagamento realizado com sucesso! Seu plano será ativado em breve.');
+      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      window.history.replaceState({}, '', '/configuracoes/perfil');
+    } else if (paymentStatus === 'completed') {
+      toast.info('Processando pagamento...');
+      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      window.history.replaceState({}, '', '/configuracoes/perfil');
+    }
+  }, [queryClient]);
+
+  const handleChoosePlan = async (planId: string) => {
+    if (!subscription) return;
+    
+    setProcessingPayment(true);
+    setSelectedPlan(planId);
+    
+    try {
+      const result = await createPayment.mutateAsync({ planId });
+      
+      if (result.success && result.paymentUrl) {
+        window.open(result.paymentUrl, '_blank');
+        toast.success('🎉 Redirecionando para o pagamento...');
+        localStorage.setItem('lastTransactionId', result.transactionId || '');
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setProcessingPayment(false);
+      setSelectedPlan(null);
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner message="Carregando informações do plano..." />;
@@ -210,10 +253,14 @@ export const PlansManagement = () => {
                     <Button
                       variant={isCurrent ? "outline" : "cta"}
                       className="w-full"
-                      disabled={isCurrent}
-                      onClick={() => setSelectedPlan(plan.id)}
+                      disabled={isCurrent || processingPayment}
+                      onClick={() => handleChoosePlan(plan.id)}
                     >
-                      {isCurrent ? 'Plano Atual' : 'Escolher Plano'}
+                      {processingPayment && selectedPlan === plan.id 
+                        ? 'Processando...' 
+                        : isCurrent 
+                          ? 'Plano Atual' 
+                          : 'Escolher Plano'}
                     </Button>
                   )}
                 </CardContent>
@@ -223,30 +270,6 @@ export const PlansManagement = () => {
         </div>
       </div>
 
-      {/* Nota sobre pagamento */}
-      {selectedPlan && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <p className="text-sm text-blue-900">
-              ℹ️ <strong>Sistema de pagamento em desenvolvimento:</strong> Em breve você poderá assinar diretamente pela plataforma. 
-              Por enquanto, entre em contato conosco pelo WhatsApp para ativar seu plano.
-            </p>
-            <Button
-              variant="default"
-              className="mt-4"
-              asChild
-            >
-              <a 
-                href={`https://wa.me/5511999999999?text=Quero%20assinar%20o%20plano%20${selectedPlan}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Falar com suporte
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

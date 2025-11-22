@@ -416,6 +416,14 @@ export default function ProfileSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {!profileData.cpfCnpj && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-sm text-yellow-900 dark:text-yellow-200">
+                    ⚠️ <strong>Complete seu CPF/CNPJ</strong> para poder assinar um plano
+                  </p>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="nomeEmpresa" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
