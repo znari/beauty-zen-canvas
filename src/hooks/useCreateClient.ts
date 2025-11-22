@@ -37,6 +37,15 @@ export const useCreateClient = () => {
         throw new Error("Dados obrigatórios faltando");
       }
 
+      // ✨ Verificar se é o primeiro cliente
+      const { data: statsData } = await supabase
+        .from("v_dashboard_stats")
+        .select("total_clients")
+        .eq("professional_id", user.id)
+        .maybeSingle();
+      
+      const isFirstClient = !statsData || statsData.total_clients === 0;
+
       // 1. Criar cliente
       const { data: client, error: clientError } = await supabase
         .from("clients")
@@ -73,7 +82,7 @@ export const useCreateClient = () => {
 
       if (visitError) throw visitError;
 
-      return { client, visit };
+      return { client, visit, isFirstClient };
     },
     onSuccess: () => {
       // Invalida cache para forçar re-fetch
