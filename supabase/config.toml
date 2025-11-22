@@ -3,5 +3,8 @@ project_id = "ldjgujvxbkclpijtgsdm"
 [functions.send-visit-reminders]
 verify_jwt = false
 
+[functions.send-renewal-reminders]
+verify_jwt = false
+
 [functions.abacate-webhook]
 verify_jwt = false

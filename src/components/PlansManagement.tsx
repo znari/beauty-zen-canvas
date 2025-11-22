@@ -123,6 +123,73 @@ export const PlansManagement = () => {
     }
   };
 
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'active':
+        return {
+          text: 'Ativo ✅',
+          color: 'bg-green-50 border-green-200 text-green-900',
+          icon: '✅'
+        };
+      case 'trialing':
+        return {
+          text: 'Teste Grátis 🎁',
+          color: 'bg-blue-50 border-blue-200 text-blue-900',
+          icon: '🎁'
+        };
+      case 'payment_required':
+        return {
+          text: 'Pagamento Pendente ⚠️',
+          color: 'bg-yellow-50 border-yellow-200 text-yellow-900',
+          icon: '⚠️'
+        };
+      case 'expired':
+        return {
+          text: 'Assinatura Expirada ⏰',
+          color: 'bg-red-50 border-red-200 text-red-900',
+          icon: '⏰'
+        };
+      case 'cancelled':
+        return {
+          text: 'Cancelada ❌',
+          color: 'bg-gray-50 border-gray-200 text-gray-900',
+          icon: '❌'
+        };
+      default:
+        return {
+          text: 'Status Desconhecido',
+          color: 'bg-gray-50 border-gray-200 text-gray-900',
+          icon: '❓'
+        };
+    }
+  };
+
+  const handleRenewSubscription = async (currentPlanId: string) => {
+    if (!subscription) return;
+    
+    setProcessingPayment(true);
+    
+    try {
+      localStorage.setItem('pendingPlanActivation', JSON.stringify({
+        planId: currentPlanId,
+        timestamp: Date.now(),
+        status: 'renewal'
+      }));
+      
+      const result = await createPayment.mutateAsync({ planId: currentPlanId });
+      
+      if (result.success && result.paymentUrl) {
+        window.open(result.paymentUrl, '_blank');
+        toast.success('🔄 Redirecionando para renovação...');
+      }
+    } catch (error) {
+      console.error(error);
+      localStorage.removeItem('pendingPlanActivation');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Banner de ativação pendente */}
@@ -137,6 +204,32 @@ export const PlansManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Status do Pagamento */}
+          <div>
+            <span className="text-sm font-medium mb-2 block">Status do Pagamento:</span>
+            {(() => {
+              const statusInfo = getStatusDisplay(subscription.status);
+              return (
+                <div className={`${statusInfo.color} border rounded-lg p-4 flex items-center gap-3`}>
+                  <span className="text-2xl">{statusInfo.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-semibold">{statusInfo.text}</p>
+                    {subscription.status === 'active' && subscription.daysUntilRenewal > 0 && (
+                      <p className="text-sm mt-1">
+                        Renovação em {subscription.daysUntilRenewal} dia(s)
+                      </p>
+                    )}
+                    {subscription.isNearExpiry && (
+                      <p className="text-sm mt-1 font-semibold">
+                        ⚠️ Sua assinatura está próxima do vencimento!
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Plano Atual */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -146,21 +239,82 @@ export const PlansManagement = () => {
                  planDefinitions.find((p: any) => p.id === subscription.plan)?.name || subscription.plan}
               </Badge>
             </div>
-            
-            {subscription.isTrialActive && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-yellow-900">
-                    Teste grátis expira em {subscription.daysUntilExpiry} dia(s)
-                  </p>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Escolha um plano abaixo para continuar usando o FichaZen após o período de teste
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Informações de Pagamento */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            {/* Último Pagamento */}
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Último Pagamento</p>
+              <p className="font-semibold">
+                {subscription.lastPaymentDate 
+                  ? new Date(subscription.lastPaymentDate).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  : 'Nenhum pagamento realizado'
+                }
+              </p>
+            </div>
+
+            {/* Próxima Renovação */}
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Próxima Renovação</p>
+              <p className="font-semibold">
+                {subscription.subscriptionEndsAt 
+                  ? new Date(subscription.subscriptionEndsAt).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  : 'Não aplicável'
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* Botão de Renovação */}
+          {subscription.status !== 'trialing' && subscription.plan !== 'free' && (
+            <div>
+              <Button
+                variant="cta"
+                className="w-full gap-2"
+                onClick={() => handleRenewSubscription(subscription.plan)}
+                disabled={processingPayment}
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <Crown className="h-4 w-4" />
+                    Renovar Assinatura Agora
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Renove antecipadamente e ganhe mais 30 dias de acesso
+              </p>
+            </div>
+          )}
+
+          {/* Aviso de Trial */}
+          {subscription.isTrialActive && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-yellow-900">
+                  Teste grátis expira em {subscription.daysUntilExpiry} dia(s)
+                </p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Escolha um plano abaixo para continuar usando o FichaZen
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Uso de Recursos */}
           {subscription.limits.maxClients !== null && (

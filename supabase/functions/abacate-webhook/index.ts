@@ -197,34 +197,36 @@ serve(async (req) => {
     if (newStatus === 'paid') {
       console.log(`🎉 Pagamento confirmado! Ativando plano ${transaction.plan_id}`);
       
-      // Calcular data de expiração baseada na frequência
-      const subscriptionEndsAt = new Date();
-      const frequency = transaction.frequency || 'ONE_TIME';
+      const now = new Date();
       
-      switch (frequency) {
-        case 'MONTHLY':
-          subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 1);
-          break;
-        case 'QUARTERLY':
-          subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 3);
-          break;
-        case 'YEARLY':
-          subscriptionEndsAt.setFullYear(subscriptionEndsAt.getFullYear() + 1);
-          break;
-        default: // ONE_TIME
-          subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+      // Buscar perfil para verificar se já tem subscription_started_at
+      const { data: currentProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('subscription_started_at')
+        .eq('id', transaction.professional_id)
+        .single();
+      
+      // Calcular data de expiração (30 dias a partir de agora)
+      const subscriptionEndsAt = new Date(now);
+      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+
+      const updateData: any = {
+        plan: transaction.plan_id,
+        subscription_status: 'active',
+        last_payment_date: now.toISOString(),
+        subscription_ends_at: subscriptionEndsAt.toISOString(),
+        trial_ends_at: null,
+        updated_at: now.toISOString()
+      };
+
+      // Só definir started_at se for o primeiro pagamento
+      if (!currentProfile?.subscription_started_at) {
+        updateData.subscription_started_at = now.toISOString();
       }
 
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({
-          plan: transaction.plan_id,
-          subscription_status: frequency === 'ONE_TIME' ? 'trial' : 'active',
-          subscription_started_at: new Date().toISOString(),
-          last_payment_date: new Date().toISOString(),
-          subscription_ends_at: subscriptionEndsAt.toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', transaction.professional_id);
 
       if (profileError) {
@@ -233,8 +235,8 @@ serve(async (req) => {
       }
 
       console.log(`🎉 Plano ${transaction.plan_id} ativado para usuário ${transaction.professional_id}`);
+      console.log(`📅 Último pagamento: ${now.toISOString()}`);
       console.log(`📅 Válido até: ${subscriptionEndsAt.toISOString()}`);
-      console.log(`🔄 Frequência: ${frequency}`);
     }
 
     return new Response(

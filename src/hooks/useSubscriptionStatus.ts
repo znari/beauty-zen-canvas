@@ -15,6 +15,11 @@ export interface SubscriptionStatus {
   isTrialActive: boolean;
   isBlocked: boolean;
   daysUntilExpiry: number;
+  lastPaymentDate: string | null;
+  subscriptionEndsAt: string | null;
+  subscriptionStartedAt: string | null;
+  daysUntilRenewal: number;
+  isNearExpiry: boolean;
   limits: PlanLimits;
   currentUsage: {
     clientsCount: number;
@@ -59,6 +64,17 @@ export const useSubscriptionStatus = () => {
                         profile.subscription_status !== 'active' &&
                         profile.plan === 'free';
 
+      // Calcular dias até renovação
+      const subscriptionEnd = profile.subscription_ends_at 
+        ? new Date(profile.subscription_ends_at) 
+        : null;
+
+      const daysUntilRenewal = subscriptionEnd
+        ? Math.ceil((subscriptionEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      const isNearExpiry = daysUntilRenewal > 0 && daysUntilRenewal <= 5;
+
       // Contar uso atual
       const { count: clientsCount } = await supabase
         .from("clients")
@@ -79,6 +95,11 @@ export const useSubscriptionStatus = () => {
         isTrialActive,
         isBlocked,
         daysUntilExpiry,
+        lastPaymentDate: profile.last_payment_date,
+        subscriptionEndsAt: profile.subscription_ends_at,
+        subscriptionStartedAt: profile.subscription_started_at,
+        daysUntilRenewal,
+        isNearExpiry,
         limits: {
           maxClients: planDef?.max_clients || null,
           maxAnamneses: planDef?.max_anamneses || null,
