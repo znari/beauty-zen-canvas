@@ -15,34 +15,31 @@ serve(async (req) => {
   try {
     console.log('🚀 Iniciando criação de cobrança Abacate Pay');
     
-    // 1. Verificar header de autorização
+    // 1. Verificar e extrair token JWT do header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('❌ Header de autorização não encontrado');
-      throw new Error('Não autenticado - token ausente');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('❌ Header de autorização inválido');
+      throw new Error('Não autenticado - token ausente ou inválido');
     }
 
-    console.log('🔑 Header de autorização encontrado');
+    const token = authHeader.replace('Bearer ', '');
+    console.log('🔑 Token JWT encontrado');
 
-    // 2. Criar cliente Supabase autenticado
-    const supabaseClient = createClient(
+    // 2. Criar cliente admin para validar o token
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
-          headers: { 
-            Authorization: authHeader 
-          } 
-        } 
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 3. Obter usuário autenticado
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // 3. Validar token e obter usuário
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
     if (userError || !user) {
-      console.error('❌ Erro de autenticação:', userError);
-      throw new Error('Não autenticado - sessão inválida');
+      console.error('❌ Token inválido ou expirado:', userError?.message);
+      throw new Error('Não autenticado - sessão inválida ou expirada');
     }
+
+    console.log('✅ Usuário autenticado:', user.id);
 
     console.log('✅ Usuário autenticado:', user.id);
 
@@ -55,8 +52,8 @@ serve(async (req) => {
 
     console.log('📦 Plano solicitado:', planId);
 
-    // 5. Buscar dados do perfil
-    const { data: profile, error: profileError } = await supabaseClient
+    // 5. Buscar dados do perfil (usando admin client)
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -69,8 +66,8 @@ serve(async (req) => {
 
     console.log('👤 Perfil encontrado:', profile.full_name);
 
-    // 6. Buscar definição do plano
-    const { data: planDef, error: planError } = await supabaseClient
+    // 6. Buscar definição do plano (usando admin client)
+    const { data: planDef, error: planError } = await supabaseAdmin
       .from('plan_definitions')
       .select('*')
       .eq('id', planId)
@@ -144,12 +141,7 @@ serve(async (req) => {
 
     console.log('✅ Cobrança criada:', abacateResult.data.id);
 
-    // 10. Salvar transação no banco usando service role
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    // 10. Salvar transação no banco (já usando admin)
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('billing_transactions')
       .insert({
