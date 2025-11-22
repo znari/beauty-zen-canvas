@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle } from "lucide-react";
+import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreatePayment } from "@/hooks/useCreatePayment";
@@ -198,7 +199,9 @@ export const PlansManagement = () => {
                   isCurrent ? 'border-2 border-primary' : ''
                 } ${
                   plan.id === 'ultimate_plus' ? 'opacity-75' : ''
-                }`}
+                } ${
+                  processingPayment ? 'opacity-50' : ''
+                } transition-opacity`}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -256,11 +259,16 @@ export const PlansManagement = () => {
                       disabled={isCurrent || processingPayment}
                       onClick={() => handleChoosePlan(plan.id)}
                     >
-                      {processingPayment && selectedPlan === plan.id 
-                        ? 'Processando...' 
-                        : isCurrent 
-                          ? 'Plano Atual' 
-                          : 'Escolher Plano'}
+                      {processingPayment && selectedPlan === plan.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processando pagamento...
+                        </>
+                      ) : isCurrent ? (
+                        'Plano Atual'
+                      ) : (
+                        'Escolher Plano'
+                      )}
                     </Button>
                   )}
                 </CardContent>
@@ -270,6 +278,7 @@ export const PlansManagement = () => {
         </div>
       </div>
 
+      <PaymentLoadingModal isOpen={processingPayment} />
     </div>
   );
 };
