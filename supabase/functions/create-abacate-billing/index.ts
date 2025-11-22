@@ -1,0 +1,183 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    console.log('🚀 Iniciando criação de cobrança Abacate Pay');
+    
+    // 1. Obter usuário autenticado
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      console.error('❌ Erro de autenticação:', userError);
+      throw new Error('Não autenticado');
+    }
+
+    console.log('✅ Usuário autenticado:', user.id);
+
+    // 2. Receber dados do body
+    const { planId } = await req.json();
+    
+    if (!planId) {
+      throw new Error('planId é obrigatório');
+    }
+
+    console.log('📦 Plano solicitado:', planId);
+
+    // 3. Buscar dados do perfil
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('❌ Erro ao buscar perfil:', profileError);
+      throw new Error('Perfil não encontrado');
+    }
+
+    console.log('👤 Perfil encontrado:', profile.full_name);
+
+    // 4. Buscar definição do plano
+    const { data: planDef, error: planError } = await supabaseClient
+      .from('plan_definitions')
+      .select('*')
+      .eq('id', planId)
+      .single();
+
+    if (planError || !planDef) {
+      console.error('❌ Erro ao buscar plano:', planError);
+      throw new Error('Plano não encontrado');
+    }
+
+    console.log('📋 Plano encontrado:', planDef.name, '- R$', planDef.price_monthly);
+
+    // 5. Validar dados obrigatórios
+    if (!profile.full_name || !profile.email) {
+      throw new Error('Dados incompletos: nome e email são obrigatórios');
+    }
+
+    if (!profile.cpf_cnpj) {
+      throw new Error('CPF/CNPJ não informado. Por favor, atualize seu perfil.');
+    }
+
+    // 6. Preparar dados para o Abacate Pay
+    const amountInCents = Math.round(planDef.price_monthly * 100);
+    
+    const billingData = {
+      frequency: "ONE_TIME",
+      methods: ["PIX"],
+      products: [{
+        externalId: planDef.id,
+        name: `FichaZen ${planDef.name}`,
+        description: `Plano ${planDef.name} - Assinatura mensal`,
+        quantity: 1,
+        price: amountInCents
+      }],
+      returnUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil?payment=success`,
+      completionUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil?payment=completed`,
+      customerId: user.id,
+      customer: {
+        name: profile.full_name,
+        cellphone: profile.phone_raw || "(00) 00000-0000",
+        email: profile.email,
+        taxId: profile.cpf_cnpj
+      },
+      allowCoupons: false,
+      externalId: `fichazen_${user.id}_${Date.now()}`,
+      metadata: {
+        userId: user.id,
+        planId: planId,
+        environment: 'production'
+      }
+    };
+
+    console.log('💳 Criando cobrança no Abacate Pay...');
+
+    // 7. Chamar API do Abacate Pay
+    const abacateResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('ABACATE_PAY_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(billingData)
+    });
+
+    const abacateResult = await abacateResponse.json();
+
+    if (abacateResult.error) {
+      console.error('❌ Erro do Abacate Pay:', abacateResult.error);
+      throw new Error(`Erro do Abacate Pay: ${abacateResult.error}`);
+    }
+
+    console.log('✅ Cobrança criada:', abacateResult.data.id);
+
+    // 8. Salvar transação no banco
+    const { data: transaction, error: transactionError } = await supabaseClient
+      .from('billing_transactions')
+      .insert({
+        professional_id: user.id,
+        abacate_bill_id: abacateResult.data.id,
+        abacate_payment_url: abacateResult.data.url,
+        plan_id: planId,
+        amount: amountInCents,
+        status: 'pending',
+        customer_data: {
+          name: profile.full_name,
+          email: profile.email,
+          cpf: profile.cpf_cnpj,
+          phone: profile.phone_raw
+        },
+        metadata: abacateResult.data
+      })
+      .select()
+      .single();
+
+    if (transactionError) {
+      console.error('❌ Erro ao salvar transação:', transactionError);
+      throw new Error('Erro ao salvar transação');
+    }
+
+    console.log('💾 Transação salva:', transaction.id);
+
+    // 9. Retornar sucesso
+    return new Response(
+      JSON.stringify({
+        success: true,
+        paymentUrl: abacateResult.data.url,
+        billId: abacateResult.data.id,
+        transactionId: transaction.id
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error: any) {
+    console.error('❌ Erro geral:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+});
