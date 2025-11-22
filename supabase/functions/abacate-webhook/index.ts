@@ -151,6 +151,11 @@ serve(async (req) => {
         paidAt = new Date().toISOString();
         console.log('💰 Pagamento confirmado!');
         break;
+      case 'ACTIVE':
+        newStatus = 'paid';
+        paidAt = new Date().toISOString();
+        console.log('💰 Assinatura ativa! Pagamento confirmado.');
+        break;
       case 'CANCELLED':
         newStatus = 'cancelled';
         console.log('🚫 Pagamento cancelado');
