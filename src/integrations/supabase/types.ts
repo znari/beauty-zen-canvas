@@ -596,6 +596,42 @@ export type Database = {
           },
         ]
       }
+      webhook_security_logs: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          origin: string | null
+          received_secret_preview: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          origin?: string | null
+          received_secret_preview?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          origin?: string | null
+          received_secret_preview?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_dashboard_stats: {
