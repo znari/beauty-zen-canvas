@@ -72,6 +72,66 @@ export type Database = {
           },
         ]
       }
+      billing_transactions: {
+        Row: {
+          abacate_bill_id: string | null
+          abacate_payment_url: string | null
+          amount: number
+          created_at: string | null
+          customer_data: Json
+          id: string
+          metadata: Json | null
+          paid_at: string | null
+          plan_id: string
+          professional_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          abacate_bill_id?: string | null
+          abacate_payment_url?: string | null
+          amount: number
+          created_at?: string | null
+          customer_data: Json
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          plan_id: string
+          professional_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          abacate_bill_id?: string | null
+          abacate_payment_url?: string | null
+          amount?: number
+          created_at?: string | null
+          customer_data?: Json
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          plan_id?: string
+          professional_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_transactions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_transactions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_stats"
+            referencedColumns: ["professional_id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string | null
