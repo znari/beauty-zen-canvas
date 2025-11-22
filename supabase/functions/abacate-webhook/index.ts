@@ -3,6 +3,67 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 serve(async (req) => {
   try {
+    // ========================================
+    // 🔒 VALIDAÇÃO DE SEGURANÇA
+    // ========================================
+    const receivedSecret = req.headers.get('X-Webhook-Secret');
+    const expectedSecret = Deno.env.get('ABACATE_WEBHOOK_SECRET');
+
+    console.log('🔐 Validando secret do webhook...');
+
+    // Verificar se o secret foi configurado
+    if (!expectedSecret) {
+      console.error('⚠️ ABACATE_WEBHOOK_SECRET não configurado no Supabase!');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Webhook secret not configured' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se o secret foi enviado na requisição
+    if (!receivedSecret) {
+      console.error('🚨 Tentativa de acesso sem secret!');
+      console.error('📍 Headers recebidos:', {
+        ip: req.headers.get('x-forwarded-for'),
+        userAgent: req.headers.get('user-agent'),
+        origin: req.headers.get('origin')
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Unauthorized: Missing webhook secret' 
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validar o secret (comparação segura)
+    if (receivedSecret !== expectedSecret) {
+      console.error('🚨 Tentativa de acesso com secret INVÁLIDO!');
+      console.error('📍 Secret recebido (preview):', receivedSecret.substring(0, 10) + '...');
+      console.error('📍 IP/Headers:', {
+        ip: req.headers.get('x-forwarded-for'),
+        userAgent: req.headers.get('user-agent')
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Unauthorized: Invalid webhook secret' 
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ Secret validado com sucesso!');
+    // ========================================
+    // FIM DA VALIDAÇÃO DE SEGURANÇA
+    // ========================================
+
     const webhookData = await req.json();
     
     console.log('📨 Webhook recebido do Abacate Pay');
