@@ -79,6 +79,7 @@ export type Database = {
           amount: number
           created_at: string | null
           customer_data: Json
+          frequency: string | null
           id: string
           metadata: Json | null
           paid_at: string | null
@@ -93,6 +94,7 @@ export type Database = {
           amount: number
           created_at?: string | null
           customer_data: Json
+          frequency?: string | null
           id?: string
           metadata?: Json | null
           paid_at?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           amount?: number
           created_at?: string | null
           customer_data?: Json
+          frequency?: string | null
           id?: string
           metadata?: Json | null
           paid_at?: string | null

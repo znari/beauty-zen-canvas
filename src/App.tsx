@@ -26,6 +26,7 @@ import AnamnesisSettings from "./pages/AnamnesisSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
 import Notifications from "./pages/Notifications";
+import PaymentHistory from "./pages/PaymentHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/configuracoes/mensagens" element={<ProtectedRoute><MessageSettings /></ProtectedRoute>} />
             <Route path="/faturamento" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             <Route path="/notificacoes" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/pagamentos" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

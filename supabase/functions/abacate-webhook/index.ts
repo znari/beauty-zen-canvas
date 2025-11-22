@@ -188,16 +188,33 @@ serve(async (req) => {
 
     console.log(`✅ Transação atualizada para status: ${newStatus}`);
 
-    // Se pagamento foi confirmado, ativar o plano
+    // Atualizar perfil do usuário com o novo plano
     if (newStatus === 'paid') {
+      console.log(`🎉 Pagamento confirmado! Ativando plano ${transaction.plan_id}`);
+      
+      // Calcular data de expiração baseada na frequência
       const subscriptionEndsAt = new Date();
-      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+      const frequency = transaction.frequency || 'ONE_TIME';
+      
+      switch (frequency) {
+        case 'MONTHLY':
+          subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 1);
+          break;
+        case 'QUARTERLY':
+          subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + 3);
+          break;
+        case 'YEARLY':
+          subscriptionEndsAt.setFullYear(subscriptionEndsAt.getFullYear() + 1);
+          break;
+        default: // ONE_TIME
+          subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+      }
 
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .update({
           plan: transaction.plan_id,
-          subscription_status: 'active',
+          subscription_status: frequency === 'ONE_TIME' ? 'trial' : 'active',
           subscription_started_at: new Date().toISOString(),
           last_payment_date: new Date().toISOString(),
           subscription_ends_at: subscriptionEndsAt.toISOString(),
@@ -207,11 +224,12 @@ serve(async (req) => {
 
       if (profileError) {
         console.error('❌ Erro ao atualizar perfil:', profileError);
-        throw profileError;
+        throw new Error('Erro ao atualizar perfil do usuário');
       }
 
       console.log(`🎉 Plano ${transaction.plan_id} ativado para usuário ${transaction.professional_id}`);
       console.log(`📅 Válido até: ${subscriptionEndsAt.toISOString()}`);
+      console.log(`🔄 Frequência: ${frequency}`);
     }
 
     return new Response(
