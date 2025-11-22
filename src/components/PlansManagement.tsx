@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreatePayment } from "@/hooks/useCreatePayment";
 import { toast } from "sonner";
+import { celebratePayment } from "@/lib/confetti";
 
 export const PlansManagement = () => {
   const { data: subscription, isLoading } = useSubscriptionStatus();
@@ -40,7 +41,14 @@ export const PlansManagement = () => {
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success') {
-      toast.success('✅ Pagamento realizado com sucesso! Seu plano será ativado em breve.');
+      // Disparar confetti imediatamente
+      celebratePayment();
+      
+      // Pequeno delay para o toast não competir com o confetti
+      setTimeout(() => {
+        toast.success('✅ Pagamento realizado com sucesso! Seu plano será ativado em breve.');
+      }, 300);
+      
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
       window.history.replaceState({}, '', '/configuracoes/perfil');
     } else if (paymentStatus === 'completed') {
