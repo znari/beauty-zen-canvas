@@ -104,7 +104,6 @@ serve(async (req) => {
       }],
       returnUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil?payment=success`,
       completionUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil?payment=completed`,
-      customerId: user.id,
       customer: {
         name: profile.full_name,
         cellphone: profile.phone_raw || "(00) 00000-0000",
