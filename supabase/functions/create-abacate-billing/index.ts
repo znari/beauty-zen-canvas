@@ -15,22 +15,38 @@ serve(async (req) => {
   try {
     console.log('🚀 Iniciando criação de cobrança Abacate Pay');
     
-    // 1. Obter usuário autenticado
+    // 1. Verificar header de autorização
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('❌ Header de autorização não encontrado');
+      throw new Error('Não autenticado - token ausente');
+    }
+
+    console.log('🔑 Header de autorização encontrado');
+
+    // 2. Criar cliente Supabase autenticado
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { 
+        global: { 
+          headers: { 
+            Authorization: authHeader 
+          } 
+        } 
+      }
     );
 
+    // 3. Obter usuário autenticado
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       console.error('❌ Erro de autenticação:', userError);
-      throw new Error('Não autenticado');
+      throw new Error('Não autenticado - sessão inválida');
     }
 
     console.log('✅ Usuário autenticado:', user.id);
 
-    // 2. Receber dados do body
+    // 4. Receber dados do body
     const { planId } = await req.json();
     
     if (!planId) {
@@ -39,7 +55,7 @@ serve(async (req) => {
 
     console.log('📦 Plano solicitado:', planId);
 
-    // 3. Buscar dados do perfil
+    // 5. Buscar dados do perfil
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('*')
@@ -53,7 +69,7 @@ serve(async (req) => {
 
     console.log('👤 Perfil encontrado:', profile.full_name);
 
-    // 4. Buscar definição do plano
+    // 6. Buscar definição do plano
     const { data: planDef, error: planError } = await supabaseClient
       .from('plan_definitions')
       .select('*')
@@ -67,7 +83,7 @@ serve(async (req) => {
 
     console.log('📋 Plano encontrado:', planDef.name, '- R$', planDef.price_monthly);
 
-    // 5. Validar dados obrigatórios
+    // 7. Validar dados obrigatórios
     if (!profile.full_name || !profile.email) {
       throw new Error('Dados incompletos: nome e email são obrigatórios');
     }
@@ -76,7 +92,7 @@ serve(async (req) => {
       throw new Error('CPF/CNPJ não informado. Por favor, atualize seu perfil.');
     }
 
-    // 6. Preparar dados para o Abacate Pay
+    // 8. Preparar dados para o Abacate Pay
     const amountInCents = Math.round(planDef.price_monthly * 100);
     
     const billingData = {
@@ -109,7 +125,7 @@ serve(async (req) => {
 
     console.log('💳 Criando cobrança no Abacate Pay...');
 
-    // 7. Chamar API do Abacate Pay
+    // 9. Chamar API do Abacate Pay
     const abacateResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
       method: 'POST',
       headers: {
@@ -128,8 +144,13 @@ serve(async (req) => {
 
     console.log('✅ Cobrança criada:', abacateResult.data.id);
 
-    // 8. Salvar transação no banco
-    const { data: transaction, error: transactionError } = await supabaseClient
+    // 10. Salvar transação no banco usando service role
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('billing_transactions')
       .insert({
         professional_id: user.id,
@@ -156,7 +177,7 @@ serve(async (req) => {
 
     console.log('💾 Transação salva:', transaction.id);
 
-    // 9. Retornar sucesso
+    // 11. Retornar sucesso
     return new Response(
       JSON.stringify({
         success: true,
