@@ -23,6 +23,12 @@ serve(async (req) => {
       );
     }
 
+    // Criar cliente Supabase com service role para logging
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     // Verificar se o secret foi enviado na requisição
     if (!receivedSecret) {
       console.error('🚨 Tentativa de acesso sem secret!');
@@ -30,6 +36,17 @@ serve(async (req) => {
         ip: req.headers.get('x-forwarded-for'),
         userAgent: req.headers.get('user-agent'),
         origin: req.headers.get('origin')
+      });
+
+      // Registrar tentativa de acesso não autorizada
+      await supabaseAdmin.from('webhook_security_logs').insert({
+        endpoint: 'abacate-webhook',
+        ip_address: req.headers.get('x-forwarded-for'),
+        user_agent: req.headers.get('user-agent'),
+        origin: req.headers.get('origin'),
+        received_secret_preview: null,
+        success: false,
+        error_message: 'Missing webhook secret'
       });
       
       return new Response(
@@ -49,6 +66,17 @@ serve(async (req) => {
         ip: req.headers.get('x-forwarded-for'),
         userAgent: req.headers.get('user-agent')
       });
+
+      // Registrar tentativa com secret inválido
+      await supabaseAdmin.from('webhook_security_logs').insert({
+        endpoint: 'abacate-webhook',
+        ip_address: req.headers.get('x-forwarded-for'),
+        user_agent: req.headers.get('user-agent'),
+        origin: req.headers.get('origin'),
+        received_secret_preview: receivedSecret?.substring(0, 10),
+        success: false,
+        error_message: 'Invalid webhook secret'
+      });
       
       return new Response(
         JSON.stringify({ 
@@ -60,6 +88,18 @@ serve(async (req) => {
     }
 
     console.log('✅ Secret validado com sucesso!');
+
+    // Registrar acesso autorizado
+    await supabaseAdmin.from('webhook_security_logs').insert({
+      endpoint: 'abacate-webhook',
+      ip_address: req.headers.get('x-forwarded-for'),
+      user_agent: req.headers.get('user-agent'),
+      origin: req.headers.get('origin'),
+      received_secret_preview: receivedSecret.substring(0, 10),
+      success: true,
+      error_message: null
+    });
+
     // ========================================
     // FIM DA VALIDAÇÃO DE SEGURANÇA
     // ========================================
@@ -68,12 +108,6 @@ serve(async (req) => {
     
     console.log('📨 Webhook recebido do Abacate Pay');
     console.log('📊 Dados:', JSON.stringify(webhookData, null, 2));
-
-    // Criar cliente Supabase com service role (sem auth)
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Extrair dados do webhook
     const billId = webhookData.data?.id;
