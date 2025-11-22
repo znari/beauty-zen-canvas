@@ -44,7 +44,8 @@ Deno.serve(async (req) => {
       .eq('subscription_status', 'active')
       .not('plan', 'eq', 'free')
       .not('subscription_ends_at', 'is', null)
-      .or(`subscription_ends_at.eq.${fiveDaysStr},subscription_ends_at.eq.${todayStr}`);
+      .gte('subscription_ends_at', todayStr)
+      .lte('subscription_ends_at', fiveDaysStr);
 
     if (profilesError) {
       console.error('❌ Erro ao buscar perfis:', profilesError);
