@@ -18,6 +18,7 @@ import { useCreateClient } from "@/hooks/useCreateClient";
 import { useProcedures } from "@/hooks/useProcedures";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { confettiFireworks } from "@/lib/confetti";
 
 const formSchema = z.object({
   // Dados do Cliente
@@ -85,6 +86,23 @@ export default function NewClient() {
     try {
       const result = await createClient.mutateAsync(data);
       
+      // ✨ Celebrar primeiro cliente com confetti
+      if (result.isFirstClient) {
+        confettiFireworks();
+        
+        toast({
+          title: "🎉 Parabéns pelo seu primeiro cliente!",
+          description: "Este é o início de uma jornada incrível!",
+        });
+      } else {
+        toast({
+          title: "Cliente cadastrado com sucesso!",
+          description: enviarWhatsApp 
+            ? `${data.nome} foi adicionado e as mensagens foram enviadas via WhatsApp.` 
+            : `${data.nome} foi adicionado ao sistema.`,
+        });
+      }
+      
       // Enviar WhatsApp com ID REAL do banco
       if (enviarWhatsApp) {
         const fichaUrl = generateAnamnesisLink(result.client.id);
@@ -111,13 +129,6 @@ export default function NewClient() {
           }, 1000);
         }
       }
-      
-      toast({
-        title: "Cliente cadastrado com sucesso!",
-        description: enviarWhatsApp 
-          ? `${data.nome} foi adicionado e as mensagens foram enviadas via WhatsApp.` 
-          : `${data.nome} foi adicionado ao sistema.`,
-      });
       
       navigate("/dashboard");
     } catch (error: any) {

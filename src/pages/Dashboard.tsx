@@ -46,6 +46,7 @@ import { ptBR } from "date-fns/locale";
 import { formatLocalDate } from "@/lib/dateUtils";
 import { openWhatsAppMessage, generateAnamnesisLink } from "@/lib/whatsapp";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { confettiFireworks } from "@/lib/confetti";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -127,12 +128,22 @@ const Dashboard = () => {
     if (!selectedAppointment?.id) return;
 
     try {
-      await completeVisit.mutateAsync(selectedAppointment.id);
+      const result = await completeVisit.mutateAsync(selectedAppointment.id);
       
-      toast({
-        title: "✅ Procedimento realizado!",
-        description: `${selectedAppointment.client} - ${selectedAppointment.procedure} marcado como concluído.`,
-      });
+      // ✨ Celebrar primeira consulta completada
+      if (result.isFirstCompletion) {
+        confettiFireworks();
+        
+        toast({
+          title: "🎉 Primeira consulta concluída!",
+          description: "Parabéns! Você completou seu primeiro atendimento!",
+        });
+      } else {
+        toast({
+          title: "✅ Procedimento realizado!",
+          description: `${selectedAppointment.client} - ${selectedAppointment.procedure} marcado como concluído.`,
+        });
+      }
       
       setSelectedAppointment(null);
     } catch (error: any) {
