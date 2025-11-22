@@ -8,6 +8,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
+import { PlanActivationBanner } from "@/components/PlanActivationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreatePayment } from "@/hooks/useCreatePayment";
@@ -43,20 +44,30 @@ export const PlansManagement = () => {
     const paymentStatus = urlParams.get('payment');
     
     if (paymentStatus === 'success') {
-      // Disparar confetti imediatamente
-      celebratePayment();
+      toast.success(
+        '✅ Pagamento confirmado!',
+        {
+          description: 'Aguarde enquanto ativamos seu plano. Isso pode levar alguns segundos.',
+          duration: 5000,
+        }
+      );
       
-      // Pequeno delay para o toast não competir com o confetti
-      setTimeout(() => {
-        toast.success('✅ Pagamento realizado com sucesso! Seu plano será ativado em breve.');
-      }, 300);
+      // Marcar como aguardando ativação (caso não tenha sido feito antes)
+      const pending = localStorage.getItem('pendingPlanActivation');
+      if (!pending) {
+        localStorage.setItem('pendingPlanActivation', JSON.stringify({
+          planId: 'unknown',
+          timestamp: Date.now(),
+          status: 'waiting'
+        }));
+      }
       
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
-      window.history.replaceState({}, '', '/configuracoes/perfil');
+      window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
     } else if (paymentStatus === 'completed') {
       toast.info('Processando pagamento...');
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
-      window.history.replaceState({}, '', '/configuracoes/perfil');
+      window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
     }
   }, [queryClient]);
 
@@ -65,6 +76,13 @@ export const PlansManagement = () => {
     
     setProcessingPayment(true);
     setSelectedPlan(planId);
+    
+    // Armazenar plano pendente
+    localStorage.setItem('pendingPlanActivation', JSON.stringify({
+      planId,
+      timestamp: Date.now(),
+      status: 'waiting'
+    }));
     
     try {
       const result = await createPayment.mutateAsync({ planId });
@@ -76,6 +94,8 @@ export const PlansManagement = () => {
       }
     } catch (error) {
       console.error(error);
+      // Limpar pendência em caso de erro
+      localStorage.removeItem('pendingPlanActivation');
     } finally {
       setProcessingPayment(false);
       setSelectedPlan(null);
@@ -105,6 +125,9 @@ export const PlansManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Banner de ativação pendente */}
+      <PlanActivationBanner />
+      
       {/* Status Atual */}
       <Card>
         <CardHeader>
