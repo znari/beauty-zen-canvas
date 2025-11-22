@@ -15,61 +15,86 @@ export const usePlanActivationDetector = () => {
     const pending = localStorage.getItem('pendingPlanActivation');
     if (!pending) return;
 
-    setIsWaitingActivation(true);
+    // Verificar o estado atual do perfil antes de criar subscrição
+    const checkCurrentProfile = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan, subscription_status')
+        .eq('id', user.id)
+        .single();
 
-    // Subscrever mudanças em tempo real no perfil
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`
-        },
-        (payload) => {
-          const newProfile = payload.new as any;
-          
-          // Verificar se o plano foi ativado
-          if (newProfile.subscription_status === 'active' && 
-              newProfile.plan !== 'free') {
-            
-            // Disparar notificação de sucesso
-            celebratePayment();
-            toast.success(
-              `🎉 Plano ${newProfile.plan} ativado com sucesso!`,
-              {
-                description: 'Você já pode usar todos os recursos do seu plano.',
-                duration: 5000,
-              }
-            );
+      // Se o plano já está ativo, limpar localStorage e não escutar mudanças
+      if (profile?.subscription_status === 'active' && profile?.plan !== 'free') {
+        console.log('✅ Plano já ativo. Limpando localStorage.');
+        localStorage.removeItem('pendingPlanActivation');
+        setIsWaitingActivation(false);
+        return true; // Indica que já está ativo
+      }
+      
+      return false; // Ainda não está ativo
+    };
 
-            // Limpar pendência
-            localStorage.removeItem('pendingPlanActivation');
-            setIsWaitingActivation(false);
+    const setupActivationListener = async () => {
+      const isAlreadyActive = await checkCurrentProfile();
+      if (isAlreadyActive) return; // Sair sem criar subscrições
+
+      setIsWaitingActivation(true);
+
+      // Subscrever mudanças em tempo real no perfil
+      const channel = supabase
+        .channel('profile-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${user.id}`
+          },
+          (payload) => {
+            const newProfile = payload.new as any;
             
-            // Cancelar subscrição
-            channel.unsubscribe();
+            // Verificar se o plano foi ativado
+            if (newProfile.subscription_status === 'active' && 
+                newProfile.plan !== 'free') {
+              
+              // Disparar notificação de sucesso
+              celebratePayment();
+              toast.success(
+                `🎉 Plano ${newProfile.plan} ativado com sucesso!`,
+                {
+                  description: 'Você já pode usar todos os recursos do seu plano.',
+                  duration: 5000,
+                }
+              );
+
+              // Limpar pendência
+              localStorage.removeItem('pendingPlanActivation');
+              setIsWaitingActivation(false);
+              
+              // Cancelar subscrição
+              channel.unsubscribe();
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
 
-    // Timeout de 5 minutos (caso o webhook demore muito)
-    const timeout = setTimeout(() => {
-      if (isWaitingActivation) {
+      // Timeout de 5 minutos (caso o webhook demore muito)
+      const timeout = setTimeout(() => {
         toast.info('Seu pagamento está sendo processado. Você receberá uma confirmação em breve.');
         localStorage.removeItem('pendingPlanActivation');
         setIsWaitingActivation(false);
-      }
-    }, 5 * 60 * 1000);
+      }, 5 * 60 * 1000);
 
-    return () => {
-      channel.unsubscribe();
-      clearTimeout(timeout);
+      return () => {
+        console.log('🧹 Limpando subscrição de ativação');
+        channel.unsubscribe();
+        clearTimeout(timeout);
+      };
     };
-  }, [user, isWaitingActivation]);
+
+    setupActivationListener();
+  }, [user]);
 
   return { isWaitingActivation };
 };

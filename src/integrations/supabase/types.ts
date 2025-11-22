@@ -529,6 +529,51 @@ export type Database = {
         }
         Relationships: []
       }
+      room_members: {
+        Row: {
+          id: string
+          role: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      room_messages: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          room_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          id?: string
+          room_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          room_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
           client_id: string
