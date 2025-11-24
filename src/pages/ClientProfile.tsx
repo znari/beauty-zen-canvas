@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import { gerarLinkWhatsApp, generateAnamnesisLink, type MessageType } from "@/lib/whatsapp";
 import TemplateSelector from "@/components/TemplateSelector";
-import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
+import { useMessageTemplates, type MessageTemplate } from "@/hooks/useMessageTemplates";
 import { useClientProfile } from "@/hooks/useClientProfile";
 import { useUpdateVisit } from "@/hooks/useUpdateVisit";
 import { useCancelVisit } from "@/hooks/useCancelVisit";
@@ -37,6 +37,7 @@ const ClientProfile = () => {
     isLoading,
     error
   } = useClientProfile(id || "");
+  const { data: templates = [] } = useMessageTemplates();
   const updateVisit = useUpdateVisit();
   const cancelVisit = useCancelVisit();
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
@@ -511,9 +512,16 @@ const ClientProfile = () => {
       </AlertDialog>
 
       {/* Template Selector */}
-      <TemplateSelector open={templateSelectorOpen} onOpenChange={setTemplateSelectorOpen} tipo={templateType} templates={mockTemplates} onSelect={handleSendWithTemplate} clientData={{
-      nomeCliente: client.name
-    }} />
+      <TemplateSelector 
+        open={templateSelectorOpen} 
+        onOpenChange={setTemplateSelectorOpen} 
+        tipo={templateType} 
+        templates={templates} 
+        onSelect={handleSendWithTemplate} 
+        clientData={{
+          nomeCliente: client.name
+        }} 
+      />
     </div>;
 };
 export default ClientProfile;

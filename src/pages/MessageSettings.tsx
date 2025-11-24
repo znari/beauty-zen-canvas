@@ -35,8 +35,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy, ArrowLeft } from "lucide-react";
 import { messageTemplates, gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
-import { mockTemplates, type MessageTemplate } from "@/lib/mockTemplates";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { 
+  useMessageTemplates, 
+  useCreateTemplate, 
+  useUpdateTemplate, 
+  useDeleteTemplate, 
+  useSetDefaultTemplate,
+  useDuplicateTemplate,
+  type MessageTemplate 
+} from "@/hooks/useMessageTemplates";
 
 const messageTypeLabels: Record<MessageType, string> = {
   ConfirmacaoAgendamento: "Confirmação de Agendamento",
@@ -50,13 +59,23 @@ const messageTypeLabels: Record<MessageType, string> = {
 
 export default function MessageSettings() {
   const navigate = useNavigate();
-  const [templates, setTemplates] = useState<MessageTemplate[]>(mockTemplates);
+  const { data: templates = [], isLoading } = useMessageTemplates();
+  const createTemplate = useCreateTemplate();
+  const updateTemplate = useUpdateTemplate();
+  const deleteTemplate = useDeleteTemplate();
+  const setDefaultTemplate = useSetDefaultTemplate();
+  const duplicateTemplate = useDuplicateTemplate();
+  
   const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
   const [filterType, setFilterType] = useState<MessageType | "all">("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
-  const [newTemplate, setNewTemplate] = useState<Partial<MessageTemplate>>({
+  const [newTemplate, setNewTemplate] = useState<{
+    nome: string;
+    tipo: MessageType;
+    conteudo: string;
+  }>({
     nome: "",
     tipo: "ConfirmacaoAgendamento",
     conteudo: "",
@@ -67,77 +86,60 @@ export default function MessageSettings() {
       ? templates
       : templates.filter((t) => t.tipo === filterType);
 
-  const handleAddTemplate = () => {
+  const handleAddTemplate = async () => {
     if (!newTemplate.nome || !newTemplate.conteudo || !newTemplate.tipo) {
       toast.error("Preencha todos os campos");
       return;
     }
 
-    const template: MessageTemplate = {
-      id: Date.now().toString(),
+    await createTemplate.mutateAsync({
       nome: newTemplate.nome,
-      tipo: newTemplate.tipo as MessageType,
+      tipo: newTemplate.tipo,
       conteudo: newTemplate.conteudo,
-      isPadrao: false,
-      criadoEm: new Date().toISOString(),
-    };
+      is_padrao: false,
+    });
 
-    setTemplates([...templates, template]);
     setNewTemplate({ nome: "", tipo: "ConfirmacaoAgendamento", conteudo: "" });
     setIsAddDialogOpen(false);
-    toast.success("Template criado com sucesso!");
   };
 
-  const handleEditTemplate = () => {
+  const handleEditTemplate = async () => {
     if (!selectedTemplate) return;
 
-    setTemplates(
-      templates.map((t) =>
-        t.id === selectedTemplate.id ? selectedTemplate : t
-      )
-    );
+    await updateTemplate.mutateAsync({
+      id: selectedTemplate.id,
+      nome: selectedTemplate.nome,
+      tipo: selectedTemplate.tipo,
+      conteudo: selectedTemplate.conteudo,
+    });
+
     setIsEditDialogOpen(false);
     setSelectedTemplate(null);
-    toast.success("Template atualizado com sucesso!");
   };
 
-  const handleDeleteTemplate = (id: string) => {
+  const handleDeleteTemplate = async (id: string) => {
     const template = templates.find((t) => t.id === id);
-    if (template?.isPadrao) {
+    if (template?.is_padrao) {
       toast.error("Não é possível excluir templates padrão");
       return;
     }
 
-    setTemplates(templates.filter((t) => t.id !== id));
+    await deleteTemplate.mutateAsync(id);
     setDeleteTemplateId(null);
-    toast.success("Template excluído com sucesso!");
   };
 
-  const handleDuplicateTemplate = (template: MessageTemplate) => {
-    const newTemplate: MessageTemplate = {
-      ...template,
-      id: Date.now().toString(),
-      nome: `${template.nome} (Cópia)`,
-      isPadrao: false,
-      criadoEm: new Date().toISOString(),
-    };
-
-    setTemplates([...templates, newTemplate]);
-    toast.success("Template duplicado com sucesso!");
+  const handleDuplicateTemplate = async (template: MessageTemplate) => {
+    await duplicateTemplate.mutateAsync(template);
   };
 
-  const handleSetAsDefault = (id: string) => {
+  const handleSetAsDefault = async (id: string) => {
     const template = templates.find((t) => t.id === id);
     if (!template) return;
 
-    setTemplates(
-      templates.map((t) =>
-        t.tipo === template.tipo
-          ? { ...t, isPadrao: t.id === id }
-          : t
-      )
-    );
-    toast.success("Template definido como padrão!");
+    await setDefaultTemplate.mutateAsync({
+      id: template.id,
+      tipo: template.tipo,
+    });
   };
 
   return (
@@ -301,19 +303,24 @@ export default function MessageSettings() {
         </div>
 
         {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTemplates.map((template) => (
             <Card
               key={template.id}
               className={`shadow-card hover:shadow-lg transition-all ${
-                template.isPadrao ? "border-2 border-primary" : ""
+                template.is_padrao ? "border-2 border-primary" : ""
               }`}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-base flex items-center gap-2">
-                      {template.isPadrao && (
+                      {template.is_padrao && (
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                       )}
                       {template.nome}
@@ -331,7 +338,7 @@ export default function MessageSettings() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {!template.isPadrao && (
+                  {!template.is_padrao && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -359,7 +366,7 @@ export default function MessageSettings() {
                   >
                     <Copy className="h-3 w-3" />
                   </Button>
-                  {!template.isPadrao && (
+                  {!template.is_padrao && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -371,8 +378,9 @@ export default function MessageSettings() {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {filteredTemplates.length === 0 && (
           <Card className="text-center py-12">
