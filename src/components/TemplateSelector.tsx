@@ -12,16 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Star, Eye } from "lucide-react";
+import { Star, Eye, Copy, MessageCircle } from "lucide-react";
 import { gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
-
-export interface MessageTemplate {
-  id: string;
-  nome: string;
-  tipo: MessageType;
-  conteudo: string;
-  isPadrao: boolean;
-}
+import { toast } from "sonner";
+import type { MessageTemplate } from "@/hooks/useMessageTemplates";
 
 interface TemplateSelectorProps {
   open: boolean;
@@ -45,7 +39,7 @@ export default function TemplateSelector({
   clientData,
 }: TemplateSelectorProps) {
   const filteredTemplates = templates.filter((t) => t.tipo === tipo);
-  const defaultTemplate = filteredTemplates.find((t) => t.isPadrao);
+  const defaultTemplate = filteredTemplates.find((t) => t.is_padrao);
   const [selectedId, setSelectedId] = useState<string>(defaultTemplate?.id || "");
   const [previewTemplate, setPreviewTemplate] = useState<MessageTemplate | null>(null);
 
@@ -74,6 +68,18 @@ export default function TemplateSelector({
     return preview;
   };
 
+  const handleCopyMessage = async (template: MessageTemplate) => {
+    const message = generateCustomPreview(template.conteudo);
+    
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("✅ Mensagem copiada! Cole no WhatsApp do cliente.");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Erro ao copiar mensagem");
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -83,6 +89,12 @@ export default function TemplateSelector({
             <DialogDescription>
               Selecione o template de mensagem que deseja enviar
             </DialogDescription>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+              <p className="text-sm text-yellow-800">
+                💡 <strong>Dica:</strong> Se o WhatsApp não abrir automaticamente, 
+                use o botão "Copiar Mensagem" e cole diretamente no chat do cliente.
+              </p>
+            </div>
           </DialogHeader>
 
           <div className="py-4">
@@ -107,7 +119,7 @@ export default function TemplateSelector({
                             className="font-semibold cursor-pointer flex items-center gap-2"
                           >
                             {template.nome}
-                            {template.isPadrao && (
+                            {template.is_padrao && (
                               <Badge variant="secondary" className="ml-2">
                                 <Star className="h-3 w-3 mr-1 text-yellow-500 fill-yellow-500" />
                                 Padrão
@@ -146,12 +158,31 @@ export default function TemplateSelector({
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirm} disabled={!selectedId}>
-              Enviar Mensagem
+            <Button 
+              variant="secondary" 
+              onClick={() => {
+                const selected = filteredTemplates.find((t) => t.id === selectedId);
+                if (selected) {
+                  handleCopyMessage(selected);
+                }
+              }}
+              disabled={!selectedId}
+              className="gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Copiar Mensagem
+            </Button>
+            <Button 
+              onClick={handleConfirm} 
+              disabled={!selectedId}
+              className="gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Abrir WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -285,6 +285,39 @@ export type Database = {
         }
         Relationships: []
       }
+      message_templates: {
+        Row: {
+          conteudo: string
+          created_at: string | null
+          id: string
+          is_padrao: boolean | null
+          nome: string
+          professional_id: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string | null
+          id?: string
+          is_padrao?: boolean | null
+          nome: string
+          professional_id: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string | null
+          id?: string
+          is_padrao?: boolean | null
+          nome?: string
+          professional_id?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           anamnesis_id: string | null
