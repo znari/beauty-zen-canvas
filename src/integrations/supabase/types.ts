@@ -607,8 +607,51 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_owner: boolean | null
+          name: string
+          owner_id: string
+          phone: string | null
+          specialty: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_owner?: boolean | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_owner?: boolean | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
+          assigned_professional_id: string | null
           client_id: string
           completed_at: string | null
           created_at: string | null
@@ -624,6 +667,7 @@ export type Database = {
           visit_time: string
         }
         Insert: {
+          assigned_professional_id?: string | null
           client_id: string
           completed_at?: string | null
           created_at?: string | null
@@ -639,6 +683,7 @@ export type Database = {
           visit_time: string
         }
         Update: {
+          assigned_professional_id?: string | null
           client_id?: string
           completed_at?: string | null
           created_at?: string | null
@@ -654,6 +699,13 @@ export type Database = {
           visit_time?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_assigned_professional_id_fkey"
+            columns: ["assigned_professional_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_client_id_fkey"
             columns: ["client_id"]

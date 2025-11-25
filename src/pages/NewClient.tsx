@@ -16,6 +16,7 @@ import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle } from "lu
 import { openWhatsAppMessage, generateAnamnesisLink, formatDate } from "@/lib/whatsapp";
 import { useCreateClient } from "@/hooks/useCreateClient";
 import { useProcedures } from "@/hooks/useProcedures";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { confettiFireworks } from "@/lib/confetti";
@@ -29,6 +30,7 @@ const formSchema = z.object({
   // Dados da Primeira Visita
   dataVisita: z.string().min(1, "Data da visita é obrigatória"),
   horaVisita: z.string().min(1, "Hora da visita é obrigatória"),
+  profissionalId: z.string().optional(),
   notasGerais: z.string().optional(),
   
   // Procedimentos
@@ -52,6 +54,9 @@ export default function NewClient() {
   
   const createClient = useCreateClient();
   const { data: procedimentosDisponiveis = [], isLoading: loadingProcedures, error: proceduresError } = useProcedures();
+  const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers(true);
+  
+  const ownerMember = teamMembers.find(m => m.is_owner);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -61,12 +66,19 @@ export default function NewClient() {
       dataNascimento: "",
       dataVisita: "",
       horaVisita: "",
+      profissionalId: "",
       notasGerais: "",
       procedimentos: [
         { procedimentoId: "", nome: "", preco: 0, observacoes: "" }
       ],
     },
   });
+
+  // Set default professional when loaded
+  const profissionalIdValue = form.watch("profissionalId");
+  if (ownerMember && !profissionalIdValue) {
+    form.setValue("profissionalId", ownerMember.id);
+  }
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -84,7 +96,10 @@ export default function NewClient() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const result = await createClient.mutateAsync(data);
+      const result = await createClient.mutateAsync({
+        ...data,
+        assignedProfessionalId: data.profissionalId,
+      });
       
       // ✨ Celebrar primeiro cliente com confetti
       if (result.isFirstClient) {
@@ -157,10 +172,10 @@ export default function NewClient() {
   form.watch(() => setIsFormDirty(true));
 
   // Loading state
-  if (loadingProcedures) {
+  if (loadingProcedures || loadingTeam) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-light via-white to-secondary-light">
-        <LoadingSpinner message="Carregando procedimentos..." />
+        <LoadingSpinner message="Carregando dados..." />
       </div>
     );
   }
@@ -284,8 +299,8 @@ export default function NewClient() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Data e Hora da Visita */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-primary/10">
+                {/* Data, Hora e Profissional */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-primary/10">
                   <FormField
                     control={form.control}
                     name="dataVisita"
@@ -313,8 +328,32 @@ export default function NewClient() {
                       </FormItem>
                     )}
                   />
-                </div>
 
+                  <FormField
+                    control={form.control}
+                    name="profissionalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissional Responsável</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teamMembers.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name} {member.is_owner && "(Você)"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 {/* Lista de Procedimentos */}
                 <div className="space-y-4">
                   {fields.map((field, index) => (

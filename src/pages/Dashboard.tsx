@@ -336,6 +336,10 @@ const Dashboard = () => {
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Mensagens do WhatsApp
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/equipe")}>
+                <Users className="h-4 w-4 mr-2" />
+                Minha Equipe
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/faturamento")}>
                 <DollarSign className="h-4 w-4 mr-2" />
                 Faturamento

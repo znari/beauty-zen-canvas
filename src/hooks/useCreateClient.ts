@@ -10,6 +10,7 @@ export interface CreateClientData {
   dataVisita?: string;
   horaVisita?: string;
   notasGerais?: string;
+  assignedProfessionalId?: string;
   procedimentos?: Array<{
     procedimentoId?: string;
     nome?: string;
@@ -76,6 +77,7 @@ export const useCreateClient = () => {
           procedures: data.procedimentos,
           price_total: priceTotal,
           notes: data.notasGerais || null,
+          assigned_professional_id: data.assignedProfessionalId || null,
         })
         .select()
         .single();

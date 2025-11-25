@@ -14,6 +14,7 @@ interface CreateVisitData {
     observacoes?: string;
   }>;
   notes?: string;
+  assigned_professional_id?: string;
 }
 
 export const useCreateVisit = () => {
@@ -48,6 +49,7 @@ export const useCreateVisit = () => {
           price_total: priceTotal,
           notes: data.notes || "",
           status: "scheduled",
+          assigned_professional_id: data.assigned_professional_id || null,
         })
         .select()
         .single();
