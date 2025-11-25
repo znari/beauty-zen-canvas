@@ -54,20 +54,21 @@ export const useClientProfile = (clientId: string) => {
         .map(visit => ({
           id: visit.id,
           date: format(new Date(visit.visit_date), "dd/MM/yyyy"),
+          rawDate: visit.visit_date,
           time: visit.visit_time.slice(0, 5),
+          rawTime: visit.visit_time,
           procedures: Array.isArray(visit.procedures) 
             ? visit.procedures.map((p: any) => p.nome || p.name || 'Procedimento')
             : [],
           totalValue: Number(visit.price_total || 0),
           notes: visit.notes || "",
-          status: visit.status === "scheduled" ? "Agendado" : "Realizado",
+          status: visit.status === "scheduled" ? "Agendado" : 
+                  visit.status === "cancelled" ? "Cancelado" : "Realizado",
           photos: visit.photos || [],
         }))
         .sort((a, b) => {
           // Ordenar por data decrescente (mais recente primeiro)
-          const dateA = a.date.split('/').reverse().join('-');
-          const dateB = b.date.split('/').reverse().join('-');
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
+          return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
         });
 
       return {

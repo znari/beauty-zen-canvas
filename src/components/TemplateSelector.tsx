@@ -27,6 +27,9 @@ interface TemplateSelectorProps {
     nomeCliente: string;
     dataProcedimento?: string;
     horaProcedimento?: string;
+    linkFicha?: string;
+    procedimentos?: string;
+    nomeStudio?: string;
   };
 }
 
@@ -76,15 +79,34 @@ export default function TemplateSelector({
     if (!clientData) return gerarPreviewMensagem(conteudo);
 
     let preview = conteudo;
+    
+    // Substituir nome do cliente
     preview = preview.replace(/\[nomeCliente\]/g, clientData.nomeCliente);
+    
+    // Substituir nome do estúdio
+    if (clientData.nomeStudio) {
+      preview = preview.replace(/\[nomeStudio\]/g, clientData.nomeStudio);
+    }
+    
+    // Substituir link da ficha
+    if (clientData.linkFicha) {
+      preview = preview.replace(/\[linkFicha\]/g, clientData.linkFicha);
+    }
+    
+    // Substituir data do procedimento
     if (clientData.dataProcedimento) {
       preview = preview.replace(/\[dataProcedimento\]/g, clientData.dataProcedimento);
     }
+    
+    // Substituir hora do procedimento
     if (clientData.horaProcedimento) {
       preview = preview.replace(/\[horaProcedimento\]/g, clientData.horaProcedimento);
     }
-    preview = preview.replace(/\[nomeStudio\]/g, "FichaZen");
-    preview = preview.replace(/\[linkFicha\]/g, "https://fichazen.app/ficha/123");
+    
+    // Substituir procedimentos
+    if (clientData.procedimentos) {
+      preview = preview.replace(/\[procedimentos\]/g, clientData.procedimentos);
+    }
 
     return preview;
   };
