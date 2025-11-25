@@ -33,12 +33,6 @@ export const exportBillingToPDF = (
   doc.setFillColor(...colors.primary);
   doc.rect(0, 4, 210, 50, "F");
   
-  // Padrão decorativo sutil
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.1);
-  for (let i = 0; i < 5; i++) {
-    doc.line(0, 10 + i * 8, 210, 10 + i * 8);
-  }
   
   // Título principal
   doc.setTextColor(255, 255, 255);
