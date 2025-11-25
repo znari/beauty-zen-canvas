@@ -16,12 +16,14 @@ import { openWhatsAppMessage, formatDate } from "@/lib/whatsapp";
 import { useCreateVisit } from "@/hooks/useCreateVisit";
 import { useProcedures } from "@/hooks/useProcedures";
 import { useClientProfile } from "@/hooks/useClientProfile";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 
 const formSchema = z.object({
   dataVisita: z.string().min(1, "Data da visita é obrigatória"),
   horaVisita: z.string().min(1, "Hora da visita é obrigatória"),
+  profissionalId: z.string().optional(),
   notasGerais: z.string().optional(),
   procedimentos: z.array(
     z.object({
@@ -43,18 +45,28 @@ export default function NewVisit() {
   const createVisit = useCreateVisit();
   const { data: client, isLoading: loadingClient, error: clientError } = useClientProfile(id!);
   const { data: procedimentosDisponiveis = [], isLoading: loadingProcedures } = useProcedures();
+  const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers(true);
+  
+  const ownerMember = teamMembers.find(m => m.is_owner);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       dataVisita: "",
       horaVisita: "",
+      profissionalId: "",
       notasGerais: "",
       procedimentos: [
         { procedimentoId: "", nome: "", preco: 0, observacoes: "" }
       ],
     },
   });
+
+  // Set default professional when loaded
+  const profissionalIdValue = form.watch("profissionalId");
+  if (ownerMember && !profissionalIdValue) {
+    form.setValue("profissionalId", ownerMember.id);
+  }
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -85,6 +97,7 @@ export default function NewVisit() {
           observacoes: p.observacoes
         })),
         notes: data.notasGerais,
+        assigned_professional_id: data.profissionalId,
       });
       
       // Enviar WhatsApp
@@ -116,7 +129,7 @@ export default function NewVisit() {
     }
   };
 
-  if (loadingClient || loadingProcedures) {
+  if (loadingClient || loadingProcedures || loadingTeam) {
     return <LoadingSpinner message="Carregando dados..." />;
   }
 
@@ -193,7 +206,7 @@ export default function NewVisit() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="dataVisita"
@@ -217,6 +230,31 @@ export default function NewVisit() {
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="profissionalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissional Responsável</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teamMembers.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name} {member.is_owner && "(Você)"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
