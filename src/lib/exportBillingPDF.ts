@@ -7,347 +7,495 @@ import type { BillingStats } from "@/hooks/useBillingStats";
 export const exportBillingToPDF = (
   stats: BillingStats,
   month: Date,
-  studioName: string
+  studioName: string,
+  professionalName?: string | null
 ) => {
   const doc = new jsPDF();
   
-  // Paleta de cores refinada
+  // Paleta de cores profissional
   const colors = {
     primary: [102, 45, 145] as [number, number, number],
-    accent: [147, 51, 234] as [number, number, number],
+    primaryLight: [147, 51, 234] as [number, number, number],
     success: [16, 185, 129] as [number, number, number],
     warning: [245, 158, 11] as [number, number, number],
-    text: [51, 51, 51] as [number, number, number],
+    danger: [239, 68, 68] as [number, number, number],
+    text: [31, 41, 55] as [number, number, number],
+    textMuted: [107, 114, 128] as [number, number, number],
     light: [249, 250, 251] as [number, number, number],
     border: [229, 231, 235] as [number, number, number],
+    white: [255, 255, 255] as [number, number, number],
   };
   
-  // ========== HEADER APRIMORADO ==========
-  // Linha decorativa no topo
-  doc.setFillColor(...colors.accent);
-  doc.rect(0, 0, 210, 3, "F");
-  
-  // Header principal com gradiente simulado
+  // ========== HEADER PREMIUM ==========
+  // Barra superior decorativa com gradiente simulado
+  doc.setFillColor(...colors.primaryLight);
+  doc.rect(0, 0, 210, 4, "F");
   doc.setFillColor(...colors.primary);
-  doc.rect(0, 3, 210, 47, "F");
+  doc.rect(0, 4, 210, 50, "F");
   
-  // Adicionar algumas linhas decorativas para simular profundidade
+  // Padrão decorativo sutil
   doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.3);
-  doc.line(20, 48, 190, 48);
+  doc.setLineWidth(0.1);
+  for (let i = 0; i < 5; i++) {
+    doc.line(0, 10 + i * 8, 210, 10 + i * 8);
+  }
   
   // Título principal
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(26);
+  doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
-  doc.text("RELATÓRIO DE FATURAMENTO", 105, 18, { align: "center" });
+  doc.text("RELATÓRIO DE FATURAMENTO", 105, 20, { align: "center" });
   
-  // Nome do estúdio destacado
-  doc.setFontSize(14);
+  // Nome do estúdio
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(studioName, 105, 30, { align: "center" });
+  doc.text(studioName, 105, 32, { align: "center" });
   
   // Período
   const monthText = format(month, "MMMM 'de' yyyy", { locale: ptBR });
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.text(
     monthText.charAt(0).toUpperCase() + monthText.slice(1),
     105,
-    39,
+    42,
     { align: "center" }
   );
+  
+  // Badge do profissional filtrado (se houver)
+  let yPosition = 62;
+  
+  if (professionalName) {
+    doc.setFillColor(...colors.primaryLight);
+    const badgeText = `Profissional: ${professionalName}`;
+    const textWidth = doc.getTextWidth(badgeText);
+    const badgeWidth = textWidth + 16;
+    const badgeX = (210 - badgeWidth) / 2;
+    
+    doc.roundedRect(badgeX, 48, badgeWidth, 8, 2, 2, "F");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(badgeText, 105, 53.5, { align: "center" });
+    yPosition = 66;
+  }
   
   // Resetar cor do texto
   doc.setTextColor(...colors.text);
   
-  let yPosition = 60;
+  // ========== RESUMO EXECUTIVO ==========
+  doc.setFillColor(...colors.light);
+  doc.roundedRect(14, yPosition - 4, 182, 22, 3, 3, "F");
   
-  // ========== RESUMO FINANCEIRO COM CARDS ==========
-  // Função auxiliar para desenhar cards
-  const drawMetricCard = (
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.primary);
+  doc.text("RESUMO EXECUTIVO", 20, yPosition + 3);
+  
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...colors.textMuted);
+  
+  const completionRate = stats.totalVisits > 0 
+    ? ((stats.completedVisits / stats.totalVisits) * 100).toFixed(1) 
+    : "0";
+  
+  const executiveSummary = professionalName
+    ? `Este relatório apresenta o desempenho financeiro de ${professionalName} em ${monthText}. Foram realizadas ${stats.completedVisits} visitas com faturamento de R$ ${stats.totalRevenue.toFixed(2)} e taxa de conclusão de ${completionRate}%.`
+    : `Este relatório apresenta o desempenho financeiro consolidado de ${monthText}. Foram realizadas ${stats.completedVisits} visitas com faturamento total de R$ ${stats.totalRevenue.toFixed(2)} e taxa de conclusão de ${completionRate}%.`;
+  
+  const summaryLines = doc.splitTextToSize(executiveSummary, 172);
+  doc.text(summaryLines, 20, yPosition + 11);
+  
+  yPosition += 28;
+  
+  // ========== INDICADORES PRINCIPAIS (KPIs) ==========
+  const drawKPICard = (
     x: number,
     y: number,
     width: number,
     height: number,
     topColor: [number, number, number],
+    icon: string,
     label: string,
     value: string,
-    subtitle?: string
+    subtitle?: string,
+    highlight?: boolean
   ) => {
-    // Sombra sutil
-    doc.setFillColor(220, 220, 220);
-    doc.roundedRect(x + 0.5, y + 0.5, width, height, 2, 2, "F");
+    // Sombra
+    doc.setFillColor(200, 200, 200);
+    doc.roundedRect(x + 1, y + 1, width, height, 3, 3, "F");
     
-    // Card branco
+    // Card
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...colors.border);
     doc.setLineWidth(0.3);
-    doc.roundedRect(x, y, width, height, 2, 2, "FD");
+    doc.roundedRect(x, y, width, height, 3, 3, "FD");
     
     // Barra colorida no topo
     doc.setFillColor(...topColor);
-    doc.rect(x, y, width, 3, "F");
+    doc.roundedRect(x, y, width, 4, 3, 3, "F");
+    doc.setFillColor(...topColor);
+    doc.rect(x, y + 2, width, 2, "F");
+    
+    // Ícone
+    doc.setFontSize(14);
+    doc.text(icon, x + 6, y + 14);
     
     // Label
-    doc.setFontSize(9);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(100, 100, 100);
-    doc.text(label, x + width / 2, y + 10, { align: "center" });
+    doc.setTextColor(...colors.textMuted);
+    doc.text(label, x + width / 2, y + 13, { align: "center" });
     
     // Valor principal
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.text);
-    doc.text(value, x + width / 2, y + 20, { align: "center" });
+    doc.text(value, x + width / 2, y + 23, { align: "center" });
     
-    // Subtítulo (opcional)
+    // Subtítulo
     if (subtitle) {
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(100, 100, 100);
-      doc.text(subtitle, x + width / 2, y + 27, { align: "center" });
+      const subtitleColor = highlight 
+        ? (stats.revenueGrowth >= 0 ? colors.success : colors.danger)
+        : colors.textMuted;
+      doc.setTextColor(...subtitleColor);
+      doc.text(subtitle, x + width / 2, y + 30, { align: "center" });
     }
   };
   
-  // Background da seção
-  doc.setFillColor(...colors.light);
-  doc.roundedRect(12, yPosition - 8, 186, 58, 3, 3, "F");
-  
   // Título da seção
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.primary);
-  doc.text("RESUMO FINANCEIRO", 16, yPosition);
+  doc.text("INDICADORES FINANCEIROS", 20, yPosition);
+  yPosition += 6;
   
-  yPosition += 8;
-  
-  // Cards de métricas (2x2)
   const cardWidth = 44;
-  const cardHeight = 30;
-  const cardSpacing = 3;
-  const startX = 16;
+  const cardHeight = 35;
+  const cardSpacing = 4;
+  const startX = 15;
   
-  // Linha 1
-  drawMetricCard(
+  const avgTicket = stats.completedVisits > 0 
+    ? stats.totalRevenue / stats.completedVisits 
+    : 0;
+  
+  drawKPICard(
     startX,
     yPosition,
     cardWidth,
     cardHeight,
     colors.primary,
+    "💰",
     "FATURAMENTO TOTAL",
-    `R$ ${stats.totalRevenue.toFixed(2)}`,
-    `${stats.revenueGrowth >= 0 ? "+" : ""}${stats.revenueGrowth.toFixed(1)}% vs mês anterior`
+    `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    `${stats.revenueGrowth >= 0 ? "+" : ""}${stats.revenueGrowth.toFixed(1)}% vs anterior`,
+    true
   );
   
-  drawMetricCard(
+  drawKPICard(
     startX + cardWidth + cardSpacing,
     yPosition,
     cardWidth,
     cardHeight,
     colors.success,
+    "📅",
     "VISITAS REALIZADAS",
     stats.completedVisits.toString(),
-    `${stats.totalVisits} agendadas`
+    `de ${stats.totalVisits} agendadas`
   );
   
-  drawMetricCard(
+  drawKPICard(
     startX + (cardWidth + cardSpacing) * 2,
     yPosition,
     cardWidth,
     cardHeight,
-    colors.accent,
+    colors.primaryLight,
+    "💵",
     "TICKET MÉDIO",
-    stats.completedVisits > 0
-      ? `R$ ${(stats.totalRevenue / stats.completedVisits).toFixed(2)}`
-      : "R$ 0,00"
+    `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   );
   
-  drawMetricCard(
+  drawKPICard(
     startX + (cardWidth + cardSpacing) * 3,
     yPosition,
     cardWidth,
     cardHeight,
     colors.warning,
+    "⏳",
     "RECEITA PENDENTE",
-    `R$ ${stats.totalPendingRevenue.toFixed(2)}`
+    `R$ ${stats.totalPendingRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   );
   
-  yPosition += cardHeight + 18;
+  yPosition += cardHeight + 12;
   
   // ========== TOP 5 PROCEDIMENTOS ==========
-  // Background da seção
-  doc.setFillColor(...colors.light);
-  doc.roundedRect(12, yPosition - 8, 186, 10, 3, 3, "F");
-  
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.primary);
-  doc.text("TOP 5 PROCEDIMENTOS", 16, yPosition);
-  
-  yPosition += 5;
+  doc.text("🏆 TOP 5 PROCEDIMENTOS", 20, yPosition);
+  yPosition += 4;
   
   if (stats.topProcedures.length > 0) {
     const totalProceduresRevenue = stats.topProcedures.reduce(
-      (sum, p) => sum + p.revenue,
-      0
-    );
-    const totalProceduresCount = stats.topProcedures.reduce(
-      (sum, p) => sum + p.count,
-      0
+      (sum, p) => sum + p.revenue, 0
     );
     
     autoTable(doc, {
       startY: yPosition,
-      head: [["Procedimento", "Quantidade", "Faturamento"]],
-      body: stats.topProcedures.map((proc) => [
-        proc.name,
-        proc.count.toString(),
-        `R$ ${proc.revenue.toFixed(2)}`,
-      ]),
-      foot: [
-        [
-          "TOTAL",
-          totalProceduresCount.toString(),
-          `R$ ${totalProceduresRevenue.toFixed(2)}`,
-        ],
-      ],
-      theme: "grid",
+      head: [["#", "Procedimento", "Qtd.", "Faturamento", "% Total"]],
+      body: stats.topProcedures.map((proc, index) => {
+        const percentage = stats.totalRevenue > 0 
+          ? ((proc.revenue / stats.totalRevenue) * 100).toFixed(1) 
+          : "0";
+        return [
+          (index + 1).toString(),
+          proc.name,
+          proc.count.toString(),
+          `R$ ${proc.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `${percentage}%`,
+        ];
+      }),
+      foot: [[
+        "",
+        "TOTAL TOP 5",
+        stats.topProcedures.reduce((sum, p) => sum + p.count, 0).toString(),
+        `R$ ${totalProceduresRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        stats.totalRevenue > 0 
+          ? `${((totalProceduresRevenue / stats.totalRevenue) * 100).toFixed(1)}%` 
+          : "0%",
+      ]],
+      theme: "striped",
       headStyles: {
         fillColor: colors.primary,
-        textColor: [255, 255, 255],
-        fontSize: 11,
+        textColor: colors.white,
+        fontSize: 9,
         fontStyle: "bold",
         halign: "center",
-        cellPadding: 4,
+        cellPadding: 3,
       },
       bodyStyles: {
-        fontSize: 10,
-        cellPadding: 4,
+        fontSize: 9,
+        cellPadding: 3,
       },
       footStyles: {
         fillColor: colors.light,
         textColor: colors.primary,
-        fontSize: 10,
+        fontSize: 9,
         fontStyle: "bold",
         halign: "center",
-        cellPadding: 4,
+        cellPadding: 3,
       },
-      alternateRowStyles: {
-        fillColor: [255, 255, 255],
+      columnStyles: {
+        0: { halign: "center", cellWidth: 12 },
+        1: { halign: "left" },
+        2: { halign: "center", cellWidth: 18 },
+        3: { halign: "right", cellWidth: 35 },
+        4: { halign: "center", cellWidth: 22 },
       },
       margin: { left: 14, right: 14 },
       tableLineColor: colors.border,
-      tableLineWidth: 0.3,
-    });
-    
-    yPosition = (doc as any).lastAutoTable.finalY + 12;
-  } else {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(128, 128, 128);
-    doc.text("Nenhum procedimento realizado neste período", 20, yPosition + 5);
-    yPosition += 18;
-  }
-  
-  // ========== TOP 5 CLIENTES ==========
-  // Background da seção
-  doc.setFillColor(...colors.light);
-  doc.roundedRect(12, yPosition - 8, 186, 10, 3, 3, "F");
-  
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...colors.primary);
-  doc.text("TOP 5 CLIENTES", 16, yPosition);
-  
-  yPosition += 5;
-  
-  if (stats.topClients.length > 0) {
-    const totalClientsVisits = stats.topClients.reduce(
-      (sum, c) => sum + c.visits,
-      0
-    );
-    const totalClientsSpent = stats.topClients.reduce(
-      (sum, c) => sum + c.totalSpent,
-      0
-    );
-    
-    autoTable(doc, {
-      startY: yPosition,
-      head: [["Cliente", "Visitas", "Total Gasto"]],
-      body: stats.topClients.map((client) => [
-        client.name,
-        client.visits.toString(),
-        `R$ ${client.totalSpent.toFixed(2)}`,
-      ]),
-      foot: [
-        [
-          "TOTAL",
-          totalClientsVisits.toString(),
-          `R$ ${totalClientsSpent.toFixed(2)}`,
-        ],
-      ],
-      theme: "grid",
-      headStyles: {
-        fillColor: colors.primary,
-        textColor: [255, 255, 255],
-        fontSize: 11,
-        fontStyle: "bold",
-        halign: "center",
-        cellPadding: 4,
-      },
-      bodyStyles: {
-        fontSize: 10,
-        cellPadding: 4,
-      },
-      footStyles: {
-        fillColor: colors.light,
-        textColor: colors.primary,
-        fontSize: 10,
-        fontStyle: "bold",
-        halign: "center",
-        cellPadding: 4,
-      },
-      alternateRowStyles: {
-        fillColor: [255, 255, 255],
-      },
-      margin: { left: 14, right: 14 },
-      tableLineColor: colors.border,
-      tableLineWidth: 0.3,
+      tableLineWidth: 0.2,
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 10;
   } else {
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
-    doc.setTextColor(128, 128, 128);
-    doc.text("Nenhum cliente com visitas neste período", 20, yPosition + 5);
-    yPosition += 15;
+    doc.setTextColor(...colors.textMuted);
+    doc.text("Nenhum procedimento realizado neste período", 20, yPosition + 5);
+    yPosition += 14;
   }
   
-  // ========== FOOTER MELHORADO ==========
-  // Linha decorativa superior
+  // ========== TOP 5 CLIENTES ==========
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.primary);
+  doc.text("👑 TOP 5 CLIENTES", 20, yPosition);
+  yPosition += 4;
+  
+  if (stats.topClients.length > 0) {
+    const totalClientsSpent = stats.topClients.reduce(
+      (sum, c) => sum + c.totalSpent, 0
+    );
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [["#", "Cliente", "Visitas", "Total Gasto", "% Total"]],
+      body: stats.topClients.map((client, index) => {
+        const percentage = stats.totalRevenue > 0 
+          ? ((client.totalSpent / stats.totalRevenue) * 100).toFixed(1) 
+          : "0";
+        return [
+          (index + 1).toString(),
+          client.name,
+          client.visits.toString(),
+          `R$ ${client.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          `${percentage}%`,
+        ];
+      }),
+      foot: [[
+        "",
+        "TOTAL TOP 5",
+        stats.topClients.reduce((sum, c) => sum + c.visits, 0).toString(),
+        `R$ ${totalClientsSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        stats.totalRevenue > 0 
+          ? `${((totalClientsSpent / stats.totalRevenue) * 100).toFixed(1)}%` 
+          : "0%",
+      ]],
+      theme: "striped",
+      headStyles: {
+        fillColor: colors.primary,
+        textColor: colors.white,
+        fontSize: 9,
+        fontStyle: "bold",
+        halign: "center",
+        cellPadding: 3,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      footStyles: {
+        fillColor: colors.light,
+        textColor: colors.primary,
+        fontSize: 9,
+        fontStyle: "bold",
+        halign: "center",
+        cellPadding: 3,
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 12 },
+        1: { halign: "left" },
+        2: { halign: "center", cellWidth: 20 },
+        3: { halign: "right", cellWidth: 35 },
+        4: { halign: "center", cellWidth: 22 },
+      },
+      margin: { left: 14, right: 14 },
+      tableLineColor: colors.border,
+      tableLineWidth: 0.2,
+    });
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(...colors.textMuted);
+    doc.text("Nenhum cliente com visitas neste período", 20, yPosition + 5);
+    yPosition += 14;
+  }
+  
+  // ========== INSIGHTS DO PERÍODO ==========
+  // Verificar se há espaço suficiente na página
+  if (yPosition > 230) {
+    doc.addPage();
+    yPosition = 20;
+  }
+  
+  doc.setFillColor(...colors.light);
+  doc.roundedRect(14, yPosition - 4, 182, 42, 3, 3, "F");
+  
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.primary);
+  doc.text("📈 INSIGHTS DO PERÍODO", 20, yPosition + 3);
+  
+  yPosition += 10;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...colors.text);
+  
+  const insights: string[] = [];
+  
+  // Insight 1: Crescimento
+  if (stats.revenueGrowth !== 0) {
+    if (stats.revenueGrowth > 0) {
+      insights.push(`• Crescimento de ${stats.revenueGrowth.toFixed(1)}% em relação ao mês anterior`);
+    } else {
+      insights.push(`• Redução de ${Math.abs(stats.revenueGrowth).toFixed(1)}% em relação ao mês anterior`);
+    }
+  }
+  
+  // Insight 2: Procedimento mais lucrativo
+  if (stats.topProcedures.length > 0) {
+    const topProc = stats.topProcedures[0];
+    const procPercentage = stats.totalRevenue > 0 
+      ? ((topProc.revenue / stats.totalRevenue) * 100).toFixed(1) 
+      : "0";
+    insights.push(`• "${topProc.name}" representa ${procPercentage}% do faturamento total`);
+  }
+  
+  // Insight 3: Taxa de conclusão
+  if (stats.totalVisits > 0) {
+    const completionRateNum = (stats.completedVisits / stats.totalVisits) * 100;
+    insights.push(`• Taxa de conclusão: ${completionRateNum.toFixed(1)}% (${stats.completedVisits} de ${stats.totalVisits} agendamentos)`);
+  }
+  
+  // Insight 4: Concentração de clientes
+  if (stats.topClients.length > 0 && stats.totalRevenue > 0) {
+    const top5Revenue = stats.topClients.reduce((sum, c) => sum + c.totalSpent, 0);
+    const concentration = ((top5Revenue / stats.totalRevenue) * 100).toFixed(1);
+    insights.push(`• Top 5 clientes representam ${concentration}% do faturamento total`);
+  }
+  
+  // Se não houver insights, adicionar um genérico
+  if (insights.length === 0) {
+    insights.push("• Período sem atividade registrada para análise");
+  }
+  
+  insights.forEach((insight, index) => {
+    doc.text(insight, 20, yPosition + (index * 6));
+  });
+  
+  // ========== FOOTER PROFISSIONAL ==========
+  const pageHeight = doc.internal.pageSize.height;
+  
+  // Linha decorativa
   doc.setDrawColor(...colors.primary);
   doc.setLineWidth(0.5);
-  doc.line(14, 275, 196, 275);
+  doc.line(14, pageHeight - 22, 196, pageHeight - 22);
   
+  // Data de geração
   doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(128, 128, 128);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...colors.textMuted);
   const now = new Date();
   doc.text(
-    `Relatório gerado em: ${format(now, "dd/MM/yyyy 'às' HH:mm")}`,
+    `Relatório gerado em ${format(now, "dd/MM/yyyy 'às' HH:mm")}`,
     105,
-    282,
+    pageHeight - 16,
     { align: "center" }
   );
   
-  doc.setFontSize(7);
-  doc.text("Powered by FichaZen • Página 1 de 1", 105, 287, {
-    align: "center",
-  });
+  // Branding
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.primary);
+  doc.text("FichaZen", 105, pageHeight - 10, { align: "center" });
   
-  // Salvar PDF
-  const fileName = `faturamento-${format(month, "yyyy-MM")}.pdf`;
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...colors.textMuted);
+  doc.text(" • Sistema de Gestão para Profissionais de Beleza", 118, pageHeight - 10);
+  
+  // Página
+  doc.setFontSize(7);
+  doc.text("Página 1 de 1", 196, pageHeight - 10, { align: "right" });
+  
+  // ========== SALVAR PDF ==========
+  // Nome do arquivo dinâmico
+  let fileName = `faturamento-${format(month, "yyyy-MM")}`;
+  if (professionalName) {
+    // Normalizar nome para filename (remover acentos e espaços)
+    const normalizedName = professionalName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-");
+    fileName += `-${normalizedName}`;
+  }
+  fileName += ".pdf";
+  
   doc.save(fileName);
 };
