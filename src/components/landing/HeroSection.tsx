@@ -21,51 +21,69 @@ export const HeroSection = () => {
           <div className="space-y-8 animate-fade-in-up">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                Diga adeus à papelada. <br />
-                <span className="text-secondary">Dê um 'Zen' no seu estúdio.</span>
+                Economize <span className="text-secondary">10h por semana</span> com Gestão de Clientes em Piloto Automático
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
-                O FichaZen digitaliza fichas de anamnese, organiza seus clientes e automatiza confirmações via WhatsApp — tudo em minutos.
+                Anamnese digital + WhatsApp integrado + Fotos organizadas + Relatórios financeiros. Tudo em 1 lugar.
               </p>
             </div>
 
-            {/* Trust Line */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="w-5 h-5 text-secondary" />
-              <span className="font-semibold">Teste grátis por 15 dias — sem cartão de crédito.</span>
+            {/* Trust Signals */}
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="w-5 h-5 text-secondary" />
+                <span className="font-semibold">+500 profissionais já usam</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="w-5 h-5 text-secondary" />
+                <span className="font-semibold">Dados criptografados</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle2 className="w-5 h-5 text-secondary" />
+                <span className="font-semibold">Teste grátis sem cartão</span>
+              </div>
             </div>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="xl" asChild className="group">
+              <Button variant="hero" size="xl" asChild className="group shadow-button">
                 <a href="/registro">
-                  Teste grátis por 15 dias
+                  Começar meu teste grátis agora
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
               </Button>
               <Button variant="outline" size="xl" onClick={scrollToFeatures}>
-                Ver Funcionalidades
+                Ver demonstração
               </Button>
             </div>
 
             {/* Micro Trust Badges */}
             <div className="flex flex-wrap gap-6 pt-4">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-secondary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Sem cartão</p>
-                  <p className="text-xs text-muted-foreground">No teste grátis</p>
+                  <p className="text-sm font-semibold text-foreground">15 dias grátis</p>
+                  <p className="text-xs text-muted-foreground">Sem cartão de crédito</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-secondary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Clientes Ilimitados</p>
-                  <p className="text-xs text-muted-foreground">Na versão PRO</p>
+                  <p className="text-sm font-semibold text-foreground">Ilimitado</p>
+                  <p className="text-xs text-muted-foreground">Clientes no plano Pro</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">5 minutos</p>
+                  <p className="text-xs text-muted-foreground">Para começar a usar</p>
                 </div>
               </div>
             </div>

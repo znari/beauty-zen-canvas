@@ -120,10 +120,15 @@ export const LandingFooter = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © 2025 FichaZen. Todos os direitos reservados.
-            </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+            <div className="text-center md:text-left">
+              <p className="text-sm text-muted-foreground mb-1">
+                © 2025 FichaZen. Todos os direitos reservados.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                🇧🇷 Feito com ❤️ no Brasil • CNPJ: 00.000.000/0001-00
+              </p>
+            </div>
             <div className="flex gap-6">
               <a 
                 href="/privacidade" 
@@ -137,6 +142,34 @@ export const LandingFooter = () => {
               >
                 Termos de Uso
               </a>
+              <a 
+                href="/lgpd" 
+                className="text-sm text-muted-foreground hover:text-secondary transition-colors"
+              >
+                LGPD
+              </a>
+            </div>
+          </div>
+          
+          {/* Security badges */}
+          <div className="flex justify-center items-center gap-4 pt-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="w-4 h-4 bg-secondary/20 rounded-full flex items-center justify-center">
+                🔒
+              </span>
+              <span>SSL Seguro</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="w-4 h-4 bg-secondary/20 rounded-full flex items-center justify-center">
+                ✓
+              </span>
+              <span>LGPD Compliant</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="w-4 h-4 bg-secondary/20 rounded-full flex items-center justify-center">
+                💳
+              </span>
+              <span>Pagamento Seguro</span>
             </div>
           </div>
         </div>

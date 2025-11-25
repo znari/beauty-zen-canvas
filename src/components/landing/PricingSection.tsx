@@ -9,16 +9,19 @@ export const PricingSection = () => {
       id: 'essencial',
       name: 'Zen Essencial',
       price: '39,90',
-      description: 'Ideal para começar',
+      description: 'Perfeito para começar',
       icon: Sparkles,
       features: [
         'Até 10 clientes',
         'Até 10 fichas de anamnese',
         '2GB de armazenamento',
         '1 profissional',
-        'Envio via WhatsApp',
+        '11 templates de mensagens',
+        'WhatsApp integrado',
         'Fotos antes/depois',
-        'Suporte por WhatsApp'
+        'Notificações automáticas',
+        'Relatórios básicos',
+        'Suporte via WhatsApp'
       ],
       highlighted: false,
       cta: 'Começar teste grátis',
@@ -28,15 +31,20 @@ export const PricingSection = () => {
       id: 'pro',
       name: 'Zen Pro',
       price: '89,90',
-      description: 'Para estúdios em crescimento',
+      description: 'Para crescer sem limites',
       icon: Crown,
-      badge: 'Mais Popular',
+      badge: '🔥 Mais Popular',
       features: [
-        'Até 50 clientes',
-        'Até 50 fichas de anamnese',
+        'Clientes ILIMITADOS ⭐',
+        'Fichas ILIMITADAS ⭐',
         '10GB de armazenamento',
         'Até 5 profissionais',
-        'Tudo do Essencial'
+        'Tudo do Essencial +',
+        'Relatórios avançados com gráficos',
+        'Exportação PDF profissional',
+        'Top 5 procedimentos e clientes',
+        'Gráficos de faturamento',
+        'Suporte prioritário'
       ],
       highlighted: true,
       cta: 'Começar teste grátis',
@@ -46,14 +54,19 @@ export const PricingSection = () => {
       id: 'ultimate',
       name: 'Zen Ultimate',
       price: '129,90',
-      description: 'Potência total',
+      description: 'Potência máxima',
       icon: Zap,
       features: [
+        'TUDO ILIMITADO ⭐⭐⭐',
         'Clientes ilimitados',
         'Fichas ilimitadas',
         'Armazenamento ilimitado',
         'Profissionais ilimitados',
-        'Tudo do Pro'
+        'Tudo do Pro +',
+        'Backup diário automático',
+        'Treinamento personalizado',
+        'Suporte VIP (resposta em 1h)',
+        'Acesso antecipado a novidades'
       ],
       highlighted: false,
       cta: 'Começar teste grátis',
@@ -63,19 +76,22 @@ export const PricingSection = () => {
       id: 'ultimate_plus',
       name: 'Zen Ultimate + IA',
       price: null,
-      description: 'Atendimento automático',
+      description: 'Futuro da automação',
       icon: MessageCircle,
-      badge: 'Em breve',
+      badge: '🚀 Em breve',
       features: [
-        'Tudo do Ultimate',
-        'Agente de IA no WhatsApp',
+        'Tudo do Ultimate +',
+        'Agente de IA no WhatsApp 🤖',
         'Agendamentos automáticos',
-        'Respostas inteligentes',
-        'Entre em contato'
+        'Respostas inteligentes 24/7',
+        'Confirmações automáticas',
+        'Lembretes personalizados',
+        'Entre em contato para saber mais'
       ],
       highlighted: false,
-      cta: 'Saber mais',
-      ctaLink: 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA'
+      cta: 'Quero saber mais',
+      ctaLink: 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA',
+      comingSoon: true
     }
   ];
 
@@ -85,15 +101,18 @@ export const PricingSection = () => {
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Escolha o plano ideal para você
+            Comece grátis. Cresça com o FichaZen. <span className="text-secondary">Cancele quando quiser.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Teste grátis por 15 dias. Sem cartão de crédito. Cancele quando quiser.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4">
+            Teste todas as funcionalidades por 15 dias, sem cartão de crédito
           </p>
+          <div className="inline-flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full">
+            <span className="text-sm font-semibold text-secondary">🎁 Oferta de lançamento: 15 dias grátis para todos</span>
+          </div>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
           {plans.map((plan) => {
             const Icon = plan.icon;
             return (
@@ -102,13 +121,13 @@ export const PricingSection = () => {
                 className={`relative ${
                   plan.highlighted 
                     ? 'border-2 border-secondary shadow-lg scale-105' 
-                    : 'border-2 border-transparent'
-                }`}
+                    : 'border border-border'
+                } ${plan.comingSoon ? 'opacity-95' : ''}`}
               >
                 {/* Badge */}
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-secondary text-secondary-foreground">
+                    <Badge className="bg-secondary text-secondary-foreground font-semibold">
                       {plan.badge}
                     </Badge>
                   </div>
@@ -140,7 +159,7 @@ export const PricingSection = () => {
 
                 <CardContent className="space-y-4">
                   {/* Features */}
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 min-h-[300px]">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm">
                         <Check className="h-4 w-4 text-secondary flex-shrink-0 mt-0.5" />
@@ -151,12 +170,12 @@ export const PricingSection = () => {
 
                   {/* CTA */}
                   <Button
-                    variant={plan.highlighted ? "cta" : "outline"}
+                    variant={plan.highlighted ? "hero" : "outline"}
                     size="lg"
-                    className="w-full"
+                    className={`w-full ${plan.highlighted ? 'shadow-button' : ''}`}
                     asChild
                   >
-                    {plan.id === 'ultimate_plus' ? (
+                    {plan.comingSoon ? (
                       <a href={plan.ctaLink} target="_blank" rel="noopener noreferrer">
                         {plan.cta}
                       </a>
@@ -172,10 +191,27 @@ export const PricingSection = () => {
           })}
         </div>
 
-        {/* Footer note */}
-        <p className="text-center text-sm text-muted-foreground mt-12">
-          💳 Todos os planos incluem <strong>15 dias de teste grátis</strong> sem necessidade de cartão de crédito
-        </p>
+        {/* Trust line */}
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <p className="text-sm text-muted-foreground">
+            💳 <strong>Todos os planos incluem 15 dias de teste grátis</strong> — sem necessidade de cartão de crédito
+          </p>
+          <p className="text-sm text-muted-foreground">
+            ✅ Sem compromisso • ✅ Cancele quando quiser • ✅ Sem multa ou fidelidade
+          </p>
+        </div>
+
+        {/* Comparison CTA */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-muted-foreground mb-2">
+            Não tem certeza qual plano escolher? 
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <a href="https://wa.me/5511999999999?text=Tenho%20dúvidas%20sobre%20os%20planos" target="_blank" rel="noopener noreferrer">
+              Falar com especialista no WhatsApp
+            </a>
+          </Button>
+        </div>
       </div>
     </section>
   );
