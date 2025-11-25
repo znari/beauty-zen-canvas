@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { gerarLinkWhatsApp, generateAnamnesisLink, type MessageType } from "@/lib/whatsapp";
+import { gerarLinkWhatsApp, generateAnamnesisLink, type MessageType, type TemplateSelectorType } from "@/lib/whatsapp";
 import TemplateSelector from "@/components/TemplateSelector";
 import { useMessageTemplates, type MessageTemplate } from "@/hooks/useMessageTemplates";
 import { useClientProfile } from "@/hooks/useClientProfile";
@@ -47,10 +47,10 @@ const ClientProfile = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
-  const [templateType, setTemplateType] = useState<MessageType>("BoasVindas");
+  const [templateType, setTemplateType] = useState<TemplateSelectorType>("BoasVindas");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedVisitForUpload, setSelectedVisitForUpload] = useState<any>(null);
-  const handleOpenTemplateSelector = (type: MessageType) => {
+  const handleOpenTemplateSelector = (type: TemplateSelectorType) => {
     setTemplateType(type);
     setTemplateSelectorOpen(true);
   };
@@ -211,7 +211,7 @@ const ClientProfile = () => {
                     </div>
                   </div>
 
-                  <Button onClick={() => handleOpenTemplateSelector("BoasVindas")} className="w-full" variant="outline">
+                  <Button onClick={() => handleOpenTemplateSelector("Todos")} className="w-full" variant="outline">
                     <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar Mensagem
                   </Button>

@@ -4,6 +4,7 @@
  */
 
 export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "Agradecimento" | "BoasVindas" | "Reagendamento" | "Cancelamento";
+export type TemplateSelectorType = MessageType | "Todos";
 
 export interface WhatsAppMessageParams {
   nomeCliente: string;
