@@ -5,23 +5,27 @@ export const ProblemSection = () => {
   const problems = [
     {
       icon: FileX,
-      title: "Fichas de papel perdidas ou amassadas",
-      description: "Perde tempo procurando informações importantes dos clientes"
+      title: "📋 40% das fichas perdidas",
+      description: "= Retrabalho e risco legal de não ter histórico do cliente",
+      impact: "2h/dia perdidas"
     },
     {
       icon: Clock,
-      title: "Tempo perdido com confirmações",
-      description: "Confirma agendamentos manualmente um por um no WhatsApp"
+      title: "⏰ 8h/semana em confirmações",
+      description: "= R$ 800 de perda produtiva por mês confirmando manualmente",
+      impact: "R$ 800/mês"
     },
     {
       icon: ImageOff,
-      title: "Fotos desorganizadas",
-      description: "Antes/depois espalhadas no rolo da câmera do celular"
+      title: "📸 Fotos no rolo da câmera",
+      description: "= Perda de oportunidades de marketing e portfólio desorganizado",
+      impact: "0 marketing"
     },
     {
       icon: Search,
-      title: "Sem histórico acessível",
-      description: "Dificuldade em acessar rapidamente o histórico do cliente"
+      title: "💰 Sem controle financeiro",
+      description: "= Impossível planejar crescimento ou identificar melhores procedimentos",
+      impact: "Estagnação"
     }
   ];
 
@@ -30,10 +34,10 @@ export const ProblemSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Seu dia a dia parece com isso?
+            Você está perdendo <span className="text-secondary">R$ 1.500/mês</span> sem perceber
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Sabemos que gerenciar um estúdio de beleza vai muito além do atendimento
+            Tempo perdido em tarefas administrativas = dinheiro deixando de entrar
           </p>
         </div>
 
@@ -52,8 +56,11 @@ export const ProblemSection = () => {
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {problem.title}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   {problem.description}
+                </p>
+                <p className="text-xs font-semibold text-secondary">
+                  {problem.impact}
                 </p>
               </div>
             );
