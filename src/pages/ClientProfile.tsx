@@ -56,13 +56,30 @@ const ClientProfile = () => {
   };
   const handleSendWithTemplate = (template: MessageTemplate) => {
     if (!client) return;
-    const fichaUrl = templateType === "EnvioFicha" ? generateAnamnesisLink(client.id) : undefined;
+
+    // Buscar próximo agendamento confirmado (não cancelado)
+    const nextVisit = client.visits
+      ?.filter((v) => v.status !== "Cancelado")
+      .sort((a, b) => {
+        const dateA = new Date(`${a.rawDate}T${a.rawTime}`);
+        const dateB = new Date(`${b.rawDate}T${b.rawTime}`);
+        return dateA.getTime() - dateB.getTime();
+      })
+      .find((v) => new Date(`${v.rawDate}T${v.rawTime}`) >= new Date());
+
+    const fichaUrl = generateAnamnesisLink(client.id);
+    
     let message = template.conteudo;
     message = message.replace(/\[nomeCliente\]/g, client.name);
     message = message.replace(/\[nomeStudio\]/g, "FichaZen");
-    if (fichaUrl) {
-      message = message.replace(/\[linkFicha\]/g, fichaUrl);
+    message = message.replace(/\[linkFicha\]/g, fichaUrl);
+    
+    if (nextVisit) {
+      message = message.replace(/\[dataProcedimento\]/g, nextVisit.date);
+      message = message.replace(/\[horaProcedimento\]/g, nextVisit.time);
+      message = message.replace(/\[procedimentos\]/g, nextVisit.procedures.join(", "));
     }
+
     const whatsappUrl = gerarLinkWhatsApp(client.phone, message);
     window.open(whatsappUrl, "_blank");
     toast({
@@ -211,7 +228,10 @@ const ClientProfile = () => {
                     </div>
                   </div>
 
-                  <Button onClick={() => handleOpenTemplateSelector("Todos")} className="w-full" variant="outline">
+                  <Button onClick={() => {
+                    setTemplateType("Todos");
+                    setTemplateSelectorOpen(true);
+                  }} className="w-full" variant="outline">
                     <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
                     Enviar Mensagem
                   </Button>
@@ -519,7 +539,30 @@ const ClientProfile = () => {
         templates={templates} 
         onSelect={handleSendWithTemplate} 
         clientData={{
-          nomeCliente: client.name
+          nomeCliente: client.name,
+          dataProcedimento: (() => {
+            const nextVisit = client.visits
+              ?.filter((v) => v.status !== "Cancelado")
+              .sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime())
+              .find((v) => new Date(v.rawDate) >= new Date());
+            return nextVisit?.date;
+          })(),
+          horaProcedimento: (() => {
+            const nextVisit = client.visits
+              ?.filter((v) => v.status !== "Cancelado")
+              .sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime())
+              .find((v) => new Date(v.rawDate) >= new Date());
+            return nextVisit?.time;
+          })(),
+          linkFicha: `${window.location.origin}/ficha/${client.id}`,
+          procedimentos: (() => {
+            const nextVisit = client.visits
+              ?.filter((v) => v.status !== "Cancelado")
+              .sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime())
+              .find((v) => new Date(v.rawDate) >= new Date());
+            return nextVisit?.procedures.join(", ");
+          })(),
+          nomeStudio: "FichaZen",
         }} 
       />
     </div>;
