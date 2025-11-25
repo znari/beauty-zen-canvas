@@ -116,7 +116,6 @@ export const exportBillingToPDF = (
     width: number,
     height: number,
     topColor: [number, number, number],
-    icon: string,
     label: string,
     value: string,
     subtitle?: string,
@@ -138,21 +137,17 @@ export const exportBillingToPDF = (
     doc.setFillColor(...topColor);
     doc.rect(x, y + 2, width, 2, "F");
     
-    // Ícone
-    doc.setFontSize(14);
-    doc.text(icon, x + 6, y + 14);
-    
     // Label
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.textMuted);
-    doc.text(label, x + width / 2, y + 13, { align: "center" });
+    doc.text(label, x + width / 2, y + 12, { align: "center" });
     
     // Valor principal
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.text);
-    doc.text(value, x + width / 2, y + 23, { align: "center" });
+    doc.text(value, x + width / 2, y + 22, { align: "center" });
     
     // Subtítulo
     if (subtitle) {
@@ -162,7 +157,7 @@ export const exportBillingToPDF = (
         ? (stats.revenueGrowth >= 0 ? colors.success : colors.danger)
         : colors.textMuted;
       doc.setTextColor(...subtitleColor);
-      doc.text(subtitle, x + width / 2, y + 30, { align: "center" });
+      doc.text(subtitle, x + width / 2, y + 29, { align: "center" });
     }
   };
   
@@ -188,8 +183,7 @@ export const exportBillingToPDF = (
     cardWidth,
     cardHeight,
     colors.primary,
-    "💰",
-    "FATURAMENTO TOTAL",
+    "FATURAMENTO",
     `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
     `${stats.revenueGrowth >= 0 ? "+" : ""}${stats.revenueGrowth.toFixed(1)}% vs anterior`,
     true
@@ -201,8 +195,7 @@ export const exportBillingToPDF = (
     cardWidth,
     cardHeight,
     colors.success,
-    "📅",
-    "VISITAS REALIZADAS",
+    "VISITAS",
     stats.completedVisits.toString(),
     `de ${stats.totalVisits} agendadas`
   );
@@ -213,8 +206,7 @@ export const exportBillingToPDF = (
     cardWidth,
     cardHeight,
     colors.primaryLight,
-    "💵",
-    "TICKET MÉDIO",
+    "TICKET MEDIO",
     `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   );
   
@@ -224,8 +216,7 @@ export const exportBillingToPDF = (
     cardWidth,
     cardHeight,
     colors.warning,
-    "⏳",
-    "RECEITA PENDENTE",
+    "PENDENTE",
     `R$ ${stats.totalPendingRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   );
   
@@ -235,7 +226,7 @@ export const exportBillingToPDF = (
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.primary);
-  doc.text("🏆 TOP 5 PROCEDIMENTOS", 20, yPosition);
+  doc.text("TOP 5 PROCEDIMENTOS", 20, yPosition);
   yPosition += 4;
   
   if (stats.topProcedures.length > 0) {
@@ -313,7 +304,7 @@ export const exportBillingToPDF = (
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.primary);
-  doc.text("👑 TOP 5 CLIENTES", 20, yPosition);
+  doc.text("TOP 5 CLIENTES", 20, yPosition);
   yPosition += 4;
   
   if (stats.topClients.length > 0) {
@@ -388,33 +379,15 @@ export const exportBillingToPDF = (
   }
   
   // ========== INSIGHTS DO PERÍODO ==========
-  // Verificar se há espaço suficiente na página
-  if (yPosition > 230) {
-    doc.addPage();
-    yPosition = 20;
-  }
-  
-  doc.setFillColor(...colors.light);
-  doc.roundedRect(14, yPosition - 4, 182, 42, 3, 3, "F");
-  
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...colors.primary);
-  doc.text("📈 INSIGHTS DO PERÍODO", 20, yPosition + 3);
-  
-  yPosition += 10;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...colors.text);
-  
+  // Gerar insights primeiro para calcular altura
   const insights: string[] = [];
   
   // Insight 1: Crescimento
   if (stats.revenueGrowth !== 0) {
     if (stats.revenueGrowth > 0) {
-      insights.push(`• Crescimento de ${stats.revenueGrowth.toFixed(1)}% em relação ao mês anterior`);
+      insights.push("Crescimento de " + stats.revenueGrowth.toFixed(1) + "% em relacao ao mes anterior");
     } else {
-      insights.push(`• Redução de ${Math.abs(stats.revenueGrowth).toFixed(1)}% em relação ao mês anterior`);
+      insights.push("Reducao de " + Math.abs(stats.revenueGrowth).toFixed(1) + "% em relacao ao mes anterior");
     }
   }
   
@@ -424,29 +397,51 @@ export const exportBillingToPDF = (
     const procPercentage = stats.totalRevenue > 0 
       ? ((topProc.revenue / stats.totalRevenue) * 100).toFixed(1) 
       : "0";
-    insights.push(`• "${topProc.name}" representa ${procPercentage}% do faturamento total`);
+    insights.push(topProc.name + " representa " + procPercentage + "% do faturamento total");
   }
   
   // Insight 3: Taxa de conclusão
   if (stats.totalVisits > 0) {
     const completionRateNum = (stats.completedVisits / stats.totalVisits) * 100;
-    insights.push(`• Taxa de conclusão: ${completionRateNum.toFixed(1)}% (${stats.completedVisits} de ${stats.totalVisits} agendamentos)`);
+    insights.push("Taxa de conclusao: " + completionRateNum.toFixed(1) + "% (" + stats.completedVisits + " de " + stats.totalVisits + " agendamentos)");
   }
   
   // Insight 4: Concentração de clientes
   if (stats.topClients.length > 0 && stats.totalRevenue > 0) {
     const top5Revenue = stats.topClients.reduce((sum, c) => sum + c.totalSpent, 0);
     const concentration = ((top5Revenue / stats.totalRevenue) * 100).toFixed(1);
-    insights.push(`• Top 5 clientes representam ${concentration}% do faturamento total`);
+    insights.push("Top 5 clientes representam " + concentration + "% do faturamento total");
   }
   
   // Se não houver insights, adicionar um genérico
   if (insights.length === 0) {
-    insights.push("• Período sem atividade registrada para análise");
+    insights.push("Periodo sem atividade registrada para analise");
   }
   
+  // Calcular altura dinâmica da caixa de insights
+  const insightsHeight = 14 + (insights.length * 7);
+  
+  // Verificar se há espaço suficiente na página
+  if (yPosition + insightsHeight > 260) {
+    doc.addPage();
+    yPosition = 20;
+  }
+  
+  doc.setFillColor(...colors.light);
+  doc.roundedRect(14, yPosition - 4, 182, insightsHeight, 3, 3, "F");
+  
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.primary);
+  doc.text("INSIGHTS DO PERIODO", 20, yPosition + 3);
+  
+  const insightStartY = yPosition + 10;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...colors.text);
+  
   insights.forEach((insight, index) => {
-    doc.text(insight, 20, yPosition + (index * 6));
+    doc.text("- " + insight, 20, insightStartY + (index * 6));
   });
   
   // ========== FOOTER PROFISSIONAL ==========
@@ -471,17 +466,13 @@ export const exportBillingToPDF = (
   
   // Branding
   doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...colors.primary);
-  doc.text("FichaZen", 105, pageHeight - 10, { align: "center" });
-  
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...colors.textMuted);
-  doc.text(" • Sistema de Gestão para Profissionais de Beleza", 118, pageHeight - 10);
+  doc.text("FichaZen - Sistema de Gestao para Profissionais de Beleza", 14, pageHeight - 10);
   
   // Página
   doc.setFontSize(7);
-  doc.text("Página 1 de 1", 196, pageHeight - 10, { align: "right" });
+  doc.text("Pagina 1", 196, pageHeight - 10, { align: "right" });
   
   // ========== SALVAR PDF ==========
   // Nome do arquivo dinâmico
