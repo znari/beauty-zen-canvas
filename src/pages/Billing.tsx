@@ -82,10 +82,17 @@ const Billing = () => {
     if (!stats) return;
     
     try {
-      exportBillingToPDF(stats, selectedMonth, studioName);
+      // Obter nome do profissional selecionado (se filtrado)
+      const professionalName = selectedProfessional 
+        ? teamMembers.find(m => m.id === selectedProfessional)?.name 
+        : null;
+      
+      exportBillingToPDF(stats, selectedMonth, studioName, professionalName);
       toast({
         title: "PDF exportado com sucesso!",
-        description: "O relatório foi baixado.",
+        description: professionalName 
+          ? `Relatório de ${professionalName} foi baixado.`
+          : "O relatório consolidado foi baixado.",
       });
     } catch (error) {
       toast({
