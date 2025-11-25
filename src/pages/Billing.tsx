@@ -4,12 +4,20 @@ import { ChevronLeft, ChevronRight, Download, TrendingUp, Calendar, DollarSign, 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useBillingStats } from "@/hooks/useBillingStats";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { exportBillingToPDF } from "@/lib/exportBillingPDF";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -39,8 +47,10 @@ const Billing = () => {
   const { toast } = useToast();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [studioName, setStudioName] = useState<string>("Studio");
+  const [selectedProfessional, setSelectedProfessional] = useState<string | null>(null);
   
-  const { data: stats, isLoading } = useBillingStats(selectedMonth);
+  const { data: teamMembers = [] } = useTeamMembers(false); // incluir inativos para histórico
+  const { data: stats, isLoading } = useBillingStats(selectedMonth, selectedProfessional);
 
   useEffect(() => {
     const fetchStudioName = async () => {
@@ -129,10 +139,10 @@ const Billing = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Month Navigation */}
+        {/* Month Navigation + Professional Filter */}
         <Card className="bg-white shadow-card border-0">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <Button
                 variant="outline"
                 onClick={handlePreviousMonth}
@@ -142,11 +152,35 @@ const Billing = () => {
                 Mês Anterior
               </Button>
               
-              <div className="text-center">
+              <div className="text-center flex flex-col items-center gap-2">
                 <h2 className="text-2xl font-bold text-secondary">{formattedMonth}</h2>
+                {selectedProfessional && (
+                  <span className="text-sm text-muted-foreground">
+                    Filtrando: {teamMembers.find(m => m.id === selectedProfessional)?.name}
+                  </span>
+                )}
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-end">
+                {/* Filtro por profissional */}
+                <Select 
+                  value={selectedProfessional || "all"} 
+                  onValueChange={(v) => setSelectedProfessional(v === "all" ? null : v)}
+                >
+                  <SelectTrigger className="w-[200px] border-primary/30">
+                    <Users className="h-4 w-4 mr-2 text-primary" />
+                    <SelectValue placeholder="Todos os profissionais" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os profissionais</SelectItem>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} {member.is_owner && "👑"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 <Button
                   variant="outline"
                   onClick={handleNextMonth}

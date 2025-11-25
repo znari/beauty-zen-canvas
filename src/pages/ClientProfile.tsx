@@ -327,6 +327,7 @@ const ClientProfile = () => {
                         <TableRow className="bg-accent/30 hover:bg-accent/30">
                           <TableHead className="font-bold text-secondary">Data</TableHead>
                           <TableHead className="font-bold text-secondary">Horário</TableHead>
+                          <TableHead className="font-bold text-secondary">Profissional</TableHead>
                           <TableHead className="font-bold text-secondary">Procedimentos</TableHead>
                           <TableHead className="font-bold text-secondary">Valor</TableHead>
                           <TableHead className="font-bold text-secondary">Status</TableHead>
@@ -337,6 +338,7 @@ const ClientProfile = () => {
                         {client.visits.map((visit, idx) => <TableRow key={visit.id} className={`hover:bg-muted/50 transition-all ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"}`}>
                             <TableCell className="font-semibold">{visit.date}</TableCell>
                             <TableCell>{visit.time}</TableCell>
+                            <TableCell className="text-muted-foreground">{visit.professionalName}</TableCell>
                             <TableCell>
                               <div className="max-w-[200px]">
                                 {visit.procedures.slice(0, 2).join(", ")}

@@ -9,13 +9,21 @@ export const useUpdateVisit = () => {
       visitId: string;
       visit_date: string;
       visit_time: string;
+      assigned_professional_id?: string | null;
     }) => {
+      const updateData: Record<string, any> = {
+        visit_date: data.visit_date,
+        visit_time: data.visit_time,
+      };
+
+      // Só incluir se foi passado
+      if (data.assigned_professional_id !== undefined) {
+        updateData.assigned_professional_id = data.assigned_professional_id;
+      }
+
       const { error } = await supabase
         .from("visits")
-        .update({
-          visit_date: data.visit_date,
-          visit_time: data.visit_time,
-        })
+        .update(updateData)
         .eq("id", data.visitId);
 
       if (error) throw error;

@@ -33,9 +33,9 @@ export interface BillingStats {
   }>;
 }
 
-export const useBillingStats = (selectedMonth: Date) => {
+export const useBillingStats = (selectedMonth: Date, professionalId?: string | null) => {
   return useQuery({
-    queryKey: ["billing-stats", format(selectedMonth, "yyyy-MM")],
+    queryKey: ["billing-stats", format(selectedMonth, "yyyy-MM"), professionalId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
@@ -44,7 +44,7 @@ export const useBillingStats = (selectedMonth: Date) => {
       const monthEnd = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
 
       // Buscar visitas do mês atual
-      const { data: visits, error } = await supabase
+      let query = supabase
         .from("visits")
         .select(`
           id,
@@ -54,6 +54,7 @@ export const useBillingStats = (selectedMonth: Date) => {
           price_total,
           procedures,
           client_id,
+          assigned_professional_id,
           clients (
             id,
             name
@@ -61,8 +62,14 @@ export const useBillingStats = (selectedMonth: Date) => {
         `)
         .eq("professional_id", user.id)
         .gte("visit_date", monthStart)
-        .lte("visit_date", monthEnd)
-        .order("visit_date", { ascending: true });
+        .lte("visit_date", monthEnd);
+
+      // Filtrar por profissional específico se selecionado
+      if (professionalId) {
+        query = query.eq("assigned_professional_id", professionalId);
+      }
+
+      const { data: visits, error } = await query.order("visit_date", { ascending: true });
 
       if (error) throw error;
 
