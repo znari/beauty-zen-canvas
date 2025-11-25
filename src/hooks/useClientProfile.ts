@@ -22,7 +22,12 @@ export const useClientProfile = (clientId: string) => {
             price_total,
             notes,
             status,
-            photos
+            photos,
+            assigned_professional_id,
+            assigned_professional:team_members!visits_assigned_professional_id_fkey (
+              id,
+              name
+            )
           ),
           anamneses (
             id,
@@ -65,6 +70,8 @@ export const useClientProfile = (clientId: string) => {
           status: visit.status === "scheduled" ? "Agendado" : 
                   visit.status === "cancelled" ? "Cancelado" : "Realizado",
           photos: visit.photos || [],
+          professionalId: visit.assigned_professional_id,
+          professionalName: (visit.assigned_professional as any)?.name || "Não atribuído",
         }))
         .sort((a, b) => {
           // Ordenar por data decrescente (mais recente primeiro)

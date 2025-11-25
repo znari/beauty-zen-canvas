@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationButton } from "@/components/NotificationButton";
 import {
@@ -30,11 +30,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useWeeklyVisits } from "@/hooks/useWeeklyVisits";
 import { useMonthlyVisits } from "@/hooks/useMonthlyVisits";
 import { useClients } from "@/hooks/useClients";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useCompleteVisit } from "@/hooks/useCompleteVisit";
 import { useUpdateVisit } from "@/hooks/useUpdateVisit";
 import { useCancelVisit } from "@/hooks/useCancelVisit";
@@ -62,6 +70,7 @@ const Dashboard = () => {
   const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
   const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
   const [selectedDayInMonth, setSelectedDayInMonth] = useState<Date | undefined>();
+  const [rescheduleProfessional, setRescheduleProfessional] = useState("");
 
   // Mutation hooks
   const completeVisit = useCompleteVisit();
@@ -73,6 +82,7 @@ const Dashboard = () => {
   const { data: weeklyVisits = {}, isLoading: visitsLoading } = useWeeklyVisits();
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const { data: monthlyVisits = {}, isLoading: monthlyLoading } = useMonthlyVisits(selectedMonthDate);
+  const { data: teamMembers = [] } = useTeamMembers(true); // activeOnly = true
 
   // Generate week days dinamicamente
   const today = new Date();
@@ -252,6 +262,7 @@ const Dashboard = () => {
         visitId: selectedAppointment.id,
         visit_date: rescheduleDate,
         visit_time: rescheduleTime,
+        assigned_professional_id: rescheduleProfessional || null,
       });
 
       toast({
@@ -263,6 +274,7 @@ const Dashboard = () => {
       setSelectedAppointment(null);
       setRescheduleDate("");
       setRescheduleTime("");
+      setRescheduleProfessional("");
     } catch (error: any) {
       toast({
         title: "Erro ao reagendar",
@@ -451,8 +463,14 @@ const Dashboard = () => {
                               {apt.visualStatus === "confirmed" && (
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                               )}
-                            </div>
-                            <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
+                                            </div>
+                                            <div className="text-sm font-semibold text-foreground mt-1">{apt.client}</div>
+                                            {apt.professionalName && (
+                                              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                                <User className="h-3 w-3" />
+                                                {apt.professionalName}
+                                              </div>
+                                            )}
                           </button>
                         );
                       })
@@ -585,6 +603,10 @@ const Dashboard = () => {
                 <Label className="text-xs font-bold text-primary uppercase tracking-wide">Horário</Label>
                 <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.time}</p>
               </div>
+              <div>
+                <Label className="text-xs font-bold text-primary uppercase tracking-wide">Profissional</Label>
+                <p className="text-base font-semibold text-foreground mt-1">{selectedAppointment.professionalName || "Não atribuído"}</p>
+              </div>
               {selectedAppointment.notes && (
                 <div>
                   <Label className="text-xs font-bold text-primary uppercase tracking-wide">Observações</Label>
@@ -642,6 +664,25 @@ const Dashboard = () => {
                     className="mt-1"
                   />
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="reschedule-professional">Profissional Responsável</Label>
+                <Select 
+                  value={rescheduleProfessional} 
+                  onValueChange={setRescheduleProfessional}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} {member.is_owner && "(Proprietária)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <Button
@@ -732,6 +773,19 @@ const Dashboard = () => {
                 </div>
               </>
             )}
+            
+            {/* Botão para abrir perfil do cliente - sempre visível */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedAppointment(null);
+                navigate(`/cliente/${selectedAppointment?.clientId}`);
+              }}
+              className="w-full border-primary/30 hover:bg-primary/10 mt-2"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Ver Perfil do Cliente
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

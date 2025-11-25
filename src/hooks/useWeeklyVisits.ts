@@ -28,6 +28,10 @@ export const useWeeklyVisits = () => {
               filled_at,
               consent
             )
+          ),
+          assigned_professional:team_members!visits_assigned_professional_id_fkey (
+            id,
+            name
           )
         `)
         .eq("professional_id", user.id)
@@ -76,6 +80,8 @@ export const useWeeklyVisits = () => {
           completedAt: visit.completed_at 
             ? format(new Date(visit.completed_at), "dd/MM/yyyy 'às' HH:mm")
             : null,
+          professionalId: visit.assigned_professional_id,
+          professionalName: (visit.assigned_professional as any)?.name || "Não atribuído",
         });
       });
 
