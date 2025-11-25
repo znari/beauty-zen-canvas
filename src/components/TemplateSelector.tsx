@@ -13,14 +13,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Star, Eye, Copy, MessageCircle } from "lucide-react";
-import { gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
+import { gerarPreviewMensagem, type TemplateSelectorType } from "@/lib/whatsapp";
 import { toast } from "sonner";
 import type { MessageTemplate } from "@/hooks/useMessageTemplates";
 
 interface TemplateSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tipo: MessageType;
+  tipo: TemplateSelectorType;
   templates: MessageTemplate[];
   onSelect: (template: MessageTemplate) => void;
   clientData?: {
@@ -38,7 +38,28 @@ export default function TemplateSelector({
   onSelect,
   clientData,
 }: TemplateSelectorProps) {
-  const filteredTemplates = templates.filter((t) => t.tipo === tipo);
+  // Se tipo for "Todos", mostrar todos os templates, caso contrário filtrar por tipo
+  const filteredTemplates = tipo === "Todos" 
+    ? templates 
+    : templates.filter((t) => t.tipo === tipo);
+  
+  // Agrupar templates por tipo para melhor organização visual
+  const templatesByType = filteredTemplates.reduce((acc, template) => {
+    if (!acc[template.tipo]) acc[template.tipo] = [];
+    acc[template.tipo].push(template);
+    return acc;
+  }, {} as Record<string, MessageTemplate[]>);
+
+  // Mapeamento de tipos para badges coloridas
+  const typeLabels: Record<string, { label: string; color: string }> = {
+    Confirmacao: { label: "Confirmação", color: "bg-blue-100 text-blue-800 border-blue-300" },
+    EnvioFicha: { label: "Envio de Ficha", color: "bg-purple-100 text-purple-800 border-purple-300" },
+    Lembrete: { label: "Lembrete", color: "bg-orange-100 text-orange-800 border-orange-300" },
+    Agradecimento: { label: "Agradecimento", color: "bg-pink-100 text-pink-800 border-pink-300" },
+    BoasVindas: { label: "Boas-Vindas", color: "bg-green-100 text-green-800 border-green-300" },
+    Reagendamento: { label: "Reagendamento", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+    Cancelamento: { label: "Cancelamento", color: "bg-red-100 text-red-800 border-red-300" },
+  };
   const defaultTemplate = filteredTemplates.find((t) => t.is_padrao);
   const [selectedId, setSelectedId] = useState<string>(defaultTemplate?.id || "");
   const [previewTemplate, setPreviewTemplate] = useState<MessageTemplate | null>(null);
@@ -100,51 +121,66 @@ export default function TemplateSelector({
           <div className="py-4">
             <RadioGroup value={selectedId} onValueChange={setSelectedId}>
               <div className="space-y-3">
-                {filteredTemplates.map((template) => (
-                  <Card
-                    key={template.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedId === template.id
-                        ? "border-2 border-primary shadow-md"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => setSelectedId(template.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <RadioGroupItem value={template.id} id={template.id} />
-                        <div className="flex-1">
-                          <Label
-                            htmlFor={template.id}
-                            className="font-semibold cursor-pointer flex items-center gap-2"
-                          >
-                            {template.nome}
-                            {template.is_padrao && (
-                              <Badge variant="secondary" className="ml-2">
-                                <Star className="h-3 w-3 mr-1 text-yellow-500 fill-yellow-500" />
-                                Padrão
+                {filteredTemplates.map((template) => {
+                  const typeInfo = typeLabels[template.tipo] || { 
+                    label: template.tipo, 
+                    color: "bg-gray-100 text-gray-800 border-gray-300" 
+                  };
+                  
+                  return (
+                    <Card
+                      key={template.id}
+                      className={`cursor-pointer transition-all ${
+                        selectedId === template.id
+                          ? "border-2 border-primary shadow-md"
+                          : "hover:border-primary/50"
+                      }`}
+                      onClick={() => setSelectedId(template.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <RadioGroupItem value={template.id} id={template.id} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Label
+                                htmlFor={template.id}
+                                className="font-semibold cursor-pointer"
+                              >
+                                {template.nome}
+                              </Label>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${typeInfo.color} border`}
+                              >
+                                {typeInfo.label}
                               </Badge>
-                            )}
-                          </Label>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {template.conteudo.substring(0, 100)}
-                            {template.conteudo.length > 100 && "..."}
-                          </p>
+                              {template.is_padrao && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Star className="h-3 w-3 mr-1 text-yellow-500 fill-yellow-500" />
+                                  Padrão
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {template.conteudo.substring(0, 100)}
+                              {template.conteudo.length > 100 && "..."}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewTemplate(template);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewTemplate(template);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </RadioGroup>
 
