@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const CTABanner = () => {
   return (
@@ -36,7 +37,7 @@ export const CTABanner = () => {
             </Button>
             <Button variant="outline" size="xl" asChild>
               <a 
-                href="https://wa.me/5511999999999?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen" 
+                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen`}
                 target="_blank" 
                 rel="noopener noreferrer"
               >
