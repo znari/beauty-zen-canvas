@@ -28,6 +28,8 @@ export interface PlanCardProps {
   // Badges
   badge?: string;
   showCurrentBadge?: boolean;
+  badgePosition?: 'top' | 'corner';
+  badgeVariant?: 'pulse' | 'static';
   
   // CTA
   ctaText: string;
@@ -37,9 +39,14 @@ export interface PlanCardProps {
   ctaLinkExternal?: boolean;
   
   // Layout
-  variant?: 'dashboard' | 'landing';
+  variant?: 'dashboard' | 'landing' | 'compact';
   animationDelay?: number;
   className?: string;
+  
+  // Props específicas para compact
+  subtitle?: string;
+  showMonthlyEquivalent?: boolean;
+  compactFeatures?: string[];
 }
 
 // Helpers
@@ -68,6 +75,8 @@ export const PlanCard = ({
   isProcessing = false,
   badge,
   showCurrentBadge = false,
+  badgePosition = 'top',
+  badgeVariant = 'static',
   ctaText,
   ctaVariant = 'default',
   onCtaClick,
@@ -76,24 +85,43 @@ export const PlanCard = ({
   variant = 'landing',
   animationDelay = 0,
   className = '',
+  subtitle,
+  showMonthlyEquivalent = false,
+  compactFeatures,
 }: PlanCardProps) => {
   const isDashboard = variant === 'dashboard';
+  const isCompact = variant === 'compact';
+  const isLanding = variant === 'landing';
   
   // Calcular preço a exibir
   const displayPrice = billingPeriod === 'yearly' && priceYearly ? priceYearly : priceMonthly;
   
   // Calcular economia
   const savings = priceMonthly && priceYearly ? calculateSavings(priceMonthly, priceYearly) : 0;
+  
+  // Equivalente mensal
+  const monthlyEquivalent = priceYearly ? priceYearly / 12 : 0;
+
+  // Features a exibir (compact usa compactFeatures ou primeiras 3)
+  const displayFeatures = isCompact 
+    ? (compactFeatures || features.slice(0, 3)) 
+    : features;
 
   // Classes do card
   const cardClasses = [
     'relative flex flex-col h-full animate-fade-in',
-    'hover:shadow-lg transition-all duration-300',
-    isDashboard ? 'hover:border-primary/50' : 'hover:-translate-y-1',
-    highlighted && !isDashboard ? 'border-2 border-secondary shadow-lg scale-105' : '',
-    highlighted && isDashboard ? '' : '',
+    'transition-all duration-300',
+    // Compact styles
+    isCompact && !highlighted ? 'border-2 border-primary/40 hover:border-primary/70' : '',
+    isCompact && highlighted ? 'border-2 border-primary bg-primary/5' : '',
+    // Dashboard styles
+    isDashboard ? 'hover:shadow-lg hover:border-primary/50' : '',
+    // Landing styles
+    isLanding ? 'hover:shadow-lg hover:-translate-y-1' : '',
+    isLanding && highlighted ? 'border-2 border-secondary shadow-lg scale-105' : '',
+    // Common states
+    !isCompact && !highlighted && !isCurrent ? 'border border-border' : '',
     isCurrent ? 'border-2 border-primary' : '',
-    !highlighted && !isCurrent ? 'border border-border' : '',
     comingSoon ? 'opacity-95' : '',
     isDisabled ? 'opacity-50' : '',
     className,
@@ -103,6 +131,7 @@ export const PlanCard = ({
   const renderCTA = () => {
     const buttonVariant = isCurrent ? 'outline' : ctaVariant;
     const buttonDisabled = isCurrent || isDisabled || isProcessing;
+    const buttonSize = isCompact ? 'default' : (isDashboard ? 'default' : 'lg');
 
     const buttonContent = isProcessing ? (
       <>
@@ -117,8 +146,8 @@ export const PlanCard = ({
       return (
         <Button
           variant={buttonVariant}
-          size={isDashboard ? 'default' : 'lg'}
-          className={`w-full mt-6 ${highlighted && !isDashboard ? 'shadow-button' : ''}`}
+          size={buttonSize}
+          className={`w-full mt-6 ${highlighted && isLanding ? 'shadow-button' : ''}`}
           asChild
         >
           <a 
@@ -135,8 +164,8 @@ export const PlanCard = ({
     return (
       <Button
         variant={buttonVariant}
-        size={isDashboard ? 'default' : 'lg'}
-        className={`w-full mt-6 ${highlighted && !isDashboard ? 'shadow-button' : ''}`}
+        size={buttonSize}
+        className={`w-full mt-6 ${highlighted && isLanding ? 'shadow-button' : ''}`}
         disabled={buttonDisabled}
         onClick={onCtaClick}
       >
@@ -145,13 +174,108 @@ export const PlanCard = ({
     );
   };
 
+  // Renderizar badge no canto (para compact)
+  const renderCornerBadge = () => {
+    if (!badge || !isCompact || badgePosition !== 'corner') return null;
+    
+    return (
+      <Badge 
+        className={`absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 ${
+          badgeVariant === 'pulse' ? 'animate-pulse' : ''
+        }`}
+      >
+        {badge}
+      </Badge>
+    );
+  };
+
+  // Renderizar header compact
+  const renderCompactHeader = () => (
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+        highlighted ? 'bg-primary/20' : 'bg-muted'
+      }`}>
+        <Icon className={`h-5 w-5 ${highlighted ? 'text-primary' : 'text-muted-foreground'}`} />
+      </div>
+      <div>
+        <h3 className="font-semibold">{name}</h3>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </div>
+    </div>
+  );
+
+  // Renderizar preço compact
+  const renderCompactPrice = () => (
+    <div className="mb-4">
+      {/* Preço riscado para anual */}
+      {billingPeriod === 'yearly' && priceMonthly && (
+        <div className="text-sm text-muted-foreground line-through">
+          R$ {formatPrice(priceMonthly * 12)}
+        </div>
+      )}
+      
+      {/* Preço principal */}
+      <div className={`text-3xl font-bold ${highlighted ? 'text-primary' : ''}`}>
+        R$ {formatPrice(displayPrice || 0)}
+        <span className="text-base font-normal text-muted-foreground">
+          /{billingPeriod === 'yearly' ? 'ano' : 'mês'}
+        </span>
+      </div>
+      
+      {/* Equivalente mensal */}
+      {showMonthlyEquivalent && billingPeriod === 'yearly' && monthlyEquivalent > 0 && (
+        <div className="text-sm text-muted-foreground">
+          = R$ {formatPrice(monthlyEquivalent)}/mês
+        </div>
+      )}
+      
+      {/* Badge de economia inline */}
+      {showSavings && billingPeriod === 'yearly' && savings > 0 && (
+        <Badge className="bg-green-500 hover:bg-green-500 text-white mt-2">
+          Economize R$ {formatPrice(savings)}/ano
+        </Badge>
+      )}
+    </div>
+  );
+
+  // Renderizar features compact
+  const renderCompactFeatures = () => (
+    <ul className="space-y-2 text-sm text-muted-foreground flex-grow">
+      {displayFeatures.map((feature, i) => (
+        <li key={i} className="flex items-center gap-2">
+          <span className="text-primary">✓</span> {feature}
+        </li>
+      ))}
+    </ul>
+  );
+
+  // Layout Compact
+  if (isCompact) {
+    return (
+      <Card
+        className={cardClasses}
+        style={{ animationDelay: `${animationDelay}ms` }}
+      >
+        {renderCornerBadge()}
+        
+        <CardContent className="p-5 flex flex-col h-full">
+          {renderCompactHeader()}
+          {renderCompactPrice()}
+          {renderCompactFeatures()}
+          {renderCTA()}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Layout Dashboard e Landing (original)
   return (
     <Card
       className={cardClasses}
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       {/* Badge promocional no topo */}
-      {badge && !isDashboard && (
+      {badge && isLanding && badgePosition === 'top' && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <Badge className="bg-secondary text-secondary-foreground font-semibold">
             {badge}
