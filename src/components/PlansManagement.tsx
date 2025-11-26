@@ -12,7 +12,6 @@ import { PaymentMethodModal } from "@/components/PaymentMethodModal";
 import { PlanActivationBanner } from "@/components/PlanActivationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreatePayment } from "@/hooks/useCreatePayment";
 import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
 import { toast } from "sonner";
 import { celebratePayment } from "@/lib/confetti";
@@ -26,7 +25,6 @@ export const PlansManagement = () => {
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "card" | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   
-  const createPayment = useCreatePayment();
   const createMercadoPagoPayment = useCreateMercadoPagoPayment();
   const queryClient = useQueryClient();
 
@@ -88,7 +86,7 @@ export const PlansManagement = () => {
     setShowPaymentMethodModal(true);
   };
 
-  // Processar pagamento via PIX (Abacate Pay)
+  // Processar pagamento via PIX (Mercado Pago)
   const handlePixPayment = async () => {
     if (!pendingPlanId) return;
     
@@ -105,11 +103,11 @@ export const PlansManagement = () => {
     }));
     
     try {
-      const result = await createPayment.mutateAsync({ planId: pendingPlanId });
+      const result = await createMercadoPagoPayment.mutateAsync({ planId: pendingPlanId });
       
       if (result.success && result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
-        toast.success('🎉 Redirecionando para o pagamento PIX...');
+        toast.success('🎉 Redirecionando para o Mercado Pago...');
         localStorage.setItem('lastTransactionId', result.transactionId || '');
         setShowPaymentMethodModal(false);
       }
