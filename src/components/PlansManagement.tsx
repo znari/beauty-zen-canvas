@@ -24,6 +24,7 @@ export const PlansManagement = () => {
   const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "card" | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   
   const createMercadoPagoPayment = useCreateMercadoPagoPayment();
   const queryClient = useQueryClient();
@@ -99,11 +100,15 @@ export const PlansManagement = () => {
       planId: pendingPlanId,
       timestamp: Date.now(),
       status: 'waiting',
-      method: 'pix'
+      method: 'pix',
+      billingPeriod
     }));
     
     try {
-      const result = await createMercadoPagoPayment.mutateAsync({ planId: pendingPlanId });
+      const result = await createMercadoPagoPayment.mutateAsync({ 
+        planId: pendingPlanId,
+        billingPeriod 
+      });
       
       if (result.success && result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
@@ -135,11 +140,15 @@ export const PlansManagement = () => {
       planId: pendingPlanId,
       timestamp: Date.now(),
       status: 'waiting',
-      method: 'card'
+      method: 'card',
+      billingPeriod
     }));
     
     try {
-      const result = await createMercadoPagoPayment.mutateAsync({ planId: pendingPlanId });
+      const result = await createMercadoPagoPayment.mutateAsync({ 
+        planId: pendingPlanId,
+        billingPeriod 
+      });
       
       if (result.success && result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
@@ -231,6 +240,20 @@ export const PlansManagement = () => {
     ? planDefinitions.find((p: any) => p.id === pendingPlanId) 
     : null;
 
+  // Calcular economia anual
+  const calculateYearlySavings = (monthlyPrice: number, yearlyPrice: number) => {
+    const fullYearlyPrice = monthlyPrice * 12;
+    return fullYearlyPrice - yearlyPrice;
+  };
+
+  // Obter preço baseado no período selecionado
+  const getDisplayPrice = (plan: any) => {
+    if (billingPeriod === 'yearly') {
+      return plan.price_yearly || 0;
+    }
+    return plan.price_monthly || 0;
+  };
+
   return (
     <div className="space-y-6">
       {/* Banner de ativação pendente */}
@@ -248,7 +271,8 @@ export const PlansManagement = () => {
         onSelectPix={handlePixPayment}
         onSelectCard={handleCardPayment}
         planName={pendingPlanInfo?.name || ""}
-        planPrice={pendingPlanInfo?.price_monthly || 0}
+        planPrice={pendingPlanInfo ? getDisplayPrice(pendingPlanInfo) : 0}
+        billingPeriod={billingPeriod}
         isProcessing={processingPayment}
         processingMethod={paymentMethod}
       />
@@ -354,7 +378,7 @@ export const PlansManagement = () => {
                 )}
               </Button>
               <p className="text-xs text-muted-foreground text-center mt-2">
-                Renove antecipadamente e ganhe mais 30 dias de acesso
+                Renove antecipadamente e ganhe mais dias de acesso
               </p>
             </div>
           )}
@@ -442,12 +466,44 @@ export const PlansManagement = () => {
 
       {/* Planos Disponíveis */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">Escolha seu plano</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h3 className="text-lg font-semibold">Escolha seu plano</h3>
+          
+          {/* Toggle Mensal/Anual */}
+          <div className="inline-flex items-center p-1 bg-muted rounded-lg">
+            <button
+              onClick={() => setBillingPeriod('monthly')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                billingPeriod === 'monthly'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              onClick={() => setBillingPeriod('yearly')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
+                billingPeriod === 'yearly'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Anual
+              <Badge className="bg-green-500 text-white text-xs">-30%</Badge>
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {planDefinitions.map((plan: any) => {
             const Icon = getPlanIcon(plan.id);
             const isCurrent = subscription.plan === plan.id;
             const features = Array.isArray(plan.features) ? plan.features : [];
+            const displayPrice = getDisplayPrice(plan);
+            const yearlySavings = plan.price_yearly && plan.price_monthly 
+              ? calculateYearlySavings(plan.price_monthly, plan.price_yearly)
+              : 0;
 
             return (
               <Card
@@ -474,11 +530,23 @@ export const PlansManagement = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      {plan.price_monthly > 0 ? (
-                        <>
-                          <div className="text-2xl font-bold">R$ {plan.price_monthly.toFixed(2)}</div>
-                          <div className="text-xs text-muted-foreground">/mês</div>
-                        </>
+                      {displayPrice > 0 ? (
+                        <div>
+                          {billingPeriod === 'yearly' && plan.price_monthly && (
+                            <div className="text-sm text-muted-foreground line-through">
+                              R$ {(plan.price_monthly * 12).toFixed(2)}
+                            </div>
+                          )}
+                          <div className="text-2xl font-bold">R$ {displayPrice.toFixed(2)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            /{billingPeriod === 'yearly' ? 'ano' : 'mês'}
+                          </div>
+                          {billingPeriod === 'yearly' && yearlySavings > 0 && (
+                            <Badge className="mt-1 bg-green-500 text-white text-xs">
+                              Economize R$ {yearlySavings.toFixed(2)}/ano
+                            </Badge>
+                          )}
+                        </div>
                       ) : (
                         <div className="text-sm font-semibold">Sob consulta</div>
                       )}

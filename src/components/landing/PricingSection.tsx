@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Crown, Zap, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export const PricingSection = () => {
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
   const plans = [
     {
       id: 'essencial',
       name: 'Zen Essencial',
-      price: '39,90',
+      priceMonthly: 39.90,
+      priceYearly: 335.16,
       description: 'Perfeito para começar',
       icon: Sparkles,
       features: [
@@ -30,7 +34,8 @@ export const PricingSection = () => {
     {
       id: 'pro',
       name: 'Zen Pro',
-      price: '89,90',
+      priceMonthly: 89.90,
+      priceYearly: 755.16,
       description: 'Para crescer sem limites',
       icon: Crown,
       badge: '🔥 Mais Popular',
@@ -53,7 +58,8 @@ export const PricingSection = () => {
     {
       id: 'ultimate',
       name: 'Zen Ultimate',
-      price: '129,90',
+      priceMonthly: 129.90,
+      priceYearly: 1091.16,
       description: 'Potência máxima',
       icon: Zap,
       features: [
@@ -75,7 +81,8 @@ export const PricingSection = () => {
     {
       id: 'ultimate_plus',
       name: 'Zen Ultimate + IA',
-      price: null,
+      priceMonthly: null,
+      priceYearly: null,
       description: 'Futuro da automação',
       icon: MessageCircle,
       badge: '🚀 Em breve',
@@ -95,17 +102,59 @@ export const PricingSection = () => {
     }
   ];
 
+  // Calcular economia anual
+  const calculateSavings = (monthly: number, yearly: number) => {
+    return (monthly * 12) - yearly;
+  };
+
+  // Obter preço para exibição
+  const getDisplayPrice = (plan: typeof plans[0]) => {
+    if (!plan.priceMonthly) return null;
+    return billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+  };
+
+  // Formatar preço
+  const formatPrice = (price: number) => {
+    return price.toFixed(2).replace('.', ',');
+  };
+
   return (
     <section id="pricing" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-16 animate-fade-in-up">
+        <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Comece grátis. Cresça com o FichaZen. <span className="text-secondary">Cancele quando quiser.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Teste todas as funcionalidades por 15 dias, sem cartão de crédito
           </p>
+          
+          {/* Toggle Mensal/Anual */}
+          <div className="inline-flex items-center p-1.5 bg-muted rounded-xl mb-6">
+            <button
+              onClick={() => setBillingPeriod('monthly')}
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                billingPeriod === 'monthly'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              onClick={() => setBillingPeriod('yearly')}
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${
+                billingPeriod === 'yearly'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Anual
+              <Badge className="bg-green-500 text-white text-xs font-bold">-30%</Badge>
+            </button>
+          </div>
+
           <div className="inline-flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full">
             <span className="text-sm font-semibold text-secondary">🎁 Oferta de lançamento: 15 dias grátis para todos</span>
           </div>
@@ -115,6 +164,11 @@ export const PricingSection = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
           {plans.map((plan) => {
             const Icon = plan.icon;
+            const displayPrice = getDisplayPrice(plan);
+            const savings = plan.priceMonthly && plan.priceYearly 
+              ? calculateSavings(plan.priceMonthly, plan.priceYearly) 
+              : 0;
+
             return (
               <Card
                 key={plan.id}
@@ -142,13 +196,32 @@ export const PricingSection = () => {
                   
                   {/* Price */}
                   <div className="pt-4">
-                    {plan.price ? (
-                      <>
+                    {displayPrice ? (
+                      <div className="space-y-1">
+                        {/* Preço riscado (valor cheio anual) */}
+                        {billingPeriod === 'yearly' && plan.priceMonthly && (
+                          <div className="text-sm text-muted-foreground line-through">
+                            R$ {formatPrice(plan.priceMonthly * 12)}
+                          </div>
+                        )}
+                        
+                        {/* Preço atual */}
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-3xl font-bold text-foreground">R$ {plan.price}</span>
-                          <span className="text-muted-foreground text-sm">/ mês</span>
+                          <span className="text-3xl font-bold text-foreground">
+                            R$ {formatPrice(displayPrice)}
+                          </span>
+                          <span className="text-muted-foreground text-sm">
+                            / {billingPeriod === 'yearly' ? 'ano' : 'mês'}
+                          </span>
                         </div>
-                      </>
+
+                        {/* Badge de economia */}
+                        {billingPeriod === 'yearly' && savings > 0 && (
+                          <Badge className="bg-green-500 text-white text-xs mt-2">
+                            Economize R$ {formatPrice(savings)}/ano
+                          </Badge>
+                        )}
+                      </div>
                     ) : (
                       <div className="text-2xl font-bold text-foreground">
                         Sob consulta

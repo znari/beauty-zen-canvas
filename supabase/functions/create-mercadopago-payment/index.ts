@@ -37,13 +37,13 @@ serve(async (req) => {
       throw new Error("Token inválido");
     }
 
-    // Obter planId do body
-    const { planId } = await req.json();
+    // Obter planId e billingPeriod do body
+    const { planId, billingPeriod = 'monthly' } = await req.json();
     if (!planId) {
       throw new Error("planId é obrigatório");
     }
 
-    console.log(`[MercadoPago] Criando pagamento para usuário ${user.id}, plano ${planId}`);
+    console.log(`[MercadoPago] Criando pagamento para usuário ${user.id}, plano ${planId}, período ${billingPeriod}`);
 
     // Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
@@ -73,7 +73,18 @@ serve(async (req) => {
       throw new Error("Plano não encontrado ou inativo");
     }
 
-    console.log(`[MercadoPago] Plano: ${planDef.name}, Preço: R$ ${planDef.price_monthly}`);
+    // Determinar preço baseado no período de cobrança
+    const isYearly = billingPeriod === 'yearly';
+    const price = isYearly ? planDef.price_yearly : planDef.price_monthly;
+    
+    if (!price || price <= 0) {
+      throw new Error(`Preço ${isYearly ? 'anual' : 'mensal'} não configurado para este plano`);
+    }
+
+    const periodLabel = isYearly ? 'Anual' : 'Mensal';
+    const periodDescription = isYearly ? 'anual (12 meses)' : 'mensal';
+
+    console.log(`[MercadoPago] Plano: ${planDef.name}, Período: ${periodLabel}, Preço: R$ ${price}`);
 
     // Preparar dados do pagador - COMPLETO para Mercado Pago
     const payerData: any = {
@@ -123,11 +134,11 @@ serve(async (req) => {
       items: [
         {
           id: planDef.id,
-          title: `FichaZen ${planDef.name}`,
-          description: `Assinatura mensal do plano ${planDef.name}`,
+          title: `FichaZen ${planDef.name} - ${periodLabel}`,
+          description: `Assinatura ${periodDescription} do plano ${planDef.name}`,
           quantity: 1,
           currency_id: "BRL",
-          unit_price: Number(planDef.price_monthly),
+          unit_price: Number(price),
         },
       ],
       payer: payerData,
@@ -140,7 +151,7 @@ serve(async (req) => {
       payment_methods: {
         excluded_payment_types: [],
         excluded_payment_methods: [],
-        installments: 12,
+        installments: isYearly ? 12 : 12, // Até 12x para ambos
       },
       auto_return: "approved",
       notification_url: webhookUrl,
@@ -178,7 +189,7 @@ serve(async (req) => {
       .insert({
         professional_id: user.id,
         plan_id: planId,
-        amount: planDef.price_monthly,
+        amount: price,
         status: "pending",
         payment_gateway: "mercadopago",
         mercadopago_preference_id: mpResult.id,
@@ -187,6 +198,7 @@ serve(async (req) => {
         metadata: {
           external_reference: externalReference,
           plan_name: planDef.name,
+          billing_period: billingPeriod,
           created_via: "checkout_pro",
         },
       })

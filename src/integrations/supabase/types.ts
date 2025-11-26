@@ -407,6 +407,7 @@ export type Database = {
           max_storage_gb: number | null
           name: string
           price_monthly: number
+          price_yearly: number | null
         }
         Insert: {
           created_at?: string | null
@@ -420,6 +421,7 @@ export type Database = {
           max_storage_gb?: number | null
           name: string
           price_monthly: number
+          price_yearly?: number | null
         }
         Update: {
           created_at?: string | null
@@ -433,6 +435,7 @@ export type Database = {
           max_storage_gb?: number | null
           name?: string
           price_monthly?: number
+          price_yearly?: number | null
         }
         Relationships: []
       }
