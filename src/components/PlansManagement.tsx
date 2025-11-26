@@ -8,23 +8,21 @@ import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
-import { PaymentMethodModal } from "@/components/PaymentMethodModal";
+import { BillingPeriodModal } from "@/components/BillingPeriodModal";
 import { PlanActivationBanner } from "@/components/PlanActivationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
 import { toast } from "sonner";
-import { celebratePayment } from "@/lib/confetti";
 
 export const PlansManagement = () => {
   const navigate = useNavigate();
   const { data: subscription, isLoading } = useSubscriptionStatus();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
-  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card" | null>(null);
+  const [showBillingPeriodModal, setShowBillingPeriodModal] = useState(false);
+  const [processingPeriod, setProcessingPeriod] = useState<'monthly' | 'yearly' | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   
   const createMercadoPagoPayment = useCreateMercadoPagoPayment();
   const queryClient = useQueryClient();
@@ -80,18 +78,18 @@ export const PlansManagement = () => {
     }
   }, [queryClient]);
 
-  // Abrir modal de escolha de método de pagamento
+  // Abrir modal de escolha de período
   const handleChoosePlan = (planId: string) => {
     if (!subscription) return;
     setPendingPlanId(planId);
-    setShowPaymentMethodModal(true);
+    setShowBillingPeriodModal(true);
   };
 
-  // Processar pagamento via PIX (Mercado Pago)
-  const handlePixPayment = async () => {
+  // Processar pagamento com período selecionado
+  const handleSelectPeriod = async (billingPeriod: 'monthly' | 'yearly') => {
     if (!pendingPlanId) return;
     
-    setPaymentMethod("pix");
+    setProcessingPeriod(billingPeriod);
     setProcessingPayment(true);
     setSelectedPlan(pendingPlanId);
     
@@ -100,7 +98,6 @@ export const PlansManagement = () => {
       planId: pendingPlanId,
       timestamp: Date.now(),
       status: 'waiting',
-      method: 'pix',
       billingPeriod
     }));
     
@@ -114,7 +111,7 @@ export const PlansManagement = () => {
         window.open(result.paymentUrl, '_blank');
         toast.success('🎉 Redirecionando para o Mercado Pago...');
         localStorage.setItem('lastTransactionId', result.transactionId || '');
-        setShowPaymentMethodModal(false);
+        setShowBillingPeriodModal(false);
       }
     } catch (error) {
       console.error(error);
@@ -122,47 +119,7 @@ export const PlansManagement = () => {
     } finally {
       setProcessingPayment(false);
       setSelectedPlan(null);
-      setPaymentMethod(null);
-      setPendingPlanId(null);
-    }
-  };
-
-  // Processar pagamento via Cartão (Mercado Pago)
-  const handleCardPayment = async () => {
-    if (!pendingPlanId) return;
-    
-    setPaymentMethod("card");
-    setProcessingPayment(true);
-    setSelectedPlan(pendingPlanId);
-    
-    // Armazenar plano pendente
-    localStorage.setItem('pendingPlanActivation', JSON.stringify({
-      planId: pendingPlanId,
-      timestamp: Date.now(),
-      status: 'waiting',
-      method: 'card',
-      billingPeriod
-    }));
-    
-    try {
-      const result = await createMercadoPagoPayment.mutateAsync({ 
-        planId: pendingPlanId,
-        billingPeriod 
-      });
-      
-      if (result.success && result.paymentUrl) {
-        window.open(result.paymentUrl, '_blank');
-        toast.success('🎉 Redirecionando para o Mercado Pago...');
-        localStorage.setItem('lastTransactionId', result.transactionId || '');
-        setShowPaymentMethodModal(false);
-      }
-    } catch (error) {
-      console.error(error);
-      localStorage.removeItem('pendingPlanActivation');
-    } finally {
-      setProcessingPayment(false);
-      setSelectedPlan(null);
-      setPaymentMethod(null);
+      setProcessingPeriod(null);
       setPendingPlanId(null);
     }
   };
@@ -232,7 +189,7 @@ export const PlansManagement = () => {
   const handleRenewSubscription = (currentPlanId: string) => {
     if (!subscription) return;
     setPendingPlanId(currentPlanId);
-    setShowPaymentMethodModal(true);
+    setShowBillingPeriodModal(true);
   };
 
   // Obter informações do plano pendente para o modal
@@ -240,41 +197,26 @@ export const PlansManagement = () => {
     ? planDefinitions.find((p: any) => p.id === pendingPlanId) 
     : null;
 
-  // Calcular economia anual
-  const calculateYearlySavings = (monthlyPrice: number, yearlyPrice: number) => {
-    const fullYearlyPrice = monthlyPrice * 12;
-    return fullYearlyPrice - yearlyPrice;
-  };
-
-  // Obter preço baseado no período selecionado
-  const getDisplayPrice = (plan: any) => {
-    if (billingPeriod === 'yearly') {
-      return plan.price_yearly || 0;
-    }
-    return plan.price_monthly || 0;
-  };
-
   return (
     <div className="space-y-6">
       {/* Banner de ativação pendente */}
       <PlanActivationBanner />
       
-      {/* Modal de escolha de método de pagamento */}
-      <PaymentMethodModal
-        isOpen={showPaymentMethodModal}
+      {/* Modal de escolha de período de assinatura */}
+      <BillingPeriodModal
+        isOpen={showBillingPeriodModal}
         onClose={() => {
           if (!processingPayment) {
-            setShowPaymentMethodModal(false);
+            setShowBillingPeriodModal(false);
             setPendingPlanId(null);
           }
         }}
-        onSelectPix={handlePixPayment}
-        onSelectCard={handleCardPayment}
+        onSelectPeriod={handleSelectPeriod}
         planName={pendingPlanInfo?.name || ""}
-        planPrice={pendingPlanInfo ? getDisplayPrice(pendingPlanInfo) : 0}
-        billingPeriod={billingPeriod}
+        priceMonthly={pendingPlanInfo?.price_monthly || 0}
+        priceYearly={pendingPlanInfo?.price_yearly || 0}
         isProcessing={processingPayment}
-        processingMethod={paymentMethod}
+        processingPeriod={processingPeriod}
       />
       
       {/* Status Atual */}
@@ -466,44 +408,13 @@ export const PlansManagement = () => {
 
       {/* Planos Disponíveis */}
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h3 className="text-lg font-semibold">Escolha seu plano</h3>
-          
-          {/* Toggle Mensal/Anual */}
-          <div className="inline-flex items-center p-1 bg-muted rounded-lg">
-            <button
-              onClick={() => setBillingPeriod('monthly')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ease-in-out ${
-                billingPeriod === 'monthly'
-                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              Mensal
-            </button>
-            <button
-              onClick={() => setBillingPeriod('yearly')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ease-in-out flex items-center gap-2 ${
-                billingPeriod === 'yearly'
-                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-            >
-              Anual
-              <Badge className="bg-green-500 text-white text-xs transition-transform duration-300">-30%</Badge>
-            </button>
-          </div>
-        </div>
+        <h3 className="text-lg font-semibold mb-6">Escolha seu plano</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {planDefinitions.map((plan: any) => {
             const Icon = getPlanIcon(plan.id);
             const isCurrent = subscription.plan === plan.id;
             const features = Array.isArray(plan.features) ? plan.features : [];
-            const displayPrice = getDisplayPrice(plan);
-            const yearlySavings = plan.price_yearly && plan.price_monthly 
-              ? calculateYearlySavings(plan.price_monthly, plan.price_yearly)
-              : 0;
 
             return (
               <Card
@@ -530,25 +441,12 @@ export const PlansManagement = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      {displayPrice > 0 ? (
-                        <div
-                          key={`${plan.id}-${billingPeriod}`}
-                          className="animate-price-in"
-                        >
-                          {billingPeriod === 'yearly' && plan.price_monthly && (
-                            <div className="text-sm text-muted-foreground line-through animate-fade-in">
-                              R$ {(plan.price_monthly * 12).toFixed(2)}
-                            </div>
-                          )}
-                          <div className="text-2xl font-bold transition-all duration-300">R$ {displayPrice.toFixed(2)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            /{billingPeriod === 'yearly' ? 'ano' : 'mês'}
+                      {plan.price_monthly > 0 ? (
+                        <div>
+                          <div className="text-lg font-bold">
+                            A partir de R$ {plan.price_monthly.toFixed(2)}
                           </div>
-                          {billingPeriod === 'yearly' && yearlySavings > 0 && (
-                            <Badge className="mt-1 bg-green-500 text-white text-xs animate-badge-pop">
-                              Economize R$ {yearlySavings.toFixed(2)}/ano
-                            </Badge>
-                          )}
+                          <div className="text-xs text-muted-foreground">/mês</div>
                         </div>
                       ) : (
                         <div className="text-sm font-semibold">Sob consulta</div>
@@ -607,7 +505,7 @@ export const PlansManagement = () => {
       </div>
 
       {/* Modal de Carregamento */}
-      <PaymentLoadingModal isOpen={processingPayment && !showPaymentMethodModal} />
+      <PaymentLoadingModal isOpen={processingPayment && !showBillingPeriodModal} />
     </div>
   );
 };
