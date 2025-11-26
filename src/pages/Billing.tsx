@@ -7,6 +7,7 @@ import { useBillingStats } from "@/hooks/useBillingStats";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { exportBillingToPDF } from "@/lib/exportBillingPDF";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,7 @@ const Billing = () => {
   
   const { data: teamMembers = [] } = useTeamMembers(false); // incluir inativos para histórico
   const { data: stats, isLoading } = useBillingStats(selectedMonth, selectedProfessional);
+  const { checkPermission, canExportPDF } = useBlockedActions();
 
   useEffect(() => {
     const fetchStudioName = async () => {
@@ -80,6 +82,7 @@ const Billing = () => {
 
   const handleExportPDF = () => {
     if (!stats) return;
+    if (!checkPermission('export')) return;
     
     try {
       // Obter nome do profissional selecionado (se filtrado)
@@ -200,9 +203,10 @@ const Billing = () => {
                 <Button
                   onClick={handleExportPDF}
                   className="gradient-button text-white font-semibold"
+                  disabled={!canExportPDF}
                 >
                   <Download className="h-5 w-5 mr-2" />
-                  Exportar PDF
+                  {canExportPDF ? "Exportar PDF" : "Bloqueado"}
                 </Button>
               </div>
             </div>

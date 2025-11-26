@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, Calendar, MessageCircle, User } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Calendar, MessageCircle, User, Lock } from "lucide-react";
 import { openWhatsAppMessage, formatDate } from "@/lib/whatsapp";
 import { useCreateVisit } from "@/hooks/useCreateVisit";
 import { useProcedures } from "@/hooks/useProcedures";
 import { useClientProfile } from "@/hooks/useClientProfile";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 
@@ -46,6 +47,7 @@ export default function NewVisit() {
   const { data: client, isLoading: loadingClient, error: clientError } = useClientProfile(id!);
   const { data: procedimentosDisponiveis = [], isLoading: loadingProcedures } = useProcedures();
   const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers(true);
+  const { checkPermission, isBlocked } = useBlockedActions();
   
   const ownerMember = teamMembers.find(m => m.is_owner);
 
@@ -84,6 +86,7 @@ export default function NewVisit() {
 
   const onSubmit = async (data: FormData) => {
     if (!client) return;
+    if (!checkPermission('create')) return;
 
     try {
       await createVisit.mutateAsync({
@@ -424,10 +427,15 @@ export default function NewVisit() {
               <Button
                 type="submit"
                 variant="cta"
-                disabled={createVisit.isPending}
+                disabled={createVisit.isPending || isBlocked}
                 className="min-w-[200px]"
               >
-                {createVisit.isPending ? "Agendando..." : "Agendar Visita"}
+                {isBlocked ? (
+                  <>
+                    <Lock className="h-4 w-4 mr-2" />
+                    Bloqueado
+                  </>
+                ) : createVisit.isPending ? "Agendando..." : "Agendar Visita"}
               </Button>
             </div>
           </form>

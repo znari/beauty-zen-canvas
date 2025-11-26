@@ -1,11 +1,9 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CreditCard, LogOut } from "lucide-react";
+import { AlertTriangle, CreditCard, LogOut, Lock, Clock } from "lucide-react";
 
 export const SubscriptionBlocker = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -17,18 +15,43 @@ export const SubscriptionBlocker = ({ children }: { children: React.ReactNode })
     navigate("/");
   };
 
-  useEffect(() => {
-    // Se bloqueado, redirecionar para página de pagamento
-    if (subscription?.isBlocked) {
-      navigate("/configuracoes/perfil?tab=pagamento");
-    }
-  }, [subscription?.isBlocked, navigate]);
-
   if (isLoading) {
     return <LoadingSpinner message="Verificando assinatura..." />;
   }
 
-  // Se em teste ativo, mostrar banner
+  // No dia da expiração: banner laranja urgente (pode usar, mas mostrar alerta)
+  if (subscription?.isExpiringToday) {
+    return (
+      <div>
+        <div className="bg-orange-50 border-b-2 border-orange-400 p-4 sticky top-0 z-50">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="font-semibold text-orange-900">
+                  ⚠️ Seu período expira HOJE!
+                </p>
+                <p className="text-sm text-orange-700">
+                  A partir de amanhã, você não poderá fazer modificações no sistema.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="cta"
+              size="sm"
+              onClick={() => navigate("/configuracoes/perfil?tab=pagamento")}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Assinar agora
+            </Button>
+          </div>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  // Se em teste ativo com poucos dias, mostrar banner amarelo
   if (subscription?.isTrialActive && subscription.daysUntilExpiry <= 7) {
     return (
       <div>
@@ -60,46 +83,45 @@ export const SubscriptionBlocker = ({ children }: { children: React.ReactNode })
     );
   }
 
-  // Se bloqueado, mostrar página de bloqueio
-  if (subscription?.isBlocked) {
+  // Bloqueado: banner vermelho fixo + modo somente leitura
+  if (subscription?.isBlocked || subscription?.canViewOnly) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center p-4 relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="absolute top-4 right-4 gap-2"
-        >
-          <LogOut className="h-4 w-4" />
-          Sair
-        </Button>
-        
-        <Card className="max-w-2xl w-full shadow-card">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
+      <div>
+        <div className="bg-red-50 border-b-4 border-red-500 p-4 sticky top-0 z-50">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Lock className="h-5 w-5 text-red-600" />
+              <div>
+                <p className="font-semibold text-red-900">
+                  🔒 Conta em modo somente leitura
+                </p>
+                <p className="text-sm text-red-700">
+                  Seu período expirou. Assine um plano para desbloquear todas as funcionalidades.
+                </p>
+              </div>
             </div>
-            <CardTitle className="text-2xl">Seu período de teste expirou</CardTitle>
-            <CardDescription className="text-base">
-              Para continuar usando o FichaZen, escolha um de nossos planos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              Você teve 15 dias para testar todas as funcionalidades.
-              Agora é hora de escolher o plano ideal para o seu estúdio!
-            </p>
-            <Button
-              variant="cta"
-              size="lg"
-              onClick={() => navigate("/configuracoes/perfil?tab=pagamento")}
-              className="w-full sm:w-auto"
-            >
-              <CreditCard className="h-5 w-5 mr-2" />
-              Escolher plano e continuar
-            </Button>
-          </CardContent>
-        </Card>
+            <div className="flex gap-2">
+              <Button
+                variant="cta"
+                size="sm"
+                onClick={() => navigate("/configuracoes/perfil?tab=pagamento")}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Desbloquear agora
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-red-700 hover:text-red-900 hover:bg-red-100"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
+        {children}
       </div>
     );
   }

@@ -11,11 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Edit, Trash2, Scissors } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Scissors, Lock } from "lucide-react";
 import { useProcedures } from "@/hooks/useProcedures";
 import { useCreateProcedure } from "@/hooks/useCreateProcedure";
 import { useUpdateProcedure } from "@/hooks/useUpdateProcedure";
 import { useDeleteProcedure } from "@/hooks/useDeleteProcedure";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 
@@ -32,6 +33,7 @@ export default function ProcedureManagement() {
   const createProcedure = useCreateProcedure();
   const updateProcedure = useUpdateProcedure();
   const deleteProcedure = useDeleteProcedure();
+  const { checkPermission, isBlocked } = useBlockedActions();
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -47,6 +49,7 @@ export default function ProcedureManagement() {
   });
 
   const handleAdd = async (data: ProcedureData) => {
+    if (!checkPermission('create')) return;
     try {
       await createProcedure.mutateAsync({
         name: data.nome,
@@ -68,6 +71,7 @@ export default function ProcedureManagement() {
   };
 
   const handleEdit = async (data: ProcedureData) => {
+    if (!checkPermission('edit')) return;
     try {
       await updateProcedure.mutateAsync({
         id: selectedProcedimento.id,
@@ -91,6 +95,7 @@ export default function ProcedureManagement() {
   };
 
   const handleDelete = async () => {
+    if (!checkPermission('delete')) return;
     try {
       await deleteProcedure.mutateAsync(selectedProcedimento.id);
       toast({
@@ -141,9 +146,9 @@ export default function ProcedureManagement() {
                 <p className="text-sm text-muted-foreground">Adicione, edite ou remova serviços oferecidos</p>
               </div>
             </div>
-            <Button onClick={() => setAddDialogOpen(true)} variant="cta">
-              <Plus className="h-5 w-5 mr-2" />
-              Novo Procedimento
+            <Button onClick={() => setAddDialogOpen(true)} variant="cta" disabled={isBlocked}>
+              {isBlocked ? <Lock className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+              {isBlocked ? "Bloqueado" : "Novo Procedimento"}
             </Button>
           </div>
         </div>

@@ -48,6 +48,7 @@ import { useUpdateVisit } from "@/hooks/useUpdateVisit";
 import { useCancelVisit } from "@/hooks/useCancelVisit";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, addDays, format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -83,6 +84,7 @@ const Dashboard = () => {
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const { data: monthlyVisits = {}, isLoading: monthlyLoading } = useMonthlyVisits(selectedMonthDate);
   const { data: teamMembers = [] } = useTeamMembers(true); // activeOnly = true
+  const { checkPermission, isBlocked } = useBlockedActions();
 
   // Generate week days dinamicamente
   const today = new Date();
@@ -136,6 +138,7 @@ const Dashboard = () => {
 
   const handleCompleteVisit = async () => {
     if (!selectedAppointment?.id) return;
+    if (!checkPermission('edit')) return;
 
     try {
       const result = await completeVisit.mutateAsync(selectedAppointment.id);
@@ -167,6 +170,7 @@ const Dashboard = () => {
 
   const handleCancelAppointment = async () => {
     if (!selectedAppointment?.id) return;
+    if (!checkPermission('edit')) return;
 
     try {
       await cancelVisit.mutateAsync(selectedAppointment.id);
@@ -217,6 +221,7 @@ const Dashboard = () => {
 
   const handleDeleteAppointment = async () => {
     if (!selectedAppointment?.id) return;
+    if (!checkPermission('delete')) return;
 
     try {
       const { error } = await supabase
@@ -256,6 +261,8 @@ const Dashboard = () => {
       });
       return;
     }
+    
+    if (!checkPermission('edit')) return;
 
     try {
       await updateVisit.mutateAsync({
