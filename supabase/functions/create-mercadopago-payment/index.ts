@@ -114,8 +114,8 @@ serve(async (req) => {
     // Criar external_reference única
     const externalReference = `fichazen_${user.id}_${Date.now()}`;
 
-    // URL de preview do Lovable para testes (REVERTER PARA PRODUÇÃO APÓS TESTES)
-    const baseUrl = "https://preview--49d41cf2-54f9-4a17-bc93-e8c34dbc1a66.lovable.app";
+    // URL de produção do FichaZen
+    const baseUrl = "https://fichazen.com.br";
     const webhookUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook`;
 
     // Criar preferência de pagamento no Mercado Pago
