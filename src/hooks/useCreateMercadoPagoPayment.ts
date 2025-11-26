@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 interface CreateMercadoPagoPaymentParams {
   planId: string;
+  billingPeriod: 'monthly' | 'yearly';
 }
 
 interface CreateMercadoPagoPaymentResponse {
@@ -16,7 +17,7 @@ interface CreateMercadoPagoPaymentResponse {
 
 export const useCreateMercadoPagoPayment = () => {
   return useMutation({
-    mutationFn: async ({ planId }: CreateMercadoPagoPaymentParams): Promise<CreateMercadoPagoPaymentResponse> => {
+    mutationFn: async ({ planId, billingPeriod }: CreateMercadoPagoPaymentParams): Promise<CreateMercadoPagoPaymentResponse> => {
       // Obter token de autenticação
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -33,7 +34,7 @@ export const useCreateMercadoPagoPayment = () => {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ planId })
+          body: JSON.stringify({ planId, billingPeriod })
         }
       );
 
