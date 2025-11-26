@@ -20,9 +20,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { GripVertical, Plus, Trash2, Edit2, FileText, Save } from "lucide-react";
+import { GripVertical, Plus, Trash2, Edit2, FileText, Save, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 
 interface Question {
   id: string;
@@ -85,6 +86,7 @@ const questionTypeLabels = {
 
 export default function AnamnesisSettings() {
   const navigate = useNavigate();
+  const { checkPermission, isBlocked } = useBlockedActions();
   const [questions, setQuestions] = useState<Question[]>(defaultQuestions);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -95,6 +97,7 @@ export default function AnamnesisSettings() {
   });
 
   const handleToggleQuestion = (id: string) => {
+    if (!checkPermission('edit')) return;
     setQuestions(
       questions.map((q) =>
         q.id === id ? { ...q, ativa: !q.ativa } : q
@@ -103,11 +106,13 @@ export default function AnamnesisSettings() {
   };
 
   const handleDeleteQuestion = (id: string) => {
+    if (!checkPermission('delete')) return;
     setQuestions(questions.filter((q) => q.id !== id));
     toast.success("Pergunta removida com sucesso");
   };
 
   const handleAddQuestion = () => {
+    if (!checkPermission('create')) return;
     if (!newQuestion.texto || !newQuestion.tipo) {
       toast.error("Preencha todos os campos");
       return;
@@ -128,6 +133,7 @@ export default function AnamnesisSettings() {
   };
 
   const handleUpdateQuestion = () => {
+    if (!checkPermission('edit')) return;
     if (!editingQuestion) return;
 
     setQuestions(
@@ -140,11 +146,13 @@ export default function AnamnesisSettings() {
   };
 
   const handleSaveConfiguration = () => {
+    if (!checkPermission('edit')) return;
     // Aqui seria salvo no backend
     toast.success("Configurações da ficha salvas com sucesso!");
   };
 
   const moveQuestion = (index: number, direction: "up" | "down") => {
+    if (!checkPermission('edit')) return;
     const newQuestions = [...questions];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
 
@@ -177,9 +185,9 @@ export default function AnamnesisSettings() {
                 Personalize as perguntas da ficha de anamnese dos seus clientes
               </p>
             </div>
-            <Button onClick={handleSaveConfiguration} className="shadow-lg">
-              <Save className="h-4 w-4 mr-2" />
-              Salvar Configurações
+            <Button onClick={handleSaveConfiguration} className="shadow-lg" disabled={isBlocked}>
+              {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {isBlocked ? "Bloqueado" : "Salvar Configurações"}
             </Button>
           </div>
         </div>
@@ -214,9 +222,9 @@ export default function AnamnesisSettings() {
             </h2>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Pergunta
+                <Button variant="outline" disabled={isBlocked}>
+                  {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                  {isBlocked ? "Bloqueado" : "Adicionar Pergunta"}
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -288,7 +296,7 @@ export default function AnamnesisSettings() {
                         size="sm"
                         className="h-6 w-6 p-0"
                         onClick={() => moveQuestion(index, "up")}
-                        disabled={index === 0}
+                        disabled={index === 0 || isBlocked}
                       >
                         ▲
                       </Button>
@@ -298,7 +306,7 @@ export default function AnamnesisSettings() {
                         size="sm"
                         className="h-6 w-6 p-0"
                         onClick={() => moveQuestion(index, "down")}
-                        disabled={index === questions.length - 1}
+                        disabled={index === questions.length - 1 || isBlocked}
                       >
                         ▼
                       </Button>
@@ -324,6 +332,7 @@ export default function AnamnesisSettings() {
                           id={`toggle-${question.id}`}
                           checked={question.ativa}
                           onCheckedChange={() => handleToggleQuestion(question.id)}
+                          disabled={isBlocked}
                         />
                       </div>
 
@@ -335,8 +344,8 @@ export default function AnamnesisSettings() {
                         }}
                       >
                         <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Edit2 className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" disabled={isBlocked}>
+                            {isBlocked ? <Lock className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
@@ -400,8 +409,9 @@ export default function AnamnesisSettings() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteQuestion(question.id)}
+                          disabled={isBlocked}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          {isBlocked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4 text-destructive" />}
                         </Button>
                       )}
                     </div>
@@ -416,9 +426,9 @@ export default function AnamnesisSettings() {
             <Button variant="outline" onClick={() => navigate("/dashboard")}>
               Voltar ao Dashboard
             </Button>
-            <Button onClick={handleSaveConfiguration} size="lg">
-              <Save className="h-4 w-4 mr-2" />
-              Salvar Configurações
+            <Button onClick={handleSaveConfiguration} size="lg" disabled={isBlocked}>
+              {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {isBlocked ? "Bloqueado" : "Salvar Configurações"}
             </Button>
           </div>
         </div>
