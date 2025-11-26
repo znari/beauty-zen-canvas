@@ -8,10 +8,12 @@ import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
+import { PaymentMethodModal } from "@/components/PaymentMethodModal";
 import { PlanActivationBanner } from "@/components/PlanActivationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreatePayment } from "@/hooks/useCreatePayment";
+import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
 import { toast } from "sonner";
 import { celebratePayment } from "@/lib/confetti";
 
@@ -20,7 +22,12 @@ export const PlansManagement = () => {
   const { data: subscription, isLoading } = useSubscriptionStatus();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card" | null>(null);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  
   const createPayment = useCreatePayment();
+  const createMercadoPagoPayment = useCreateMercadoPagoPayment();
   const queryClient = useQueryClient();
 
   // Buscar definições de planos
@@ -64,41 +71,92 @@ export const PlansManagement = () => {
       
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
       window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
-    } else if (paymentStatus === 'completed') {
+    } else if (paymentStatus === 'completed' || paymentStatus === 'pending') {
       toast.info('Processando pagamento...');
       queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
+    } else if (paymentStatus === 'failed') {
+      toast.error('Pagamento não aprovado. Tente novamente.');
       window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
     }
   }, [queryClient]);
 
-  const handleChoosePlan = async (planId: string) => {
+  // Abrir modal de escolha de método de pagamento
+  const handleChoosePlan = (planId: string) => {
     if (!subscription) return;
+    setPendingPlanId(planId);
+    setShowPaymentMethodModal(true);
+  };
+
+  // Processar pagamento via PIX (Abacate Pay)
+  const handlePixPayment = async () => {
+    if (!pendingPlanId) return;
     
+    setPaymentMethod("pix");
     setProcessingPayment(true);
-    setSelectedPlan(planId);
+    setSelectedPlan(pendingPlanId);
     
     // Armazenar plano pendente
     localStorage.setItem('pendingPlanActivation', JSON.stringify({
-      planId,
+      planId: pendingPlanId,
       timestamp: Date.now(),
-      status: 'waiting'
+      status: 'waiting',
+      method: 'pix'
     }));
     
     try {
-      const result = await createPayment.mutateAsync({ planId });
+      const result = await createPayment.mutateAsync({ planId: pendingPlanId });
       
       if (result.success && result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
-        toast.success('🎉 Redirecionando para o pagamento...');
+        toast.success('🎉 Redirecionando para o pagamento PIX...');
         localStorage.setItem('lastTransactionId', result.transactionId || '');
+        setShowPaymentMethodModal(false);
       }
     } catch (error) {
       console.error(error);
-      // Limpar pendência em caso de erro
       localStorage.removeItem('pendingPlanActivation');
     } finally {
       setProcessingPayment(false);
       setSelectedPlan(null);
+      setPaymentMethod(null);
+      setPendingPlanId(null);
+    }
+  };
+
+  // Processar pagamento via Cartão (Mercado Pago)
+  const handleCardPayment = async () => {
+    if (!pendingPlanId) return;
+    
+    setPaymentMethod("card");
+    setProcessingPayment(true);
+    setSelectedPlan(pendingPlanId);
+    
+    // Armazenar plano pendente
+    localStorage.setItem('pendingPlanActivation', JSON.stringify({
+      planId: pendingPlanId,
+      timestamp: Date.now(),
+      status: 'waiting',
+      method: 'card'
+    }));
+    
+    try {
+      const result = await createMercadoPagoPayment.mutateAsync({ planId: pendingPlanId });
+      
+      if (result.success && result.paymentUrl) {
+        window.open(result.paymentUrl, '_blank');
+        toast.success('🎉 Redirecionando para o Mercado Pago...');
+        localStorage.setItem('lastTransactionId', result.transactionId || '');
+        setShowPaymentMethodModal(false);
+      }
+    } catch (error) {
+      console.error(error);
+      localStorage.removeItem('pendingPlanActivation');
+    } finally {
+      setProcessingPayment(false);
+      setSelectedPlan(null);
+      setPaymentMethod(null);
+      setPendingPlanId(null);
     }
   };
 
@@ -164,36 +222,38 @@ export const PlansManagement = () => {
     }
   };
 
-  const handleRenewSubscription = async (currentPlanId: string) => {
+  const handleRenewSubscription = (currentPlanId: string) => {
     if (!subscription) return;
-    
-    setProcessingPayment(true);
-    
-    try {
-      localStorage.setItem('pendingPlanActivation', JSON.stringify({
-        planId: currentPlanId,
-        timestamp: Date.now(),
-        status: 'renewal'
-      }));
-      
-      const result = await createPayment.mutateAsync({ planId: currentPlanId });
-      
-      if (result.success && result.paymentUrl) {
-        window.open(result.paymentUrl, '_blank');
-        toast.success('🔄 Redirecionando para renovação...');
-      }
-    } catch (error) {
-      console.error(error);
-      localStorage.removeItem('pendingPlanActivation');
-    } finally {
-      setProcessingPayment(false);
-    }
+    setPendingPlanId(currentPlanId);
+    setShowPaymentMethodModal(true);
   };
+
+  // Obter informações do plano pendente para o modal
+  const pendingPlanInfo = pendingPlanId 
+    ? planDefinitions.find((p: any) => p.id === pendingPlanId) 
+    : null;
 
   return (
     <div className="space-y-6">
       {/* Banner de ativação pendente */}
       <PlanActivationBanner />
+      
+      {/* Modal de escolha de método de pagamento */}
+      <PaymentMethodModal
+        isOpen={showPaymentMethodModal}
+        onClose={() => {
+          if (!processingPayment) {
+            setShowPaymentMethodModal(false);
+            setPendingPlanId(null);
+          }
+        }}
+        onSelectPix={handlePixPayment}
+        onSelectCard={handleCardPayment}
+        planName={pendingPlanInfo?.name || ""}
+        planPrice={pendingPlanInfo?.price_monthly || 0}
+        isProcessing={processingPayment}
+        processingMethod={paymentMethod}
+      />
       
       {/* Status Atual */}
       <Card>
@@ -461,7 +521,7 @@ export const PlansManagement = () => {
                       {processingPayment && selectedPlan === plan.id ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processando pagamento...
+                          Processando...
                         </>
                       ) : isCurrent ? (
                         'Plano Atual'
@@ -477,7 +537,8 @@ export const PlansManagement = () => {
         </div>
       </div>
 
-      <PaymentLoadingModal isOpen={processingPayment} />
+      {/* Modal de Carregamento */}
+      <PaymentLoadingModal isOpen={processingPayment && !showPaymentMethodModal} />
     </div>
   );
 };
