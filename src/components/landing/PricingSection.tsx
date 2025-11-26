@@ -134,24 +134,24 @@ export const PricingSection = () => {
           <div className="inline-flex items-center p-1.5 bg-muted rounded-xl mb-6">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
                 billingPeriod === 'monthly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Mensal
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 ${
                 billingPeriod === 'yearly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Anual
-              <Badge className="bg-green-500 text-white text-xs font-bold">-30%</Badge>
+              <Badge className="bg-green-500 text-white text-xs font-bold transition-transform duration-300">-30%</Badge>
             </button>
           </div>
 
@@ -197,16 +197,19 @@ export const PricingSection = () => {
                   {/* Price */}
                   <div className="pt-4">
                     {displayPrice ? (
-                      <div className="space-y-1">
+                      <div 
+                        key={`${plan.id}-${billingPeriod}`}
+                        className="space-y-1 animate-price-in"
+                      >
                         {/* Preço riscado (valor cheio anual) */}
                         {billingPeriod === 'yearly' && plan.priceMonthly && (
-                          <div className="text-sm text-muted-foreground line-through">
+                          <div className="text-sm text-muted-foreground line-through animate-fade-in">
                             R$ {formatPrice(plan.priceMonthly * 12)}
                           </div>
                         )}
                         
                         {/* Preço atual */}
-                        <div className="flex items-baseline justify-center gap-1">
+                        <div className="flex items-baseline justify-center gap-1 transition-all duration-300">
                           <span className="text-3xl font-bold text-foreground">
                             R$ {formatPrice(displayPrice)}
                           </span>
@@ -217,7 +220,7 @@ export const PricingSection = () => {
 
                         {/* Badge de economia */}
                         {billingPeriod === 'yearly' && savings > 0 && (
-                          <Badge className="bg-green-500 text-white text-xs mt-2">
+                          <Badge className="bg-green-500 text-white text-xs mt-2 animate-badge-pop">
                             Economize R$ {formatPrice(savings)}/ano
                           </Badge>
                         )}
