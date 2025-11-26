@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy, ArrowLeft } from "lucide-react";
+import { MessageCircle, Eye, Plus, Edit2, Trash2, Star, Copy, ArrowLeft, Lock } from "lucide-react";
 import { messageTemplates, gerarPreviewMensagem, type MessageType } from "@/lib/whatsapp";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -46,6 +46,7 @@ import {
   useDuplicateTemplate,
   type MessageTemplate 
 } from "@/hooks/useMessageTemplates";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 
 const messageTypeLabels: Record<MessageType, string> = {
   ConfirmacaoAgendamento: "Confirmação de Agendamento",
@@ -59,6 +60,7 @@ const messageTypeLabels: Record<MessageType, string> = {
 
 export default function MessageSettings() {
   const navigate = useNavigate();
+  const { checkPermission, isBlocked } = useBlockedActions();
   const { data: templates = [], isLoading } = useMessageTemplates();
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
@@ -87,6 +89,7 @@ export default function MessageSettings() {
       : templates.filter((t) => t.tipo === filterType);
 
   const handleAddTemplate = async () => {
+    if (!checkPermission('create')) return;
     if (!newTemplate.nome || !newTemplate.conteudo || !newTemplate.tipo) {
       toast.error("Preencha todos os campos");
       return;
@@ -104,6 +107,7 @@ export default function MessageSettings() {
   };
 
   const handleEditTemplate = async () => {
+    if (!checkPermission('edit')) return;
     if (!selectedTemplate) return;
 
     await updateTemplate.mutateAsync({
@@ -118,6 +122,7 @@ export default function MessageSettings() {
   };
 
   const handleDeleteTemplate = async (id: string) => {
+    if (!checkPermission('delete')) return;
     const template = templates.find((t) => t.id === id);
     if (template?.is_padrao) {
       toast.error("Não é possível excluir templates padrão");
@@ -129,10 +134,12 @@ export default function MessageSettings() {
   };
 
   const handleDuplicateTemplate = async (template: MessageTemplate) => {
+    if (!checkPermission('create')) return;
     await duplicateTemplate.mutateAsync(template);
   };
 
   const handleSetAsDefault = async (id: string) => {
+    if (!checkPermission('edit')) return;
     const template = templates.find((t) => t.id === id);
     if (!template) return;
 
@@ -168,9 +175,9 @@ export default function MessageSettings() {
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="shadow-lg">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Template
+                <Button className="shadow-lg" disabled={isBlocked}>
+                  {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                  {isBlocked ? "Bloqueado" : "Novo Template"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -344,9 +351,10 @@ export default function MessageSettings() {
                       size="sm"
                       onClick={() => handleSetAsDefault(template.id)}
                       className="flex-1"
+                      disabled={isBlocked}
                     >
-                      <Star className="h-3 w-3 mr-1" />
-                      Tornar Padrão
+                      {isBlocked ? <Lock className="h-3 w-3 mr-1" /> : <Star className="h-3 w-3 mr-1" />}
+                      {isBlocked ? "Bloqueado" : "Tornar Padrão"}
                     </Button>
                   )}
                   <Button
@@ -356,23 +364,26 @@ export default function MessageSettings() {
                       setSelectedTemplate(template);
                       setIsEditDialogOpen(true);
                     }}
+                    disabled={isBlocked}
                   >
-                    <Edit2 className="h-3 w-3" />
+                    {isBlocked ? <Lock className="h-3 w-3" /> : <Edit2 className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDuplicateTemplate(template)}
+                    disabled={isBlocked}
                   >
-                    <Copy className="h-3 w-3" />
+                    {isBlocked ? <Lock className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   </Button>
                   {!template.is_padrao && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setDeleteTemplateId(template.id)}
+                      disabled={isBlocked}
                     >
-                      <Trash2 className="h-3 w-3 text-destructive" />
+                      {isBlocked ? <Lock className="h-3 w-3" /> : <Trash2 className="h-3 w-3 text-destructive" />}
                     </Button>
                   )}
                 </div>
@@ -389,9 +400,9 @@ export default function MessageSettings() {
               <p className="text-muted-foreground mb-4">
                 Nenhum template encontrado para este tipo
               </p>
-              <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Template
+              <Button onClick={() => setIsAddDialogOpen(true)} disabled={isBlocked}>
+                {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                {isBlocked ? "Bloqueado" : "Criar Primeiro Template"}
               </Button>
             </CardContent>
           </Card>
