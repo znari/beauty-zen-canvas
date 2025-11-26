@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Crown, Zap, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PlanCard } from "@/components/PlanCard";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
@@ -97,7 +98,7 @@ export const PricingSection = () => {
       ],
       highlighted: false,
       cta: 'Quero saber mais',
-      ctaLink: 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA',
+      ctaLink: `https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA`,
       comingSoon: true
     }
   ];
@@ -187,7 +188,7 @@ export const PricingSection = () => {
             Não tem certeza qual plano escolher? 
           </p>
           <Button variant="outline" size="sm" asChild>
-            <a href="https://wa.me/5511999999999?text=Tenho%20dúvidas%20sobre%20os%20planos" target="_blank" rel="noopener noreferrer">
+            <a href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Tenho%20dúvidas%20sobre%20os%20planos`} target="_blank" rel="noopener noreferrer">
               Falar com especialista no WhatsApp
             </a>
           </Button>

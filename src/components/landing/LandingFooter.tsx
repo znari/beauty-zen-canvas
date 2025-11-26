@@ -1,4 +1,5 @@
 import { Instagram, Facebook } from "lucide-react";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const LandingFooter = () => {
   const scrollToSection = (id: string) => {
@@ -73,7 +74,7 @@ export const LandingFooter = () => {
               </li>
               <li>
                 <a 
-                  href="https://wa.me/5511999999999" 
+                  href={`https://wa.me/${SUPPORT_WHATSAPP}`}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm text-muted-foreground hover:text-secondary transition-colors"
@@ -126,7 +127,7 @@ export const LandingFooter = () => {
                 © 2025 FichaZen. Todos os direitos reservados.
               </p>
               <p className="text-xs text-muted-foreground">
-                🇧🇷 Feito com ❤️ no Brasil • CNPJ: 00.000.000/0001-00
+                🇧🇷 Feito com ❤️ no Brasil
               </p>
             </div>
             <div className="flex gap-6">

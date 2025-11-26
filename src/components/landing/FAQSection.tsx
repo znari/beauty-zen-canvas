@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const FAQSection = () => {
   const faqs = [
@@ -77,7 +78,7 @@ export const FAQSection = () => {
             </p>
             <Button variant="hero" size="lg" asChild className="shadow-button">
               <a 
-                href="https://wa.me/5511999999999?text=Olá! Tenho dúvidas sobre o FichaZen" 
+                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Olá! Tenho dúvidas sobre o FichaZen`}
                 target="_blank" 
                 rel="noopener noreferrer"
               >

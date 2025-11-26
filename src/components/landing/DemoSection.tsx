@@ -243,7 +243,7 @@ export const DemoSection = () => {
           {/* CTA after video */}
           <div className="text-center mt-10 animate-fade-in-up" style={{ animationDelay: "0.6s" }}>
             <a 
-              href="/cadastro"
+              href="/registro"
               className="inline-flex items-center gap-2 gradient-button text-white px-8 py-4 rounded-2xl font-semibold shadow-button hover:shadow-hover hover:scale-[1.02] transition-all duration-300"
             >
               Começar teste grátis agora
