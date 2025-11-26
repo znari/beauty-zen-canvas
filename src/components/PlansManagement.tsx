@@ -411,7 +411,7 @@ export const PlansManagement = () => {
         <h3 className="text-lg font-semibold mb-6">Escolha seu plano</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {planDefinitions.map((plan: any) => {
+          {planDefinitions.map((plan: any, index: number) => {
             const Icon = getPlanIcon(plan.id);
             const isCurrent = subscription.plan === plan.id;
             const features = Array.isArray(plan.features) ? plan.features : [];
@@ -419,13 +419,14 @@ export const PlansManagement = () => {
             return (
               <Card
                 key={plan.id}
-                className={`${
+                className={`flex flex-col h-full animate-fade-in hover:shadow-lg hover:border-primary/50 transition-all duration-300 ${
                   isCurrent ? 'border-2 border-primary' : ''
                 } ${
                   plan.id === 'ultimate_plus' ? 'opacity-75' : ''
                 } ${
                   processingPayment ? 'opacity-50' : ''
-                } transition-opacity`}
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -454,10 +455,10 @@ export const PlansManagement = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-2">
-                    {features.map((feature: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2 text-sm">
+                <CardContent className="flex flex-col flex-1">
+                  <ul className="space-y-2 flex-1">
+                    {features.map((feature: string, featureIndex: number) => (
+                      <li key={featureIndex} className="flex items-start gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
@@ -467,7 +468,7 @@ export const PlansManagement = () => {
                   {plan.id === 'ultimate_plus' ? (
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full mt-6"
                       asChild
                     >
                       <a 
@@ -481,7 +482,7 @@ export const PlansManagement = () => {
                   ) : (
                     <Button
                       variant={isCurrent ? "outline" : "cta"}
-                      className="w-full"
+                      className="w-full mt-6"
                       disabled={isCurrent || processingPayment}
                       onClick={() => handleChoosePlan(plan.id)}
                     >
