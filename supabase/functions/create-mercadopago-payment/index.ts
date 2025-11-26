@@ -136,6 +136,12 @@ serve(async (req) => {
         failure: `${baseUrl}/configuracoes/perfil?payment=failed`,
         pending: `${baseUrl}/configuracoes/perfil?payment=pending`,
       },
+      // Habilitar todos os métodos de pagamento incluindo PIX
+      payment_methods: {
+        excluded_payment_types: [],
+        excluded_payment_methods: [],
+        installments: 12,
+      },
       auto_return: "approved",
       notification_url: webhookUrl,
       external_reference: externalReference,
