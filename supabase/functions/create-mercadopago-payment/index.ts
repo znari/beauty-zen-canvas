@@ -75,19 +75,39 @@ serve(async (req) => {
 
     console.log(`[MercadoPago] Plano: ${planDef.name}, Preço: R$ ${planDef.price_monthly}`);
 
-    // Preparar dados do pagador
+    // Preparar dados do pagador - COMPLETO para Mercado Pago
     const payerData: any = {
       name: profile.full_name.split(" ")[0],
       surname: profile.full_name.split(" ").slice(1).join(" ") || profile.full_name,
       email: profile.email,
     };
 
-    // Adicionar CPF/CNPJ se disponível
+    // Adicionar CPF/CNPJ (obrigatório para cartão)
     if (profile.cpf_cnpj) {
       const cleanDoc = profile.cpf_cnpj.replace(/\D/g, "");
       payerData.identification = {
         type: cleanDoc.length > 11 ? "CNPJ" : "CPF",
         number: cleanDoc,
+      };
+    }
+
+    // Adicionar telefone (obrigatório para pagamento com cartão)
+    if (profile.phone_normalized || profile.phone_raw) {
+      const phoneClean = (profile.phone_normalized || profile.phone_raw || "").replace(/\D/g, "");
+      if (phoneClean.length >= 10) {
+        payerData.phone = {
+          area_code: phoneClean.substring(0, 2),
+          number: phoneClean.substring(2),
+        };
+      }
+    }
+
+    // Adicionar endereço se disponível
+    if (profile.address_cep && profile.address_street) {
+      payerData.address = {
+        zip_code: profile.address_cep.replace(/\D/g, ""),
+        street_name: profile.address_street,
+        street_number: profile.address_number || "S/N",
       };
     }
 
