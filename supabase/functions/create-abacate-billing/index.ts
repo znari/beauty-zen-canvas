@@ -94,7 +94,7 @@ serve(async (req) => {
     
     const billingData = {
       frequency: "MULTIPLE_PAYMENTS",
-      methods: ["PIX"],
+      methods: ["PIX", "CARD"],
       products: [{
         externalId: planDef.id,
         name: `FichaZen ${planDef.name}`,
@@ -102,8 +102,8 @@ serve(async (req) => {
         quantity: 1,
         price: amountInCents
       }],
-      returnUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil`,
-      completionUrl: `https://preview--beauty-zen-canvas.lovable.app/configuracoes/perfil?payment=success`,
+      returnUrl: `https://fichazen.com.br/configuracoes/perfil`,
+      completionUrl: `https://fichazen.com.br/configuracoes/perfil?payment=success`,
       customer: {
         name: profile.full_name,
         cellphone: profile.phone_raw || "(00) 00000-0000",
