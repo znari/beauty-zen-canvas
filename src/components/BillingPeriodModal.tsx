@@ -96,6 +96,10 @@ export const BillingPeriodModal = ({
 
           {/* Card Anual - Destacado */}
           <div className="relative border-2 border-primary rounded-xl p-5 bg-primary/5 flex flex-col animate-fade-in [animation-delay:200ms]">
+            <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-2 py-0.5">
+              -30%
+            </Badge>
+
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                 <Star className="h-5 w-5 text-primary" />
