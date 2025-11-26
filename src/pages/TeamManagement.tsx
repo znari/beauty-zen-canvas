@@ -10,12 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Plus, Pencil, Trash2, Users, Crown, AlertTriangle, User } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Users, Crown, AlertTriangle, User, Lock } from "lucide-react";
 import { useTeamMembers, TeamMember } from "@/hooks/useTeamMembers";
 import { useCreateTeamMember } from "@/hooks/useCreateTeamMember";
 import { useUpdateTeamMember } from "@/hooks/useUpdateTeamMember";
 import { useDeleteTeamMember } from "@/hooks/useDeleteTeamMember";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 interface MemberFormData {
@@ -46,10 +47,11 @@ export default function TeamManagement() {
   const createMember = useCreateTeamMember();
   const updateMember = useUpdateTeamMember();
   const deleteMember = useDeleteTeamMember();
+  const { checkPermission, isBlocked } = useBlockedActions();
 
   const maxProfessionals = subscription?.limits.maxProfessionals;
   const currentCount = members.length;
-  const canAddMore = maxProfessionals === null || currentCount < maxProfessionals;
+  const canAddMore = (maxProfessionals === null || currentCount < maxProfessionals) && !isBlocked;
 
   const handleOpenCreate = () => {
     setEditingMember(null);
@@ -71,6 +73,7 @@ export default function TeamManagement() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) return;
+    if (!checkPermission(editingMember ? 'edit' : 'create')) return;
 
     if (editingMember) {
       await updateMember.mutateAsync({
@@ -87,6 +90,7 @@ export default function TeamManagement() {
   };
 
   const handleDelete = async () => {
+    if (!checkPermission('delete')) return;
     if (deleteConfirm) {
       await deleteMember.mutateAsync(deleteConfirm.id);
       setDeleteConfirm(null);
@@ -133,11 +137,11 @@ export default function TeamManagement() {
             </div>
             <Button
               onClick={handleOpenCreate}
-              disabled={!canAddMore}
+              disabled={!canAddMore || isBlocked}
               variant="cta"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Profissional
+              {isBlocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              {isBlocked ? "Bloqueado" : "Novo Profissional"}
             </Button>
           </div>
         </div>

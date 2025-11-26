@@ -12,11 +12,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, User, Calendar, Save, MessageCircle, Lock } from "lucide-react";
 import { openWhatsAppMessage, generateAnamnesisLink, formatDate } from "@/lib/whatsapp";
 import { useCreateClient } from "@/hooks/useCreateClient";
 import { useProcedures } from "@/hooks/useProcedures";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { confettiFireworks } from "@/lib/confetti";
@@ -55,6 +56,7 @@ export default function NewClient() {
   const createClient = useCreateClient();
   const { data: procedimentosDisponiveis = [], isLoading: loadingProcedures, error: proceduresError } = useProcedures();
   const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers(true);
+  const { checkPermission, isBlocked } = useBlockedActions();
   
   const ownerMember = teamMembers.find(m => m.is_owner);
 
@@ -95,6 +97,8 @@ export default function NewClient() {
   };
 
   const onSubmit = async (data: FormData) => {
+    if (!checkPermission('create')) return;
+    
     try {
       const result = await createClient.mutateAsync({
         ...data,

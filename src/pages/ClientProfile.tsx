@@ -17,6 +17,7 @@ import { useMessageTemplates, type MessageTemplate } from "@/hooks/useMessageTem
 import { useClientProfile } from "@/hooks/useClientProfile";
 import { useUpdateVisit } from "@/hooks/useUpdateVisit";
 import { useCancelVisit } from "@/hooks/useCancelVisit";
+import { useBlockedActions } from "@/hooks/useBlockedActions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,7 @@ const ClientProfile = () => {
   const { data: templates = [] } = useMessageTemplates();
   const updateVisit = useUpdateVisit();
   const cancelVisit = useCancelVisit();
+  const { checkPermission, isBlocked } = useBlockedActions();
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -96,6 +98,7 @@ const ClientProfile = () => {
       });
       return;
     }
+    if (!checkPermission('edit')) return;
     try {
       await updateVisit.mutateAsync({
         visitId: selectedVisit.id,
@@ -120,6 +123,7 @@ const ClientProfile = () => {
   };
   const handleCancelVisit = async () => {
     if (!selectedVisit) return;
+    if (!checkPermission('edit')) return;
     try {
       await cancelVisit.mutateAsync(selectedVisit.id);
       toast({

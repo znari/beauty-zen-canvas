@@ -199,15 +199,37 @@ serve(async (req) => {
       
       const now = new Date();
       
-      // Buscar perfil para verificar se já tem subscription_started_at
+      // Buscar perfil para verificar renovação antecipada
       const { data: currentProfile } = await supabaseAdmin
         .from('profiles')
-        .select('subscription_started_at')
+        .select('subscription_started_at, subscription_ends_at, subscription_status')
         .eq('id', transaction.professional_id)
         .single();
       
-      // Calcular data de expiração (30 dias a partir de agora)
-      const subscriptionEndsAt = new Date(now);
+      const currentEndsAt = currentProfile?.subscription_ends_at 
+        ? new Date(currentProfile.subscription_ends_at) 
+        : null;
+
+      // Verificar se é renovação antecipada (subscription ativa e data de expiração futura)
+      const isEarlyRenewal = 
+        currentProfile?.subscription_status === 'active' && 
+        currentEndsAt && 
+        currentEndsAt > now;
+
+      // Calcular nova data de expiração
+      let subscriptionEndsAt: Date;
+
+      if (isEarlyRenewal && currentEndsAt) {
+        // Renovação antecipada: calcular a partir da data de expiração atual
+        subscriptionEndsAt = new Date(currentEndsAt);
+        console.log(`📅 Renovação antecipada - base: ${currentEndsAt.toISOString()}`);
+      } else {
+        // Primeiro pagamento ou expirado: calcular a partir de agora
+        subscriptionEndsAt = new Date(now);
+        console.log(`📅 Novo pagamento - base: ${now.toISOString()}`);
+      }
+
+      // Adicionar 30 dias (Abacate só suporta mensal)
       subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
 
       const updateData: any = {
@@ -237,6 +259,9 @@ serve(async (req) => {
       console.log(`🎉 Plano ${transaction.plan_id} ativado para usuário ${transaction.professional_id}`);
       console.log(`📅 Último pagamento: ${now.toISOString()}`);
       console.log(`📅 Válido até: ${subscriptionEndsAt.toISOString()}`);
+      if (isEarlyRenewal) {
+        console.log(`✨ Renovação antecipada - período acumulado!`);
+      }
     }
 
     return new Response(

@@ -352,24 +352,42 @@ async function processPayment(supabase: any, accessToken: string, paymentId: str
     // Verificar período de cobrança nos metadados da transação
     const billingPeriod = transaction.metadata?.billing_period || 'monthly';
     const isYearly = billingPeriod === 'yearly';
+    const periodDays = isYearly ? 365 : 30;
     
-    // Calcular data de expiração baseada no período
-    // Mensal: 30 dias | Anual: 365 dias
-    const subscriptionEndsAt = new Date();
-    if (isYearly) {
-      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 365);
-      console.log(`[MercadoPago Webhook] Plano anual - expira em 365 dias`);
-    } else {
-      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
-      console.log(`[MercadoPago Webhook] Plano mensal - expira em 30 dias`);
-    }
-
-    // Buscar perfil atual
+    // Buscar perfil atual para verificar renovação antecipada
     const { data: currentProfile } = await supabase
       .from("profiles")
-      .select("subscription_started_at")
+      .select("subscription_started_at, subscription_ends_at, subscription_status")
       .eq("id", userId)
       .single();
+
+    const now = new Date();
+    const currentEndsAt = currentProfile?.subscription_ends_at 
+      ? new Date(currentProfile.subscription_ends_at) 
+      : null;
+
+    // Verificar se é renovação antecipada (subscription ativa e data de expiração futura)
+    const isEarlyRenewal = 
+      currentProfile?.subscription_status === 'active' && 
+      currentEndsAt && 
+      currentEndsAt > now;
+
+    // Calcular nova data de expiração
+    let subscriptionEndsAt: Date;
+
+    if (isEarlyRenewal && currentEndsAt) {
+      // Renovação antecipada: calcular a partir da data de expiração atual
+      subscriptionEndsAt = new Date(currentEndsAt);
+      console.log(`[MercadoPago Webhook] Renovação antecipada - base: ${currentEndsAt.toISOString()}`);
+    } else {
+      // Primeiro pagamento ou expirado: calcular a partir de agora
+      subscriptionEndsAt = new Date();
+      console.log(`[MercadoPago Webhook] Novo pagamento - base: ${now.toISOString()}`);
+    }
+
+    // Adicionar período
+    subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + periodDays);
+    console.log(`[MercadoPago Webhook] Plano ${isYearly ? 'anual' : 'mensal'} - expira em: ${subscriptionEndsAt.toISOString()}`);
 
     const profileUpdate: any = {
       plan: transaction.plan_id,
@@ -395,5 +413,8 @@ async function processPayment(supabase: any, accessToken: string, paymentId: str
     }
 
     console.log(`[MercadoPago Webhook] Plano ${transaction.plan_id} (${billingPeriod}) ativado com sucesso!`);
+    if (isEarlyRenewal) {
+      console.log(`[MercadoPago Webhook] ✨ Renovação antecipada - período acumulado!`);
+    }
   }
 }
