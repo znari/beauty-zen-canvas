@@ -31,6 +31,9 @@ import TeamManagement from "./pages/TeamManagement";
 import NotFound from "./pages/NotFound";
 import Help from "./pages/Help";
 import Support from "./pages/Support";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
+import LGPD from "./pages/LGPD";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +54,9 @@ const App = () => (
             <Route path="/ficha/:id" element={<AnamnesisForm />} />
             <Route path="/ficha/expirada" element={<ExpiredVisit />} />
             <Route path="/ficha/sucesso" element={<AnamnesisSuccess />} />
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
+            <Route path="/termos" element={<TermsOfUse />} />
+            <Route path="/lgpd" element={<LGPD />} />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
