@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Check, Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
+import { Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
 import { BillingPeriodModal } from "@/components/BillingPeriodModal";
 import { PlanActivationBanner } from "@/components/PlanActivationBanner";
+import { PlanCard } from "@/components/PlanCard";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
@@ -415,91 +416,37 @@ export const PlansManagement = () => {
             const Icon = getPlanIcon(plan.id);
             const isCurrent = subscription.plan === plan.id;
             const features = Array.isArray(plan.features) ? plan.features : [];
+            const isUltimatePlus = plan.id === 'ultimate_plus';
 
             return (
-              <Card
+              <PlanCard
                 key={plan.id}
-                className={`flex flex-col h-full animate-fade-in hover:shadow-lg hover:border-primary/50 transition-all duration-300 ${
-                  isCurrent ? 'border-2 border-primary' : ''
-                } ${
-                  plan.id === 'ultimate_plus' ? 'opacity-75' : ''
-                } ${
-                  processingPayment ? 'opacity-50' : ''
-                }`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{plan.name}</CardTitle>
-                        {isCurrent && (
-                          <Badge variant="outline" className="mt-1">Plano Atual</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {plan.price_monthly > 0 ? (
-                        <div>
-                          <div className="text-lg font-bold">
-                            A partir de R$ {plan.price_monthly.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">/mês</div>
-                        </div>
-                      ) : (
-                        <div className="text-sm font-semibold">Sob consulta</div>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col flex-1">
-                  <ul className="space-y-2 flex-1">
-                    {features.map((feature: string, featureIndex: number) => (
-                      <li key={featureIndex} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {plan.id === 'ultimate_plus' ? (
-                    <Button
-                      variant="outline"
-                      className="w-full mt-6"
-                      asChild
-                    >
-                      <a 
-                        href="https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Entre em contato
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button
-                      variant={isCurrent ? "outline" : "cta"}
-                      className="w-full mt-6"
-                      disabled={isCurrent || processingPayment}
-                      onClick={() => handleChoosePlan(plan.id)}
-                    >
-                      {processingPayment && selectedPlan === plan.id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processando...
-                        </>
-                      ) : isCurrent ? (
-                        'Plano Atual'
-                      ) : (
-                        'Escolher Plano'
-                      )}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                id={plan.id}
+                name={plan.name}
+                icon={Icon}
+                features={features}
+                priceMonthly={plan.price_monthly}
+                isCurrent={isCurrent}
+                showCurrentBadge={true}
+                isDisabled={processingPayment}
+                isProcessing={processingPayment && selectedPlan === plan.id}
+                ctaText={
+                  processingPayment && selectedPlan === plan.id
+                    ? 'Processando...'
+                    : isCurrent
+                    ? 'Plano Atual'
+                    : isUltimatePlus
+                    ? 'Entre em contato'
+                    : 'Escolher Plano'
+                }
+                ctaVariant={isCurrent ? 'outline' : 'cta'}
+                onCtaClick={isUltimatePlus ? undefined : () => handleChoosePlan(plan.id)}
+                ctaLink={isUltimatePlus ? 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA' : undefined}
+                ctaLinkExternal={isUltimatePlus}
+                variant="dashboard"
+                animationDelay={index * 100}
+                className={isUltimatePlus ? 'opacity-75' : ''}
+              />
             );
           })}
         </div>
