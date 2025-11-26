@@ -15,6 +15,7 @@ interface PaymentMethodModalProps {
   onSelectCard: () => void;
   planName: string;
   planPrice: number;
+  billingPeriod: 'monthly' | 'yearly';
   isProcessing: boolean;
   processingMethod: "pix" | "card" | null;
 }
@@ -26,16 +27,30 @@ export const PaymentMethodModal = ({
   onSelectCard,
   planName,
   planPrice,
+  billingPeriod,
   isProcessing,
   processingMethod,
 }: PaymentMethodModalProps) => {
+  const isYearly = billingPeriod === 'yearly';
+  const periodLabel = isYearly ? '/ano' : '/mês';
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isProcessing && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Escolha a forma de pagamento</DialogTitle>
           <DialogDescription>
-            Plano <span className="font-semibold">{planName}</span> - R$ {planPrice.toFixed(2)}/mês
+            <span className="font-semibold">{planName}</span>
+            {isYearly && (
+              <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                Anual - 30% OFF
+              </span>
+            )}
+            <br />
+            <span className="text-lg font-bold text-foreground">
+              R$ {planPrice.toFixed(2)}
+            </span>
+            <span className="text-muted-foreground">{periodLabel}</span>
           </DialogDescription>
         </DialogHeader>
 

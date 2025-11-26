@@ -241,9 +241,20 @@ async function processPayment(supabase: any, accessToken: string, paymentId: str
   if (status === "approved") {
     console.log(`[MercadoPago Webhook] Ativando plano para usuário: ${userId}`);
 
-    // Calcular data de expiração (30 dias)
+    // Verificar período de cobrança nos metadados da transação
+    const billingPeriod = transaction.metadata?.billing_period || 'monthly';
+    const isYearly = billingPeriod === 'yearly';
+    
+    // Calcular data de expiração baseada no período
+    // Mensal: 30 dias | Anual: 365 dias
     const subscriptionEndsAt = new Date();
-    subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+    if (isYearly) {
+      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 365);
+      console.log(`[MercadoPago Webhook] Plano anual - expira em 365 dias`);
+    } else {
+      subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 30);
+      console.log(`[MercadoPago Webhook] Plano mensal - expira em 30 dias`);
+    }
 
     // Buscar perfil atual
     const { data: currentProfile } = await supabase
@@ -275,6 +286,6 @@ async function processPayment(supabase: any, accessToken: string, paymentId: str
       throw new Error("Erro ao ativar plano");
     }
 
-    console.log(`[MercadoPago Webhook] Plano ${transaction.plan_id} ativado com sucesso!`);
+    console.log(`[MercadoPago Webhook] Plano ${transaction.plan_id} (${billingPeriod}) ativado com sucesso!`);
   }
 }
