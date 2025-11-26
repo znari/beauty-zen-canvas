@@ -15,48 +15,45 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
 import { toast } from "sonner";
-
 export const PlansManagement = () => {
   const navigate = useNavigate();
-  const { data: subscription, isLoading } = useSubscriptionStatus();
+  const {
+    data: subscription,
+    isLoading
+  } = useSubscriptionStatus();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [showBillingPeriodModal, setShowBillingPeriodModal] = useState(false);
   const [processingPeriod, setProcessingPeriod] = useState<'monthly' | 'yearly' | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
-  
   const createMercadoPagoPayment = useCreateMercadoPagoPayment();
   const queryClient = useQueryClient();
 
   // Buscar definições de planos
-  const { data: planDefinitions = [] } = useQuery({
+  const {
+    data: planDefinitions = []
+  } = useQuery({
     queryKey: ["plan-definitions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("plan_definitions")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
-
+      const {
+        data,
+        error
+      } = await supabase.from("plan_definitions").select("*").eq("is_active", true).order("display_order");
       if (error) throw error;
       return data;
-    },
+    }
   });
 
   // Detectar retorno do pagamento
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
-    
     if (paymentStatus === 'success') {
-      toast.success(
-        '✅ Pagamento confirmado!',
-        {
-          description: 'Aguarde enquanto ativamos seu plano. Isso pode levar alguns segundos.',
-          duration: 5000,
-        }
-      );
-      
+      toast.success('✅ Pagamento confirmado!', {
+        description: 'Aguarde enquanto ativamos seu plano. Isso pode levar alguns segundos.',
+        duration: 5000
+      });
+
       // Marcar como aguardando ativação (caso não tenha sido feito antes)
       const pending = localStorage.getItem('pendingPlanActivation');
       if (!pending) {
@@ -66,12 +63,15 @@ export const PlansManagement = () => {
           status: 'waiting'
         }));
       }
-      
-      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      queryClient.invalidateQueries({
+        queryKey: ['subscription-status']
+      });
       window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
     } else if (paymentStatus === 'completed' || paymentStatus === 'pending') {
       toast.info('Processando pagamento...');
-      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      queryClient.invalidateQueries({
+        queryKey: ['subscription-status']
+      });
       window.history.replaceState({}, '', '/configuracoes/perfil?tab=pagamento');
     } else if (paymentStatus === 'failed') {
       toast.error('Pagamento não aprovado. Tente novamente.');
@@ -89,11 +89,10 @@ export const PlansManagement = () => {
   // Processar pagamento com período selecionado
   const handleSelectPeriod = async (billingPeriod: 'monthly' | 'yearly') => {
     if (!pendingPlanId) return;
-    
     setProcessingPeriod(billingPeriod);
     setProcessingPayment(true);
     setSelectedPlan(pendingPlanId);
-    
+
     // Armazenar plano pendente
     localStorage.setItem('pendingPlanActivation', JSON.stringify({
       planId: pendingPlanId,
@@ -101,13 +100,11 @@ export const PlansManagement = () => {
       status: 'waiting',
       billingPeriod
     }));
-    
     try {
-      const result = await createMercadoPagoPayment.mutateAsync({ 
+      const result = await createMercadoPagoPayment.mutateAsync({
         planId: pendingPlanId,
-        billingPeriod 
+        billingPeriod
       });
-      
       if (result.success && result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
         toast.success('🎉 Redirecionando para o Mercado Pago...');
@@ -124,28 +121,28 @@ export const PlansManagement = () => {
       setPendingPlanId(null);
     }
   };
-
   if (isLoading) {
     return <LoadingSpinner message="Carregando informações do plano..." />;
   }
-
   if (!subscription) return null;
-
   const getUsagePercentage = (current: number, max: number | null) => {
     if (max === null) return 0;
-    return Math.min((current / max) * 100, 100);
+    return Math.min(current / max * 100, 100);
   };
-
   const getPlanIcon = (planId: string) => {
     switch (planId) {
-      case 'essencial': return Sparkles;
-      case 'pro': return Crown;
-      case 'ultimate': return Zap;
-      case 'ultimate_plus': return MessageCircle;
-      default: return Sparkles;
+      case 'essencial':
+        return Sparkles;
+      case 'pro':
+        return Crown;
+      case 'ultimate':
+        return Zap;
+      case 'ultimate_plus':
+        return MessageCircle;
+      default:
+        return Sparkles;
     }
   };
-
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'active':
@@ -186,7 +183,6 @@ export const PlansManagement = () => {
         };
     }
   };
-
   const handleRenewSubscription = (currentPlanId: string) => {
     if (!subscription) return;
     setPendingPlanId(currentPlanId);
@@ -194,31 +190,18 @@ export const PlansManagement = () => {
   };
 
   // Obter informações do plano pendente para o modal
-  const pendingPlanInfo = pendingPlanId 
-    ? planDefinitions.find((p: any) => p.id === pendingPlanId) 
-    : null;
-
-  return (
-    <div className="space-y-6">
+  const pendingPlanInfo = pendingPlanId ? planDefinitions.find((p: any) => p.id === pendingPlanId) : null;
+  return <div className="space-y-6">
       {/* Banner de ativação pendente */}
       <PlanActivationBanner />
       
       {/* Modal de escolha de período de assinatura */}
-      <BillingPeriodModal
-        isOpen={showBillingPeriodModal}
-        onClose={() => {
-          if (!processingPayment) {
-            setShowBillingPeriodModal(false);
-            setPendingPlanId(null);
-          }
-        }}
-        onSelectPeriod={handleSelectPeriod}
-        planName={pendingPlanInfo?.name || ""}
-        priceMonthly={pendingPlanInfo?.price_monthly || 0}
-        priceYearly={pendingPlanInfo?.price_yearly || 0}
-        isProcessing={processingPayment}
-        processingPeriod={processingPeriod}
-      />
+      <BillingPeriodModal isOpen={showBillingPeriodModal} onClose={() => {
+      if (!processingPayment) {
+        setShowBillingPeriodModal(false);
+        setPendingPlanId(null);
+      }
+    }} onSelectPeriod={handleSelectPeriod} planName={pendingPlanInfo?.name || ""} priceMonthly={pendingPlanInfo?.price_monthly || 0} priceYearly={pendingPlanInfo?.price_yearly || 0} isProcessing={processingPayment} processingPeriod={processingPeriod} />
       
       {/* Status Atual */}
       <Card>
@@ -233,26 +216,20 @@ export const PlansManagement = () => {
           <div>
             <span className="text-sm font-medium mb-2 block">Status do Pagamento:</span>
             {(() => {
-              const statusInfo = getStatusDisplay(subscription.status);
-              return (
-                <div className={`${statusInfo.color} border rounded-lg p-4 flex items-center gap-3`}>
+            const statusInfo = getStatusDisplay(subscription.status);
+            return <div className={`${statusInfo.color} border rounded-lg p-4 flex items-center gap-3`}>
                   <span className="text-2xl">{statusInfo.icon}</span>
                   <div className="flex-1">
                     <p className="font-semibold">{statusInfo.text}</p>
-                    {subscription.status === 'active' && subscription.daysUntilRenewal > 0 && (
-                      <p className="text-sm mt-1">
+                    {subscription.status === 'active' && subscription.daysUntilRenewal > 0 && <p className="text-sm mt-1">
                         Renovação em {subscription.daysUntilRenewal} dia(s)
-                      </p>
-                    )}
-                    {subscription.isNearExpiry && (
-                      <p className="text-sm mt-1 font-semibold">
+                      </p>}
+                    {subscription.isNearExpiry && <p className="text-sm mt-1 font-semibold">
                         ⚠️ Sua assinatura está próxima do vencimento!
-                      </p>
-                    )}
+                      </p>}
                   </div>
-                </div>
-              );
-            })()}
+                </div>;
+          })()}
           </div>
 
           {/* Plano Atual */}
@@ -260,8 +237,7 @@ export const PlansManagement = () => {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Plano Atual:</span>
               <Badge variant={subscription.isTrialActive ? "secondary" : "default"}>
-                {subscription.plan === 'free' ? 'Teste Grátis' : 
-                 planDefinitions.find((p: any) => p.id === subscription.plan)?.name || subscription.plan}
+                {subscription.plan === 'free' ? 'Teste Grátis' : planDefinitions.find((p: any) => p.id === subscription.plan)?.name || subscription.plan}
               </Badge>
             </div>
           </div>
@@ -272,14 +248,11 @@ export const PlansManagement = () => {
             <div>
               <p className="text-sm text-muted-foreground mb-1">Último Pagamento</p>
               <p className="font-semibold">
-                {subscription.lastPaymentDate 
-                  ? new Date(subscription.lastPaymentDate).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    })
-                  : 'Nenhum pagamento realizado'
-                }
+                {subscription.lastPaymentDate ? new Date(subscription.lastPaymentDate).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+              }) : 'Nenhum pagamento realizado'}
               </p>
             </div>
 
@@ -287,48 +260,31 @@ export const PlansManagement = () => {
             <div>
               <p className="text-sm text-muted-foreground mb-1">Próxima Renovação</p>
               <p className="font-semibold">
-                {subscription.subscriptionEndsAt 
-                  ? new Date(subscription.subscriptionEndsAt).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    })
-                  : 'Não aplicável'
-                }
+                {subscription.subscriptionEndsAt ? new Date(subscription.subscriptionEndsAt).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+              }) : 'Não aplicável'}
               </p>
             </div>
           </div>
 
           {/* Botão de Renovação */}
-          {subscription.status !== 'trialing' && subscription.plan !== 'free' && (
-            <div>
-              <Button
-                variant="cta"
-                className="w-full gap-2"
-                onClick={() => handleRenewSubscription(subscription.plan)}
-                disabled={processingPayment}
-              >
-                {processingPayment ? (
-                  <>
+          {subscription.status !== 'trialing' && subscription.plan !== 'free' && <div>
+              <Button variant="cta" className="w-full gap-2" onClick={() => handleRenewSubscription(subscription.plan)} disabled={processingPayment}>
+                {processingPayment ? <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Processando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Crown className="h-4 w-4" />
                     Renovar Assinatura Agora
-                  </>
-                )}
+                  </>}
               </Button>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Renove antecipadamente e ganhe mais dias de acesso
-              </p>
-            </div>
-          )}
+              
+            </div>}
 
           {/* Aviso de Trial */}
-          {subscription.isTrialActive && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+          {subscription.isTrialActive && <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-yellow-900">
@@ -338,70 +294,44 @@ export const PlansManagement = () => {
                   Escolha um plano abaixo para continuar usando o FichaZen
                 </p>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Uso de Recursos */}
-          {subscription.limits.maxClients !== null && (
-            <div>
+          {subscription.limits.maxClients !== null && <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm">Clientes</span>
                 <span className="text-sm text-muted-foreground">
                   {subscription.currentUsage.clientsCount} / {subscription.limits.maxClients}
                 </span>
               </div>
-              <Progress 
-                value={getUsagePercentage(
-                  subscription.currentUsage.clientsCount,
-                  subscription.limits.maxClients
-                )} 
-              />
-            </div>
-          )}
+              <Progress value={getUsagePercentage(subscription.currentUsage.clientsCount, subscription.limits.maxClients)} />
+            </div>}
 
-          {subscription.limits.maxAnamneses !== null && (
-            <div>
+          {subscription.limits.maxAnamneses !== null && <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm">Fichas de Anamnese</span>
                 <span className="text-sm text-muted-foreground">
                   {subscription.currentUsage.anamnesesCount} / {subscription.limits.maxAnamneses}
                 </span>
               </div>
-              <Progress 
-                value={getUsagePercentage(
-                  subscription.currentUsage.anamnesesCount,
-                  subscription.limits.maxAnamneses
-                )} 
-              />
-            </div>
-          )}
+              <Progress value={getUsagePercentage(subscription.currentUsage.anamnesesCount, subscription.limits.maxAnamneses)} />
+            </div>}
 
-          {subscription.limits.maxStorageGB !== null && (
-            <div>
+          {subscription.limits.maxStorageGB !== null && <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm">Armazenamento</span>
                 <span className="text-sm text-muted-foreground">
                   {(subscription.currentUsage.storageUsedMB / 1024).toFixed(2)} GB / {subscription.limits.maxStorageGB} GB
                 </span>
               </div>
-              <Progress 
-                value={getUsagePercentage(
-                  subscription.currentUsage.storageUsedMB / 1024,
-                  subscription.limits.maxStorageGB
-                )} 
-              />
-            </div>
-          )}
+              <Progress value={getUsagePercentage(subscription.currentUsage.storageUsedMB / 1024, subscription.limits.maxStorageGB)} />
+            </div>}
         </CardContent>
       </Card>
 
       {/* Botão para Histórico de Pagamentos */}
       <div className="flex justify-end">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/pagamentos')}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={() => navigate('/pagamentos')} className="gap-2">
           <History className="h-4 w-4" />
           Ver Histórico de Pagamentos
         </Button>
@@ -413,47 +343,16 @@ export const PlansManagement = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {planDefinitions.map((plan: any, index: number) => {
-            const Icon = getPlanIcon(plan.id);
-            const isCurrent = subscription.plan === plan.id;
-            const features = Array.isArray(plan.features) ? plan.features : [];
-            const isUltimatePlus = plan.id === 'ultimate_plus';
-
-            return (
-              <PlanCard
-                key={plan.id}
-                id={plan.id}
-                name={plan.name}
-                icon={Icon}
-                features={features}
-                priceMonthly={plan.price_monthly}
-                isCurrent={isCurrent}
-                showCurrentBadge={true}
-                isDisabled={processingPayment}
-                isProcessing={processingPayment && selectedPlan === plan.id}
-                ctaText={
-                  processingPayment && selectedPlan === plan.id
-                    ? 'Processando...'
-                    : isCurrent
-                    ? 'Plano Atual'
-                    : isUltimatePlus
-                    ? 'Entre em contato'
-                    : 'Escolher Plano'
-                }
-                ctaVariant={isCurrent ? 'outline' : 'cta'}
-                onCtaClick={isUltimatePlus ? undefined : () => handleChoosePlan(plan.id)}
-                ctaLink={isUltimatePlus ? 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA' : undefined}
-                ctaLinkExternal={isUltimatePlus}
-                variant="dashboard"
-                animationDelay={index * 100}
-                className={isUltimatePlus ? 'opacity-75' : ''}
-              />
-            );
-          })}
+          const Icon = getPlanIcon(plan.id);
+          const isCurrent = subscription.plan === plan.id;
+          const features = Array.isArray(plan.features) ? plan.features : [];
+          const isUltimatePlus = plan.id === 'ultimate_plus';
+          return <PlanCard key={plan.id} id={plan.id} name={plan.name} icon={Icon} features={features} priceMonthly={plan.price_monthly} isCurrent={isCurrent} showCurrentBadge={true} isDisabled={processingPayment} isProcessing={processingPayment && selectedPlan === plan.id} ctaText={processingPayment && selectedPlan === plan.id ? 'Processando...' : isCurrent ? 'Plano Atual' : isUltimatePlus ? 'Entre em contato' : 'Escolher Plano'} ctaVariant={isCurrent ? 'outline' : 'cta'} onCtaClick={isUltimatePlus ? undefined : () => handleChoosePlan(plan.id)} ctaLink={isUltimatePlus ? 'https://wa.me/5511999999999?text=Quero%20saber%20mais%20sobre%20o%20Zen%20Ultimate%20%2B%20IA' : undefined} ctaLinkExternal={isUltimatePlus} variant="dashboard" animationDelay={index * 100} className={isUltimatePlus ? 'opacity-75' : ''} />;
+        })}
         </div>
       </div>
 
       {/* Modal de Carregamento */}
       <PaymentLoadingModal isOpen={processingPayment && !showBillingPeriodModal} />
-    </div>
-  );
+    </div>;
 };
