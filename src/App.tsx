@@ -29,6 +29,8 @@ import Notifications from "./pages/Notifications";
 import PaymentHistory from "./pages/PaymentHistory";
 import TeamManagement from "./pages/TeamManagement";
 import NotFound from "./pages/NotFound";
+import Help from "./pages/Help";
+import Support from "./pages/Support";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,8 @@ const App = () => (
             <Route path="/notificacoes" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/pagamentos" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+            <Route path="/ajuda" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+            <Route path="/suporte" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
