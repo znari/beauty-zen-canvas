@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Crown, Zap, MessageCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Crown, Zap, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PlanCard } from "@/components/PlanCard";
 
 export const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
@@ -102,22 +102,6 @@ export const PricingSection = () => {
     }
   ];
 
-  // Calcular economia anual
-  const calculateSavings = (monthly: number, yearly: number) => {
-    return (monthly * 12) - yearly;
-  };
-
-  // Obter preço para exibição
-  const getDisplayPrice = (plan: typeof plans[0]) => {
-    if (!plan.priceMonthly) return null;
-    return billingPeriod === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-  };
-
-  // Formatar preço
-  const formatPrice = (price: number) => {
-    return price.toFixed(2).replace('.', ',');
-  };
-
   return (
     <section id="pricing" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -162,110 +146,29 @@ export const PricingSection = () => {
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
-          {plans.map((plan, index) => {
-            const Icon = plan.icon;
-            const displayPrice = getDisplayPrice(plan);
-            const savings = plan.priceMonthly && plan.priceYearly 
-              ? calculateSavings(plan.priceMonthly, plan.priceYearly) 
-              : 0;
-
-            return (
-              <Card
-                key={plan.id}
-                className={`relative flex flex-col h-full animate-fade-in hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
-                  plan.highlighted 
-                    ? 'border-2 border-secondary shadow-lg scale-105' 
-                    : 'border border-border'
-                } ${plan.comingSoon ? 'opacity-95' : ''}`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Badge */}
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-secondary text-secondary-foreground font-semibold">
-                      {plan.badge}
-                    </Badge>
-                  </div>
-                )}
-
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  
-                  {/* Price */}
-                  <div className="pt-4">
-                    {displayPrice ? (
-                      <div 
-                        key={`${plan.id}-${billingPeriod}`}
-                        className="space-y-1 animate-price-in"
-                      >
-                        {/* Preço riscado (valor cheio anual) */}
-                        {billingPeriod === 'yearly' && plan.priceMonthly && (
-                          <div className="text-sm text-muted-foreground line-through animate-fade-in">
-                            R$ {formatPrice(plan.priceMonthly * 12)}
-                          </div>
-                        )}
-                        
-                        {/* Preço atual */}
-                        <div className="flex items-baseline justify-center gap-1 transition-all duration-300">
-                          <span className="text-3xl font-bold text-foreground">
-                            R$ {formatPrice(displayPrice)}
-                          </span>
-                          <span className="text-muted-foreground text-sm">
-                            / {billingPeriod === 'yearly' ? 'ano' : 'mês'}
-                          </span>
-                        </div>
-
-                        {/* Badge de economia com pulse */}
-                        {billingPeriod === 'yearly' && savings > 0 && (
-                          <Badge className="bg-green-500 hover:bg-green-500 text-white text-xs mt-2 animate-pulse">
-                            Economize R$ {formatPrice(savings)}/ano
-                          </Badge>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-2xl font-bold text-foreground">
-                        Sob consulta
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex flex-col flex-1">
-                  {/* Features */}
-                  <ul className="space-y-2 flex-1">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-secondary flex-shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <Button
-                    variant={plan.highlighted ? "hero" : "outline"}
-                    size="lg"
-                    className={`w-full mt-6 ${plan.highlighted ? 'shadow-button' : ''}`}
-                    asChild
-                  >
-                    {plan.comingSoon ? (
-                      <a href={plan.ctaLink} target="_blank" rel="noopener noreferrer">
-                        {plan.cta}
-                      </a>
-                    ) : (
-                      <a href={plan.ctaLink}>
-                        {plan.cta}
-                      </a>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {plans.map((plan, index) => (
+            <PlanCard
+              key={plan.id}
+              id={plan.id}
+              name={plan.name}
+              description={plan.description}
+              icon={plan.icon}
+              features={plan.features}
+              priceMonthly={plan.priceMonthly}
+              priceYearly={plan.priceYearly}
+              billingPeriod={billingPeriod}
+              showSavings={true}
+              highlighted={plan.highlighted}
+              comingSoon={plan.comingSoon}
+              badge={plan.badge}
+              ctaText={plan.cta}
+              ctaVariant={plan.highlighted ? 'hero' : 'outline'}
+              ctaLink={plan.ctaLink}
+              ctaLinkExternal={plan.comingSoon}
+              variant="landing"
+              animationDelay={index * 100}
+            />
+          ))}
         </div>
 
         {/* Trust line */}
