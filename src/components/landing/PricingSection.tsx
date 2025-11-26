@@ -162,7 +162,7 @@ export const PricingSection = () => {
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
-          {plans.map((plan) => {
+          {plans.map((plan, index) => {
             const Icon = plan.icon;
             const displayPrice = getDisplayPrice(plan);
             const savings = plan.priceMonthly && plan.priceYearly 
@@ -172,11 +172,12 @@ export const PricingSection = () => {
             return (
               <Card
                 key={plan.id}
-                className={`relative ${
+                className={`relative flex flex-col h-full animate-fade-in hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
                   plan.highlighted 
                     ? 'border-2 border-secondary shadow-lg scale-105' 
                     : 'border border-border'
                 } ${plan.comingSoon ? 'opacity-95' : ''}`}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Badge */}
                 {plan.badge && (
@@ -218,9 +219,9 @@ export const PricingSection = () => {
                           </span>
                         </div>
 
-                        {/* Badge de economia */}
+                        {/* Badge de economia com pulse */}
                         {billingPeriod === 'yearly' && savings > 0 && (
-                          <Badge className="bg-green-500 text-white text-xs mt-2 animate-badge-pop">
+                          <Badge className="bg-green-500 hover:bg-green-500 text-white text-xs mt-2 animate-pulse">
                             Economize R$ {formatPrice(savings)}/ano
                           </Badge>
                         )}
@@ -233,11 +234,11 @@ export const PricingSection = () => {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="flex flex-col flex-1">
                   {/* Features */}
-                  <ul className="space-y-2 min-h-[300px]">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm">
+                  <ul className="space-y-2 flex-1">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-2 text-sm">
                         <Check className="h-4 w-4 text-secondary flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
@@ -248,7 +249,7 @@ export const PricingSection = () => {
                   <Button
                     variant={plan.highlighted ? "hero" : "outline"}
                     size="lg"
-                    className={`w-full ${plan.highlighted ? 'shadow-button' : ''}`}
+                    className={`w-full mt-6 ${plan.highlighted ? 'shadow-button' : ''}`}
                     asChild
                   >
                     {plan.comingSoon ? (
