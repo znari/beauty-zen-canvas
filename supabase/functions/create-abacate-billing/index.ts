@@ -94,7 +94,7 @@ serve(async (req) => {
     
     const billingData = {
       frequency: "MULTIPLE_PAYMENTS",
-      methods: ["PIX", "CARD"],
+      methods: ["PIX"],
       products: [{
         externalId: planDef.id,
         name: `FichaZen ${planDef.name}`,
