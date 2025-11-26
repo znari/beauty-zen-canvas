@@ -38,16 +38,16 @@ export const BillingPeriodModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isProcessing && onClose()}>
       <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="text-center">
           <DialogTitle>Escolha o período de assinatura</DialogTitle>
           <DialogDescription>
-            <span className="font-semibold text-foreground">{planName}</span>
+            <span className="font-semibold text-foreground text-lg">{planName}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           {/* Card Mensal */}
-          <div className="relative border rounded-xl p-5 hover:border-primary/50 transition-colors">
+          <div className="relative border-2 border-primary/40 rounded-xl p-5 hover:border-primary/70 transition-all duration-300 flex flex-col animate-fade-in [animation-delay:100ms]">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -65,7 +65,7 @@ export const BillingPeriodModal = ({
               </div>
             </div>
 
-            <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
+            <ul className="space-y-2 text-sm text-muted-foreground flex-grow">
               <li className="flex items-center gap-2">
                 <span className="text-primary">✓</span> Cancele quando quiser
               </li>
@@ -79,7 +79,7 @@ export const BillingPeriodModal = ({
 
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full mt-6"
               onClick={() => onSelectPeriod('monthly')}
               disabled={isProcessing}
             >
@@ -95,13 +95,8 @@ export const BillingPeriodModal = ({
           </div>
 
           {/* Card Anual - Destacado */}
-          <div className="relative border-2 border-primary rounded-xl p-5 bg-primary/5">
-            {/* Badge de destaque */}
-            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-              MAIS POPULAR
-            </Badge>
-
-            <div className="flex items-center gap-3 mb-4 mt-1">
+          <div className="relative border-2 border-primary rounded-xl p-5 bg-primary/5 flex flex-col animate-fade-in [animation-delay:200ms]">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                 <Star className="h-5 w-5 text-primary" />
               </div>
@@ -128,7 +123,7 @@ export const BillingPeriodModal = ({
               Economize R$ {yearlySavings.toFixed(2)}/ano
             </Badge>
 
-            <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
+            <ul className="space-y-2 text-sm text-muted-foreground flex-grow">
               <li className="flex items-center gap-2">
                 <span className="text-primary">✓</span> 30% de desconto
               </li>
@@ -142,7 +137,7 @@ export const BillingPeriodModal = ({
 
             <Button
               variant="cta"
-              className="w-full"
+              className="w-full mt-6"
               onClick={() => onSelectPeriod('yearly')}
               disabled={isProcessing}
             >
