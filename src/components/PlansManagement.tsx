@@ -473,24 +473,24 @@ export const PlansManagement = () => {
           <div className="inline-flex items-center p-1 bg-muted rounded-lg">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ease-in-out ${
                 billingPeriod === 'monthly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Mensal
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ease-in-out flex items-center gap-2 ${
                 billingPeriod === 'yearly'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-md scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Anual
-              <Badge className="bg-green-500 text-white text-xs">-30%</Badge>
+              <Badge className="bg-green-500 text-white text-xs transition-transform duration-300">-30%</Badge>
             </button>
           </div>
         </div>
@@ -531,18 +531,21 @@ export const PlansManagement = () => {
                     </div>
                     <div className="text-right">
                       {displayPrice > 0 ? (
-                        <div>
+                        <div
+                          key={`${plan.id}-${billingPeriod}`}
+                          className="animate-price-in"
+                        >
                           {billingPeriod === 'yearly' && plan.price_monthly && (
-                            <div className="text-sm text-muted-foreground line-through">
+                            <div className="text-sm text-muted-foreground line-through animate-fade-in">
                               R$ {(plan.price_monthly * 12).toFixed(2)}
                             </div>
                           )}
-                          <div className="text-2xl font-bold">R$ {displayPrice.toFixed(2)}</div>
+                          <div className="text-2xl font-bold transition-all duration-300">R$ {displayPrice.toFixed(2)}</div>
                           <div className="text-xs text-muted-foreground">
                             /{billingPeriod === 'yearly' ? 'ano' : 'mês'}
                           </div>
                           {billingPeriod === 'yearly' && yearlySavings > 0 && (
-                            <Badge className="mt-1 bg-green-500 text-white text-xs">
+                            <Badge className="mt-1 bg-green-500 text-white text-xs animate-badge-pop">
                               Economize R$ {yearlySavings.toFixed(2)}/ano
                             </Badge>
                           )}
