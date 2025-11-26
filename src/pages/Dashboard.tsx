@@ -363,11 +363,11 @@ const Dashboard = () => {
                 <DollarSign className="h-4 w-4 mr-2" />
                 Faturamento
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/ajuda")}>
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Ajuda
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/suporte")}>
                 <LifeBuoy className="h-4 w-4 mr-2" />
                 Suporte
               </DropdownMenuItem>
