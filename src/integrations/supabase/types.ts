@@ -81,8 +81,12 @@ export type Database = {
           customer_data: Json
           frequency: string | null
           id: string
+          mercadopago_payment_id: string | null
+          mercadopago_payment_url: string | null
+          mercadopago_preference_id: string | null
           metadata: Json | null
           paid_at: string | null
+          payment_gateway: string | null
           plan_id: string
           professional_id: string
           status: string
@@ -96,8 +100,12 @@ export type Database = {
           customer_data: Json
           frequency?: string | null
           id?: string
+          mercadopago_payment_id?: string | null
+          mercadopago_payment_url?: string | null
+          mercadopago_preference_id?: string | null
           metadata?: Json | null
           paid_at?: string | null
+          payment_gateway?: string | null
           plan_id: string
           professional_id: string
           status?: string
@@ -111,8 +119,12 @@ export type Database = {
           customer_data?: Json
           frequency?: string | null
           id?: string
+          mercadopago_payment_id?: string | null
+          mercadopago_payment_url?: string | null
+          mercadopago_preference_id?: string | null
           metadata?: Json | null
           paid_at?: string | null
+          payment_gateway?: string | null
           plan_id?: string
           professional_id?: string
           status?: string
