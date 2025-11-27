@@ -1,4 +1,4 @@
-import agendaPreview from "@/assets/agenda-preview.jpg";
+import agendaPreview from "@/assets/agenda-preview.png";
 
 export const AgendaPreviewSection = () => {
   return (
