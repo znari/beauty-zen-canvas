@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { formatLocalDate, parseLocalDate } from "@/lib/dateUtils";
 
 export const useClientProfile = (clientId: string) => {
   return useQuery({
@@ -44,7 +45,7 @@ export const useClientProfile = (clientId: string) => {
 
       // Formatar dados
       const lastVisit = client.visits?.[0]?.visit_date 
-        ? format(new Date(client.visits[0].visit_date), "dd/MM/yyyy")
+        ? formatLocalDate(client.visits[0].visit_date, "dd/MM/yyyy")
         : "Sem visita";
 
       const anamnesisStatus = client.anamneses?.some(a => a.filled_at && a.consent)
@@ -58,7 +59,7 @@ export const useClientProfile = (clientId: string) => {
       const formattedVisits = (client.visits || [])
         .map(visit => ({
           id: visit.id,
-          date: format(new Date(visit.visit_date), "dd/MM/yyyy"),
+          date: formatLocalDate(visit.visit_date, "dd/MM/yyyy"),
           rawDate: visit.visit_date,
           time: visit.visit_time.slice(0, 5),
           rawTime: visit.visit_time,
@@ -75,7 +76,7 @@ export const useClientProfile = (clientId: string) => {
         }))
         .sort((a, b) => {
           // Ordenar por data decrescente (mais recente primeiro)
-          return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
+          return parseLocalDate(b.rawDate).getTime() - parseLocalDate(a.rawDate).getTime();
         });
 
       return {
