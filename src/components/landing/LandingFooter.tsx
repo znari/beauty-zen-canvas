@@ -126,17 +126,6 @@ export const LandingFooter = () => {
               <p className="text-sm text-muted-foreground mb-1">
                 © 2025 FichaZen. Todos os direitos reservados.
               </p>
-              <p className="text-xs text-muted-foreground mb-1">
-                Desenvolvido por:{" "}
-                <a 
-                  href="https://nexuslab.dev.br" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-medium hover:text-secondary transition-colors"
-                >
-                  Nexus Lab
-                </a>
-              </p>
               <p className="text-xs text-muted-foreground">
                 🇧🇷 Feito com ❤️ no Brasil
               </p>
@@ -183,6 +172,21 @@ export const LandingFooter = () => {
               </span>
               <span>Pagamento Seguro</span>
             </div>
+          </div>
+
+          {/* Developer Credits - Destaque Final */}
+          <div className="mt-6 pt-4 border-t border-border/50 text-center">
+            <p className="text-sm text-muted-foreground">
+              Desenvolvido com 💜 por{" "}
+              <a 
+                href="https://nexuslab.dev.br" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold text-secondary hover:text-secondary/80 transition-colors"
+              >
+                Nexus Lab
+              </a>
+            </p>
           </div>
         </div>
       </div>
