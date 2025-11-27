@@ -4,7 +4,6 @@ import { TrustBadgesBar } from "@/components/landing/TrustBadgesBar";
 import { ProblemSection } from "@/components/landing/ProblemSection";
 import { SolutionOverview } from "@/components/landing/SolutionOverview";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
-import { DemoSection } from "@/components/landing/DemoSection";
 import { AgendaPreviewSection } from "@/components/landing/AgendaPreviewSection";
 import { BenefitsSection } from "@/components/landing/BenefitsSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
@@ -23,7 +22,6 @@ const Landing = () => {
         <ProblemSection />
         <SolutionOverview />
         <FeaturesSection />
-        <DemoSection />
         <AgendaPreviewSection />
         <BenefitsSection />
         <TestimonialsSection />
