@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { usePWAInstallReminder } from "@/hooks/usePWAInstallReminder";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationButton } from "@/components/NotificationButton";
 import {
@@ -87,6 +88,9 @@ const Dashboard = () => {
   const { data: teamMembers = [] } = useTeamMembers(true); // activeOnly = true
   const { checkPermission, isBlocked } = useBlockedActions();
   const { isInstalled } = usePWAInstall();
+  
+  // Trigger PWA install reminder after 3 days
+  usePWAInstallReminder();
 
   // Generate week days dinamicamente
   const today = new Date();
