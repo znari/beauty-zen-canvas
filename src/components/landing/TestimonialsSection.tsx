@@ -1,4 +1,10 @@
 import { Star } from "lucide-react";
+import marianaAvatar from "@/assets/testimonials/mariana-silva.webp";
+import julianaAvatar from "@/assets/testimonials/juliana-costa.webp";
+import patriciaAvatar from "@/assets/testimonials/patricia-oliveira.webp";
+import fernandaAvatar from "@/assets/testimonials/fernanda-alves.webp";
+import carlaAvatar from "@/assets/testimonials/carla-mendes.webp";
+import amandaAvatar from "@/assets/testimonials/amanda-santos.webp";
 
 export const TestimonialsSection = () => {
   const testimonials = [
@@ -6,7 +12,7 @@ export const TestimonialsSection = () => {
       name: "Mariana Silva",
       role: "Designer de Sobrancelhas",
       city: "São Paulo - SP",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mariana",
+      avatar: marianaAvatar,
       text: "Antes do FichaZen eu perdia 2h por dia confirmando agendamentos. Agora faço tudo em 10 minutos com os templates!",
       result: "Economizei 12h/semana",
       rating: 5
@@ -15,7 +21,7 @@ export const TestimonialsSection = () => {
       name: "Juliana Costa",
       role: "Especialista em Cílios",
       city: "Rio de Janeiro - RJ",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Juliana",
+      avatar: julianaAvatar,
       text: "Minhas clientes adoram receber a ficha pelo WhatsApp. Ficou tudo mais profissional e organizado.",
       result: "100% das fichas preenchidas",
       rating: 5
@@ -24,7 +30,7 @@ export const TestimonialsSection = () => {
       name: "Patrícia Oliveira",
       role: "Esteticista Facial",
       city: "Belo Horizonte - MG",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Patricia",
+      avatar: patriciaAvatar,
       text: "Os lembretes automáticos mudaram meu negócio. Reduzi faltas em 70% e consigo atender mais clientes!",
       result: "5 clientes a mais/semana",
       rating: 5
@@ -33,7 +39,7 @@ export const TestimonialsSection = () => {
       name: "Fernanda Alves",
       role: "Manicure & Pedicure",
       city: "Curitiba - PR",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fernanda",
+      avatar: fernandaAvatar,
       text: "Não consigo mais imaginar trabalhar sem o FichaZen. As fotos antes/depois ficam organizadas e posso mostrar para novas clientes facilmente.",
       result: "Portfolio organizado",
       rating: 5
@@ -42,7 +48,7 @@ export const TestimonialsSection = () => {
       name: "Carla Mendes",
       role: "Micropigmentadora",
       city: "Brasília - DF",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carla",
+      avatar: carlaAvatar,
       text: "Os relatórios de faturamento me ajudaram a identificar meus procedimentos mais lucrativos. Agora tomo decisões baseadas em dados reais!",
       result: "+30% de faturamento",
       rating: 5
@@ -51,7 +57,7 @@ export const TestimonialsSection = () => {
       name: "Amanda Santos",
       role: "Depiladora",
       city: "Porto Alegre - RS",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Amanda",
+      avatar: amandaAvatar,
       text: "Sistema muito fácil de usar! Em 5 minutos já estava enviando fichas para minhas clientes. Suporte excelente também!",
       result: "Configurei em 5 minutos",
       rating: 5
