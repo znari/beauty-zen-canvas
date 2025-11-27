@@ -34,6 +34,9 @@ import Support from "./pages/Support";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import LGPD from "./pages/LGPD";
+import Install from "./pages/Install";
+import { PWAInstallBanner } from "./components/PWAInstallBanner";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <OfflineIndicator />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
@@ -59,6 +63,7 @@ const App = () => (
             <Route path="/lgpd" element={<LGPD />} />
             
             {/* Protected routes */}
+            <Route path="/instalar" element={<ProtectedRoute><Install /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/cliente/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
             <Route path="/cliente/:id/nova-visita" element={<ProtectedRoute><NewVisit /></ProtectedRoute>} />
