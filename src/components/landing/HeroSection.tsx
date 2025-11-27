@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroMockup from "@/assets/hero-mockup.jpg";
 
 export const HeroSection = () => {
@@ -47,10 +48,10 @@ export const HeroSection = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="xl" asChild className="group shadow-button">
-                <a href="/registro">
+                <Link to="/registro">
                   Começar meu teste grátis agora
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </a>
+                </Link>
               </Button>
               <Button variant="outline" size="xl" onClick={scrollToFeatures}>
                 Ver demonstração

@@ -1,4 +1,5 @@
 import { Instagram, Facebook } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const LandingFooter = () => {
@@ -50,12 +51,12 @@ export const LandingFooter = () => {
                 </button>
               </li>
               <li>
-                <a 
-                  href="/login" 
+                <Link 
+                  to="/login" 
                   className="text-sm text-muted-foreground hover:text-secondary transition-colors"
                 >
                   Login
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -83,12 +84,12 @@ export const LandingFooter = () => {
                 </a>
               </li>
               <li>
-                <a 
-                  href="/suporte" 
+                <Link 
+                  to="/suporte" 
                   className="text-sm text-muted-foreground hover:text-secondary transition-colors"
                 >
                   Central de Ajuda
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -131,24 +132,24 @@ export const LandingFooter = () => {
               </p>
             </div>
             <div className="flex gap-6">
-              <a 
-                href="/privacidade" 
+              <Link 
+                to="/privacidade" 
                 className="text-sm text-muted-foreground hover:text-secondary transition-colors"
               >
                 Política de Privacidade
-              </a>
-              <a 
-                href="/termos" 
+              </Link>
+              <Link 
+                to="/termos" 
                 className="text-sm text-muted-foreground hover:text-secondary transition-colors"
               >
                 Termos de Uso
-              </a>
-              <a 
-                href="/lgpd" 
+              </Link>
+              <Link 
+                to="/lgpd" 
                 className="text-sm text-muted-foreground hover:text-secondary transition-colors"
               >
                 LGPD
-              </a>
+              </Link>
             </div>
           </div>
           

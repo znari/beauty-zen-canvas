@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export const LandingHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,9 +19,9 @@ export const LandingHeader = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="text-2xl font-bold text-foreground hover:text-secondary transition-colors">
+          <Link to="/" className="text-2xl font-bold text-foreground hover:text-secondary transition-colors">
             FichaZen
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
@@ -47,10 +48,10 @@ export const LandingHeader = () => {
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <Button variant="outline" asChild>
-              <a href="/login">Login</a>
+              <Link to="/login">Login</Link>
             </Button>
             <Button variant="hero" size="lg" asChild>
-              <a href="/registro">Teste grátis por 15 dias</a>
+              <Link to="/registro">Teste grátis por 15 dias</Link>
             </Button>
           </div>
 
@@ -87,10 +88,10 @@ export const LandingHeader = () => {
             </button>
             <div className="flex flex-col gap-2 pt-2">
               <Button variant="outline" className="w-full" asChild>
-                <a href="/login">Login</a>
+                <Link to="/login">Login</Link>
               </Button>
               <Button variant="hero" className="w-full" asChild>
-                <a href="/registro">Teste grátis por 15 dias</a>
+                <Link to="/registro">Teste grátis por 15 dias</Link>
               </Button>
             </div>
           </div>

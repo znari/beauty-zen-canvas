@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Loader2, LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export interface PlanCardProps {
   // Dados básicos
@@ -143,6 +144,26 @@ export const PlanCard = ({
     );
 
     if (ctaLink) {
+      // Use Link for internal routes, <a> for external
+      if (ctaLinkExternal) {
+        return (
+          <Button
+            variant={buttonVariant}
+            size={buttonSize}
+            className={`w-full mt-6 ${highlighted && isLanding ? 'shadow-button' : ''}`}
+            asChild
+          >
+            <a 
+              href={ctaLink} 
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {buttonContent}
+            </a>
+          </Button>
+        );
+      }
+      
       return (
         <Button
           variant={buttonVariant}
@@ -150,13 +171,9 @@ export const PlanCard = ({
           className={`w-full mt-6 ${highlighted && isLanding ? 'shadow-button' : ''}`}
           asChild
         >
-          <a 
-            href={ctaLink} 
-            target={ctaLinkExternal ? '_blank' : undefined}
-            rel={ctaLinkExternal ? 'noopener noreferrer' : undefined}
-          >
+          <Link to={ctaLink}>
             {buttonContent}
-          </a>
+          </Link>
         </Button>
       );
     }

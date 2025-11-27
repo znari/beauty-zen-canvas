@@ -1,5 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const SolutionOverview = () => {
   return (
@@ -31,9 +32,9 @@ export const SolutionOverview = () => {
           </div>
 
           <Button variant="hero" size="lg" asChild className="animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
-            <a href="/registro">
+            <Link to="/registro">
               Começar meu teste grátis agora
-            </a>
+            </Link>
           </Button>
         </div>
       </div>
