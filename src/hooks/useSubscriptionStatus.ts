@@ -143,6 +143,10 @@ export const useSubscriptionStatus = () => {
         canViewOnly,
       };
     },
-    refetchInterval: 60000, // Revalidar a cada minuto
+    staleTime: Infinity, // Dados nunca ficam "stale" automaticamente
+    gcTime: 1000 * 60 * 60 * 24, // Manter em cache por 24 horas
+    refetchOnWindowFocus: false, // Não refetch ao focar janela
+    refetchOnMount: false, // Não refetch ao montar componente
+    refetchOnReconnect: false, // Não refetch ao reconectar
   });
 };

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { signIn, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -62,6 +64,9 @@ export default function Login() {
       });
       setIsSubmitting(false);
     } else {
+      // Forçar verificação única de assinatura após login
+      await queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vinda de volta 💜",
