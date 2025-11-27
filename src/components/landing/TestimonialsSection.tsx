@@ -10,6 +10,8 @@ import amandaAvatar from "@/assets/testimonials/amanda-santos.webp";
 export const TestimonialsSection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const testimonials = [
     {
       name: "Mariana Silva",
@@ -117,6 +119,33 @@ export const TestimonialsSection = () => {
     setCurrentIndex(index);
   }, []);
 
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsHovered(true); // Pause auto-rotation on touch
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+    
+    if (distance > minSwipeDistance) {
+      nextSlide(); // Swipe left → next
+    }
+    if (distance < -minSwipeDistance) {
+      prevSlide(); // Swipe right → previous
+    }
+
+    // Resume auto-rotation after 3 seconds of inactivity
+    setTimeout(() => setIsHovered(false), 3000);
+  };
+
   const maxIndex = testimonials.length - cardsPerView;
   const translateX = -(currentIndex * (100 / cardsPerView));
 
@@ -138,26 +167,30 @@ export const TestimonialsSection = () => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Botão Anterior */}
+          {/* Botões de Navegação - Ocultos em mobile */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border items-center justify-center"
             aria-label="Depoimento anterior"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
 
-          {/* Botão Próximo */}
           <button
             onClick={nextSlide}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border items-center justify-center"
             aria-label="Próximo depoimento"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
 
-          {/* Track do Carrossel */}
-          <div className="overflow-hidden">
+          {/* Track do Carrossel com suporte a touch */}
+          <div 
+            className="overflow-hidden touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <div 
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(${translateX}%)` }}
@@ -207,19 +240,23 @@ export const TestimonialsSection = () => {
             </div>
           </div>
 
-          {/* Indicadores (dots) */}
+          {/* Indicadores (dots) - Área de toque maior para mobile */}
           <div className="flex justify-center gap-2 mt-8">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentIndex === index 
-                    ? 'w-8 bg-secondary' 
-                    : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label={`Ir para página ${index + 1}`}
-              />
+              >
+                <span
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    currentIndex === index 
+                      ? 'w-8 bg-secondary' 
+                      : 'w-2 bg-muted-foreground/30'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>
