@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MessageSquare, FileText, ImageIcon, Calendar, DollarSign, Bell } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const FeaturesSection = () => {
   const features = [
@@ -131,7 +132,7 @@ export const FeaturesSection = () => {
 
         <div className="text-center">
           <Button variant="hero" size="lg" asChild className="shadow-button">
-            <a href="/registro">Começar teste grátis de 15 dias</a>
+            <Link to="/registro">Começar teste grátis de 15 dias</Link>
           </Button>
           <p className="text-sm text-muted-foreground mt-4">
             ✨ Sem cartão de crédito • Cancele quando quiser

@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SUPPORT_WHATSAPP } from "@/lib/constants";
+
 export const CTABanner = () => {
-  return <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+  return (
+    <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero opacity-30"></div>
       
@@ -21,18 +24,19 @@ export const CTABanner = () => {
             Junte-se a +500 profissionais que já economizam 10h por semana com o FichaZen
           </p>
           
-          {/* Bonus badge */}
-          
-          
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             <Button variant="hero" size="xl" asChild className="group shadow-button">
-              <a href="/registro">
+              <Link to="/registro">
                 Começar teste grátis agora
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <a href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen`} target="_blank" rel="noopener noreferrer">
+              <a 
+                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 💬 Falar com especialista
               </a>
             </Button>
@@ -54,5 +58,6 @@ export const CTABanner = () => {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
