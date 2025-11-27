@@ -15,7 +15,8 @@ export const SubscriptionBlocker = ({ children }: { children: React.ReactNode })
     navigate("/");
   };
 
-  if (isLoading) {
+  // Mostrar loading APENAS se não houver dados em cache
+  if (isLoading && !subscription) {
     return <LoadingSpinner message="Verificando assinatura..." />;
   }
 
