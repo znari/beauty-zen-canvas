@@ -1,4 +1,4 @@
-import agendaPreview from "@/assets/agenda-preview.png";
+import agendaPreview from "@/assets/agenda-preview.webp";
 
 export const AgendaPreviewSection = () => {
   return (
