@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { SUPPORT_WHATSAPP } from "@/lib/constants";
-
 export const CTABanner = () => {
-  return (
-    <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
+  return <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero opacity-30"></div>
       
@@ -24,9 +22,7 @@ export const CTABanner = () => {
           </p>
           
           {/* Bonus badge */}
-          <div className="inline-flex items-center gap-2 bg-secondary/20 px-6 py-3 rounded-full mb-8 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <span className="text-sm font-semibold text-foreground">🎁 Bônus: Primeiros 100 cadastros ganham 1 mês extra grátis</span>
-          </div>
+          
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             <Button variant="hero" size="xl" asChild className="group shadow-button">
@@ -36,11 +32,7 @@ export const CTABanner = () => {
               </a>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <a 
-                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen`}
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
+              <a href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Quero%20falar%20com%20um%20especialista%20sobre%20o%20FichaZen`} target="_blank" rel="noopener noreferrer">
                 💬 Falar com especialista
               </a>
             </Button>
@@ -62,6 +54,5 @@ export const CTABanner = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
