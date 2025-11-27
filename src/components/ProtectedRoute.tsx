@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionBlocker } from "@/components/SubscriptionBlocker";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -18,8 +19,11 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <SubscriptionBlocker>
-      {children}
-    </SubscriptionBlocker>
+    <>
+      <PWAInstallBanner />
+      <SubscriptionBlocker>
+        {children}
+      </SubscriptionBlocker>
+    </>
   );
 };
