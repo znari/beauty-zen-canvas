@@ -1,4 +1,5 @@
-import { Star } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import marianaAvatar from "@/assets/testimonials/mariana-silva.webp";
 import julianaAvatar from "@/assets/testimonials/juliana-costa.webp";
 import patriciaAvatar from "@/assets/testimonials/patricia-oliveira.webp";
@@ -7,6 +8,8 @@ import carlaAvatar from "@/assets/testimonials/carla-mendes.webp";
 import amandaAvatar from "@/assets/testimonials/amanda-santos.webp";
 
 export const TestimonialsSection = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const testimonials = [
     {
       name: "Mariana Silva",
@@ -64,6 +67,59 @@ export const TestimonialsSection = () => {
     }
   ];
 
+  // Determinar quantos cards mostrar por vez baseado no tamanho da tela
+  const getCardsPerView = useCallback(() => {
+    if (typeof window === 'undefined') return 3;
+    if (window.innerWidth >= 1024) return 3; // lg breakpoint
+    if (window.innerWidth >= 768) return 2;  // md breakpoint
+    return 1;
+  }, []);
+
+  const [cardsPerView, setCardsPerView] = useState(getCardsPerView());
+
+  // Atualizar cardsPerView quando a janela redimensionar
+  useEffect(() => {
+    const handleResize = () => setCardsPerView(getCardsPerView());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [getCardsPerView]);
+
+  // Auto-rotação
+  useEffect(() => {
+    if (isHovered) return;
+    
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const maxIndex = testimonials.length - cardsPerView;
+        return prev >= maxIndex ? 0 : prev + 1;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isHovered, cardsPerView, testimonials.length]);
+
+  // Navegação
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => {
+      const maxIndex = testimonials.length - cardsPerView;
+      return prev >= maxIndex ? 0 : prev + 1;
+    });
+  }, [cardsPerView, testimonials.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentIndex((prev) => {
+      const maxIndex = testimonials.length - cardsPerView;
+      return prev <= 0 ? maxIndex : prev - 1;
+    });
+  }, [cardsPerView, testimonials.length]);
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentIndex(index);
+  }, []);
+
+  const maxIndex = testimonials.length - cardsPerView;
+  const translateX = -(currentIndex * (100 / cardsPerView));
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
@@ -76,47 +132,96 @@ export const TestimonialsSection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {testimonials.map((testimonial, index) => (
+        {/* Carrossel Container */}
+        <div 
+          className="relative max-w-7xl mx-auto"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* Botão Anterior */}
+          <button
+            onClick={prevSlide}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border"
+            aria-label="Depoimento anterior"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Botão Próximo */}
+          <button
+            onClick={nextSlide}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-card hover:bg-accent text-foreground p-3 rounded-full shadow-card transition-all duration-300 hover:scale-110 border border-border"
+            aria-label="Próximo depoimento"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Track do Carrossel */}
+          <div className="overflow-hidden">
             <div 
-              key={index}
-              className="bg-card p-6 rounded-xl shadow-card hover-lift animate-fade-in-up border border-border"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(${translateX}%)` }}
             >
-              {/* Rating */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-secondary text-secondary" />
-                ))}
-              </div>
+              {testimonials.map((testimonial, index) => (
+                <div 
+                  key={index}
+                  className="flex-shrink-0 px-3"
+                  style={{ width: `${100 / cardsPerView}%` }}
+                >
+                  <div className="bg-card p-6 rounded-xl shadow-card hover-lift border border-border h-full">
+                    {/* Rating */}
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-secondary text-secondary" />
+                      ))}
+                    </div>
 
-              {/* Testimonial Text */}
-              <p className="text-muted-foreground mb-4 italic text-sm leading-relaxed">
-                "{testimonial.text}"
-              </p>
+                    {/* Testimonial Text */}
+                    <p className="text-muted-foreground mb-4 italic text-sm leading-relaxed">
+                      "{testimonial.text}"
+                    </p>
 
-              {/* Result badge */}
-              <div className="inline-block bg-secondary/10 px-3 py-1 rounded-full mb-4">
-                <p className="text-xs font-semibold text-secondary">
-                  ✨ {testimonial.result}
-                </p>
-              </div>
+                    {/* Result badge */}
+                    <div className="inline-block bg-secondary/10 px-3 py-1 rounded-full mb-4">
+                      <p className="text-xs font-semibold text-secondary">
+                        ✨ {testimonial.result}
+                      </p>
+                    </div>
 
-              {/* Author */}
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <img 
-                  src={testimonial.avatar} 
-                  alt={testimonial.name}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div>
-                  <p className="font-semibold text-foreground">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  <p className="text-xs text-muted-foreground">{testimonial.city}</p>
+                    {/* Author */}
+                    <div className="flex items-center gap-3 pt-4 border-t border-border">
+                      <img 
+                        src={testimonial.avatar} 
+                        alt={testimonial.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-semibold text-foreground">{testimonial.name}</p>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        <p className="text-xs text-muted-foreground">{testimonial.city}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Indicadores (dots) */}
+          <div className="flex justify-center gap-2 mt-8">
+            {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentIndex === index 
+                    ? 'w-8 bg-secondary' 
+                    : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+                aria-label={`Ir para página ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Trust metrics */}
