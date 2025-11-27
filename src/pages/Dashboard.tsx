@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download } from "lucide-react";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationButton } from "@/components/NotificationButton";
 import {
@@ -85,6 +86,7 @@ const Dashboard = () => {
   const { data: monthlyVisits = {}, isLoading: monthlyLoading } = useMonthlyVisits(selectedMonthDate);
   const { data: teamMembers = [] } = useTeamMembers(true); // activeOnly = true
   const { checkPermission, isBlocked } = useBlockedActions();
+  const { isInstalled } = usePWAInstall();
 
   // Generate week days dinamicamente
   const today = new Date();
@@ -371,6 +373,12 @@ const Dashboard = () => {
                 <LifeBuoy className="h-4 w-4 mr-2" />
                 Suporte
               </DropdownMenuItem>
+              {!isInstalled && (
+                <DropdownMenuItem onClick={() => navigate("/instalar")}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Instalar App
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
