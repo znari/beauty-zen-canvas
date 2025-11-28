@@ -12,7 +12,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section id="hero" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
+    <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero opacity-10"></div>
       
@@ -21,7 +21,7 @@ export const HeroSection = () => {
           {/* Left Column: Copy + CTAs */}
           <div className="space-y-8 animate-fade-in-up">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
                 Economize <span className="text-secondary">10h por semana</span> com Gestão de Clientes em Piloto Automático
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
@@ -30,7 +30,7 @@ export const HeroSection = () => {
             </div>
 
             {/* Trust Signals */}
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="w-5 h-5 text-secondary" />
                 <span className="font-semibold">+500 profissionais já usam</span>
@@ -59,7 +59,7 @@ export const HeroSection = () => {
             </div>
 
             {/* Micro Trust Badges */}
-            <div className="flex flex-wrap gap-6 pt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-secondary" />

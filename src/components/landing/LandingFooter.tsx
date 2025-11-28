@@ -131,7 +131,7 @@ export const LandingFooter = () => {
                 🇧🇷 Feito com ❤️ no Brasil
               </p>
             </div>
-            <div className="flex gap-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-center sm:text-left">
               <Link 
                 to="/privacidade" 
                 className="text-sm text-muted-foreground hover:text-secondary transition-colors"
