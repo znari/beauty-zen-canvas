@@ -11,9 +11,9 @@ export const LandingFooter = () => {
   };
 
   return (
-    <footer className="bg-muted/30 border-t border-border py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-muted/30 border-t border-border py-8 sm:py-10 md:py-12">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
           {/* Brand */}
           <div className="space-y-4">
             <h3 className="text-2xl font-bold text-foreground">FichaZen</h3>
@@ -121,8 +121,8 @@ export const LandingFooter = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-border">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div className="border-t border-border pt-6 sm:pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="text-center md:text-left">
               <p className="text-sm text-muted-foreground mb-1">
                 © 2025 FichaZen. Todos os direitos reservados.
@@ -154,7 +154,7 @@ export const LandingFooter = () => {
           </div>
           
           {/* Security badges */}
-          <div className="flex justify-center items-center gap-4 pt-4">
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 pt-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="w-4 h-4 bg-secondary/20 rounded-full flex items-center justify-center">
                 🔒

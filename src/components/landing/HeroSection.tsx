@@ -12,19 +12,19 @@ export const HeroSection = () => {
   };
 
   return (
-    <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
+    <section id="hero" className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 md:pt-32 md:pb-24 lg:pt-40 lg:pb-32 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero opacity-10"></div>
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Column: Copy + CTAs */}
-          <div className="space-y-8 animate-fade-in-up">
-            <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
+          <div className="space-y-6 sm:space-y-8 animate-fade-in-up">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground leading-tight">
                 Economize <span className="text-secondary">10h por semana</span> com Gestão de Clientes em Piloto Automático
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl">
                 Anamnese digital + WhatsApp integrado + Fotos organizadas + Relatórios financeiros. Tudo em 1 lugar.
               </p>
             </div>
@@ -46,45 +46,45 @@ export const HeroSection = () => {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="xl" asChild className="group shadow-button">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button variant="hero" size="lg" asChild className="group shadow-button w-full sm:w-auto">
                 <Link to="/registro">
                   Começar meu teste grátis agora
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
-              <Button variant="outline" size="xl" onClick={scrollToFeatures}>
+              <Button variant="outline" size="lg" onClick={scrollToFeatures} className="w-full sm:w-auto">
                 Ver demonstração
               </Button>
             </div>
 
             {/* Micro Trust Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 sm:pt-4">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-secondary" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">15 dias grátis</p>
-                  <p className="text-xs text-muted-foreground">Sem cartão de crédito</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground truncate">15 dias grátis</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Sem cartão de crédito</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-secondary" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Ilimitado</p>
-                  <p className="text-xs text-muted-foreground">Clientes no plano Pro</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground truncate">Ilimitado</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Clientes no plano Pro</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-secondary" />
+              <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">5 minutos</p>
-                  <p className="text-xs text-muted-foreground">Para começar a usar</p>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-foreground truncate">5 minutos</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Para começar a usar</p>
                 </div>
               </div>
             </div>
