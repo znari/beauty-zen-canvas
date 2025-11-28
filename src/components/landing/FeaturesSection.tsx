@@ -67,18 +67,18 @@ export const FeaturesSection = () => {
   ];
 
   return (
-    <section id="features" className="py-12 sm:py-16 md:py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-fade-in-up">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+    <section id="features" className="py-20 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16 animate-fade-in-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Todas as ferramentas que você precisa em <span className="text-secondary">1 só lugar</span>
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Sistema completo para gestão de clientes, procedimentos e faturamento
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto mb-8 sm:mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-12">
           {features.map((feature, index) => (
             <div 
               key={index}
@@ -89,7 +89,7 @@ export const FeaturesSection = () => {
                 <feature.icon className="w-8 h-8 text-secondary" />
               </div>
               
-              <h3 className="text-lg sm:text-xl font-bold text-foreground mb-3">
+              <h3 className="text-xl font-bold text-foreground mb-3">
                 {feature.title}
               </h3>
               
@@ -110,11 +110,11 @@ export const FeaturesSection = () => {
         </div>
 
         {/* Extra features highlight */}
-        <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-6 sm:p-8 max-w-4xl mx-auto mb-6 sm:mb-8">
-          <h3 className="text-lg sm:text-xl font-bold text-foreground text-center mb-4 sm:mb-6">
+        <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-8 max-w-4xl mx-auto mb-8">
+          <h3 className="text-xl font-bold text-foreground text-center mb-6">
             Mais recursos inclusos em todos os planos:
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
+          <div className="grid md:grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-sm font-semibold text-foreground">✅ Backup automático</p>
               <p className="text-xs text-muted-foreground mt-1">Dados sempre seguros</p>

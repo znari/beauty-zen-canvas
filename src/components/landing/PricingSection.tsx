@@ -104,22 +104,22 @@ export const PricingSection = () => {
   ];
 
   return (
-    <section id="pricing" className="py-12 sm:py-16 md:py-20 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6">
+    <section id="pricing" className="py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-10 md:mb-12 animate-fade-in-up">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+        <div className="text-center mb-12 animate-fade-in-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Comece grátis. Cresça com o FichaZen. <span className="text-secondary">Cancele quando quiser.</span>
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-4 sm:mb-6">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Teste todas as funcionalidades por 15 dias, sem cartão de crédito
           </p>
           
           {/* Toggle Mensal/Anual */}
-          <div className="inline-flex items-center p-1 sm:p-1.5 bg-muted rounded-xl mb-4 sm:mb-6">
+          <div className="inline-flex items-center p-1.5 bg-muted rounded-xl mb-6">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
                 billingPeriod === 'monthly'
                   ? 'bg-background text-foreground shadow-md scale-[1.02]'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -129,14 +129,14 @@ export const PricingSection = () => {
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 ${
+              className={`px-6 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out flex items-center gap-2 ${
                 billingPeriod === 'yearly'
                   ? 'bg-background text-foreground shadow-md scale-[1.02]'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Anual
-              <Badge className="bg-green-500 text-white text-[10px] sm:text-xs font-bold transition-transform duration-300">-30%</Badge>
+              <Badge className="bg-green-500 text-white text-xs font-bold transition-transform duration-300">-30%</Badge>
             </button>
           </div>
 

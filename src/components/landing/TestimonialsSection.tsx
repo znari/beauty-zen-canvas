@@ -150,13 +150,13 @@ export const TestimonialsSection = () => {
   const translateX = -(currentIndex * (100 / cardsPerView));
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-fade-in-up">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+    <section className="py-20 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16 animate-fade-in-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Junte-se a <span className="text-secondary">+500 profissionais</span> que já dizem 'Zen'
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Descubra como o FichaZen está transformando estúdios de beleza em todo o Brasil
           </p>
         </div>
@@ -262,22 +262,22 @@ export const TestimonialsSection = () => {
         </div>
 
         {/* Trust metrics */}
-        <div className="mt-12 sm:mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
+        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
           <div className="text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 sm:mb-2">⭐ 4.9/5</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Avaliação média</p>
+            <p className="text-3xl font-bold text-secondary mb-2">⭐ 4.9/5</p>
+            <p className="text-sm text-muted-foreground">Avaliação média</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 sm:mb-2">+500</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Profissionais ativas</p>
+            <p className="text-3xl font-bold text-secondary mb-2">+500</p>
+            <p className="text-sm text-muted-foreground">Profissionais ativas</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 sm:mb-2">10h</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Economia média/semana</p>
+            <p className="text-3xl font-bold text-secondary mb-2">10h</p>
+            <p className="text-sm text-muted-foreground">Economia média/semana</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 sm:mb-2">95%</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Renovam assinatura</p>
+            <p className="text-3xl font-bold text-secondary mb-2">95%</p>
+            <p className="text-sm text-muted-foreground">Renovam assinatura</p>
           </div>
         </div>
       </div>

@@ -33,18 +33,18 @@ export const BenefitsSection = () => {
   ];
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10 sm:mb-12 md:mb-16 animate-fade-in-up">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
+    <section className="py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16 animate-fade-in-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             O ROI que você precisa ver para acreditar
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Profissionais que usam FichaZen economizam tempo e aumentam receita
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {benefits.map((benefit, index) => (
             <div 
               key={index}
@@ -64,7 +64,7 @@ export const BenefitsSection = () => {
               </p>
 
               <div className="pt-4 border-t border-border">
-                <p className="text-xl sm:text-2xl font-bold text-secondary mb-1">
+                <p className="text-2xl font-bold text-secondary mb-1">
                   {benefit.metric}
                 </p>
                 <p className="text-xs text-muted-foreground">
