@@ -42,7 +42,7 @@ export const CTABanner = () => {
             </Button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <span className="text-secondary">✅</span>
               <span>Sem cartão de crédito</span>

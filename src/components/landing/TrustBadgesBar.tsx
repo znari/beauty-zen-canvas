@@ -4,7 +4,7 @@ export const TrustBadgesBar = () => {
   return (
     <section className="py-8 bg-background border-y border-border">
       <div className="container mx-auto px-4">
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-6 sm:gap-8 md:gap-16">
           {/* Badge 1 */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
