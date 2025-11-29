@@ -13,7 +13,7 @@ export const HeroSection = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Column: Copy + CTAs */}
-          <div className="space-y-8 animate-fade-in-up">
+          <div className="space-y-8 animate-fade-in-up relative z-20">
             <div className="space-y-4">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
                 Economize <span className="text-secondary">10h por semana</span> com Gestão de Clientes em Piloto Automático
