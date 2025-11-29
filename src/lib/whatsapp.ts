@@ -3,6 +3,8 @@
  * Permite envio de mensagens prontas com variáveis dinâmicas
  */
 
+import { ANAMNESIS_DOMAIN } from "./constants";
+
 export type MessageType = "ConfirmacaoAgendamento" | "EnvioFicha" | "Lembrete" | "Agradecimento" | "BoasVindas" | "Reagendamento" | "Cancelamento";
 export type TemplateSelectorType = MessageType | "Todos";
 
@@ -215,7 +217,7 @@ export function gerarPreviewMensagem(template: string): string {
     telefone: "",
     dataProcedimento: "12/11",
     horaProcedimento: "14:00",
-    linkFicha: "https://fichazen.app/ficha/123",
+    linkFicha: "https://fichazen.net/ficha/123",
     nomeStudio: "Studio Bela",
   };
 
@@ -226,7 +228,7 @@ export function gerarPreviewMensagem(template: string): string {
  * Gera link de ficha de anamnese
  */
 export function generateAnamnesisLink(clientId: string | number): string {
-  return `${window.location.origin}/ficha/${clientId}`;
+  return `${ANAMNESIS_DOMAIN}/ficha/${clientId}`;
 }
 
 /**
