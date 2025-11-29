@@ -11,3 +11,6 @@ export const SUPPORT_HOURS = {
   weekdays: "Segunda a Sexta",
   time: "9h às 18h",
 };
+
+// Domínio dedicado para fichas de anamnese
+export const ANAMNESIS_DOMAIN = "https://fichazen.net";
