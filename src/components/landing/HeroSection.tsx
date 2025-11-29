@@ -2,15 +2,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroMockup from "@/assets/hero-mockup.jpg";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
 export const HeroSection = () => {
-  const scrollToFeatures = () => {
-    const element = document.getElementById('features');
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
       {/* Background gradient */}
@@ -53,8 +47,14 @@ export const HeroSection = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
-              <Button variant="outline" size="xl" onClick={scrollToFeatures}>
-                Ver demonstração
+              <Button variant="outline" size="xl" asChild>
+                <a 
+                  href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Olá! Gostaria de saber mais sobre o FichaZen`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  💬 Falar com especialista
+                </a>
               </Button>
             </div>
 
