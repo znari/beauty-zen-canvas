@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
         name: 'FichaZen - Gestão de Clientes',
         short_name: 'FichaZen',
         description: 'Micro-CRM para profissionais de beleza',
+        lang: 'pt-BR',
         theme_color: '#7E69AB',
         background_color: '#ffffff',
         display: 'standalone',
