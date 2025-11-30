@@ -560,7 +560,7 @@ const ClientProfile = () => {
               .find((v) => new Date(v.rawDate) >= new Date());
             return nextVisit?.time;
           })(),
-          linkFicha: `${window.location.origin}/ficha/${client.id}`,
+          linkFicha: generateAnamnesisLink(client.id),
           procedimentos: (() => {
             const nextVisit = client.visits
               ?.filter((v) => v.status !== "Cancelado")
