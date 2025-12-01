@@ -17,6 +17,7 @@ import { useDeleteAvatar } from "@/hooks/useDeleteAvatar";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { PlansManagement } from "@/components/PlansManagement";
+import * as z from "zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Schema de validação
+const profileSchema = z.object({
+  nomeEmpresa: z.string()
+    .trim()
+    .min(2, "Nome da empresa deve ter no mínimo 2 caracteres")
+    .max(100, "Nome da empresa deve ter no máximo 100 caracteres"),
+  cpfCnpj: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  telefone: z.string()
+    .min(10, "Telefone deve ter no mínimo 10 dígitos")
+    .max(20, "Telefone inválido")
+    .optional()
+    .or(z.literal("")),
+  cep: z.string()
+    .regex(/^\d{5}-?\d{3}$/, "CEP inválido")
+    .optional()
+    .or(z.literal("")),
+  logradouro: z.string().max(200, "Logradouro muito longo").optional(),
+  numero: z.string().max(20, "Número muito longo").optional(),
+  complemento: z.string().max(100, "Complemento muito longo").optional(),
+  bairro: z.string().max(100, "Bairro muito longo").optional(),
+  cidade: z.string().max(100, "Cidade muito longa").optional(),
+  estado: z.string().max(2, "Use a sigla do estado (ex: SP)").optional(),
+  metodoPagamento: z.string().optional(),
+});
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -173,10 +200,15 @@ export default function ProfileSettings() {
   const handleSave = async () => {
     if (!user) return;
     
-    // Validações
-    if (!profileData.nomeEmpresa?.trim()) {
-      toast.error("O nome da empresa é obrigatório");
-      return;
+    // Validar dados com zod
+    try {
+      profileSchema.parse(profileData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast.error(firstError.message);
+        return;
+      }
     }
     
     // Detectar campos alterados

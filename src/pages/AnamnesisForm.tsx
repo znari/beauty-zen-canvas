@@ -89,7 +89,6 @@ const AnamnesisForm = () => {
       await saveMutation.mutateAsync({
         clientId: visitData.clientId,
         responses: data,
-        anamnesisId: visitData.anamnesisId
       });
 
       toast({
