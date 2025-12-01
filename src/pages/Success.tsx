@@ -38,6 +38,12 @@ const Success = () => {
           subtitle: "Sua senha foi redefinida com sucesso 💜",
           description: "Agradecemos pela confiança no FichaZen. Agora você já pode acessar sua conta com a nova senha ✨"
         };
+      case "cadastro":
+        return {
+          title: "E-mail confirmado! 🎉",
+          subtitle: "Sua conta foi ativada com sucesso 💜",
+          description: "Agora você pode acessar o FichaZen e começar a organizar seus atendimentos!"
+        };
       default:
         return {
           title: "Tudo certo por aqui!",

@@ -38,6 +38,8 @@ import Install from "./pages/Install";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 
+import EmailConfirmation from "./pages/EmailConfirmation";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -52,6 +54,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/registro" element={<Registration />} />
+            <Route path="/confirmar-email" element={<EmailConfirmation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/recuperar-senha" element={<PasswordRecovery />} />
             <Route path="/nova-senha" element={<NewPassword />} />
