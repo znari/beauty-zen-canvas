@@ -828,6 +828,10 @@ export type Database = {
         }[]
       }
       normalize_phone: { Args: { input_text: string }; Returns: string }
+      submit_public_anamnesis: {
+        Args: { p_client_id: string; p_responses: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
