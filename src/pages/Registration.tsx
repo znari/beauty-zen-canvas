@@ -120,13 +120,16 @@ export default function Registration() {
       });
       setIsSubmitting(false);
     } else {
+      // Salvar email no localStorage para exibir na página de confirmação
+      localStorage.setItem('pendingConfirmationEmail', data.email);
+      
       toast({
         title: "Conta criada com sucesso! 💖",
-        description: "Verifique seu e-mail para confirmar o cadastro e fazer login.",
+        description: "Redirecionando para confirmação...",
       });
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      
+      // Redirecionar imediatamente para página de confirmação
+      navigate("/confirmar-email");
     }
   };
 
