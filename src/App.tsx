@@ -10,6 +10,8 @@ import Registration from "./pages/Registration";
 import Login from "./pages/Login";
 import PasswordRecovery from "./pages/PasswordRecovery";
 import NewPassword from "./pages/NewPassword";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
@@ -38,8 +40,6 @@ import Install from "./pages/Install";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 
-import EmailConfirmation from "./pages/EmailConfirmation";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -64,6 +64,9 @@ const App = () => (
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfUse />} />
             <Route path="/lgpd" element={<LGPD />} />
+            
+            {/* Onboarding route (protected) */}
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             
             {/* Protected routes */}
             <Route path="/instalar" element={<ProtectedRoute><Install /></ProtectedRoute>} />
