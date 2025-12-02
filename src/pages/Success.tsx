@@ -10,6 +10,17 @@ const Success = () => {
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
+    const origem = searchParams.get("origem");
+    
+    // Se origem é cadastro, redirecionar para onboarding
+    if (origem === "cadastro") {
+      const timer = setTimeout(() => {
+        navigate("/onboarding");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+
+    // Para outras origens, comportamento normal com countdown
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -22,7 +33,7 @@ const Success = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const getMessage = () => {
     switch (origem) {
@@ -42,7 +53,7 @@ const Success = () => {
         return {
           title: "E-mail confirmado! 🎉",
           subtitle: "Sua conta foi ativada com sucesso 💜",
-          description: "Agora você pode acessar o FichaZen e começar a organizar seus atendimentos!"
+          description: "Vamos configurar seu FichaZen em poucos passos..."
         };
       default:
         return {
