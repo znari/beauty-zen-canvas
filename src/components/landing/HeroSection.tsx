@@ -40,9 +40,7 @@ export const HeroSection = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="xl" asChild className="group shadow-button">
-                <Link to="/registro">
-                  Começar meu teste grátis agora
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <Link to="/registro">Começar teste grátis agora<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
               <Button variant="outline" size="xl" asChild>
