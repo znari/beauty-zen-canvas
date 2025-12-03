@@ -32,11 +32,42 @@ const formSchema = z.object({
   previousProcedure: z.enum(["yes", "no"], {
     required_error: "Por favor, selecione uma opção",
   }),
+  previousProcedureDetails: z.string().optional(),
   skinConditions: z.enum(["yes", "no"], {
     required_error: "Por favor, selecione uma opção",
   }),
   skinConditionDetails: z.string().optional(),
   additionalNotes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+}).superRefine((data, ctx) => {
+  // Validação condicional: se "Sim" selecionado, campo obrigatório com mínimo 5 caracteres
+  if (data.useContinuousMedication === "yes" && (!data.medicationDetails || data.medicationDetails.length < 5)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Por favor, informe quais medicamentos (mínimo 5 caracteres)",
+      path: ["medicationDetails"],
+    });
+  }
+  if (data.hasAllergies === "yes" && (!data.allergyDetails || data.allergyDetails.length < 5)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Por favor, informe quais alergias (mínimo 5 caracteres)",
+      path: ["allergyDetails"],
+    });
+  }
+  if (data.previousProcedure === "yes" && (!data.previousProcedureDetails || data.previousProcedureDetails.length < 5)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Por favor, informe detalhes do procedimento anterior (mínimo 5 caracteres)",
+      path: ["previousProcedureDetails"],
+    });
+  }
+  if (data.skinConditions === "yes" && (!data.skinConditionDetails || data.skinConditionDetails.length < 5)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Por favor, descreva a condição de pele (mínimo 5 caracteres)",
+      path: ["skinConditionDetails"],
+    });
+  }
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -160,10 +191,15 @@ const AnamnesisForm = () => {
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-soft">
         <div className="container max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-center gap-3 mb-4 animate-fade-in">
+          <div className="flex items-center justify-center gap-3 mb-2 animate-fade-in">
             <Sparkles className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold gradient-text">FichaZen</h1>
           </div>
+          {visitData.studioName && (
+            <p className="text-center text-muted-foreground text-sm mb-4 animate-fade-in">
+              {visitData.studioName}
+            </p>
+          )}
           <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <h2 className="text-2xl font-semibold text-foreground">
               Ficha de Anamnese — {visitData.clientName}
@@ -230,7 +266,7 @@ const AnamnesisForm = () => {
 
         {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Pergunta 1 */}
+          {/* Pergunta 1 - Gravidez (SEM caixa de observação) */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.isPregnantOrBreastfeeding === "yes" ? "bg-primary/5 border-primary/40" : ""
@@ -263,7 +299,7 @@ const AnamnesisForm = () => {
             </CardContent>
           </Card>
 
-          {/* Pergunta 2 */}
+          {/* Pergunta 2 - Medicamentos */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.useContinuousMedication === "yes" ? "bg-primary/5 border-primary/40" : ""
@@ -295,19 +331,22 @@ const AnamnesisForm = () => {
               )}
               {watchFields.useContinuousMedication === "yes" && (
                 <div className="animate-fade-in">
-                  <Label htmlFor="medication-details">Quais medicamentos?</Label>
+                  <Label htmlFor="medication-details">Quais medicamentos? *</Label>
                   <Input
                     id="medication-details"
                     placeholder="Ex: Anticoncepcional, Roacutan, etc."
                     {...register("medicationDetails")}
                     className="mt-2"
                   />
+                  {errors.medicationDetails && (
+                    <p className="text-sm text-destructive mt-1">{errors.medicationDetails.message}</p>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Pergunta 3 */}
+          {/* Pergunta 3 - Alergias */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.hasAllergies === "yes" ? "bg-primary/5 border-primary/40" : ""
@@ -339,19 +378,22 @@ const AnamnesisForm = () => {
               )}
               {watchFields.hasAllergies === "yes" && (
                 <div className="animate-fade-in">
-                  <Label htmlFor="allergy-details">Quais alergias?</Label>
+                  <Label htmlFor="allergy-details">Quais alergias? *</Label>
                   <Input
                     id="allergy-details"
                     placeholder="Ex: Látex, cosméticos específicos, etc."
                     {...register("allergyDetails")}
                     className="mt-2"
                   />
+                  {errors.allergyDetails && (
+                    <p className="text-sm text-destructive mt-1">{errors.allergyDetails.message}</p>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Pergunta 4 */}
+          {/* Pergunta 4 - Procedimento Anterior */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.previousProcedure === "yes" ? "bg-primary/5 border-primary/40" : ""
@@ -364,7 +406,7 @@ const AnamnesisForm = () => {
                 Já realizou este procedimento antes?
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <RadioGroup
                 onValueChange={(value) => register("previousProcedure").onChange({ target: { value } })}
                 className="flex gap-4"
@@ -379,12 +421,26 @@ const AnamnesisForm = () => {
                 </div>
               </RadioGroup>
               {errors.previousProcedure && (
-                <p className="text-sm text-destructive mt-2">{errors.previousProcedure.message}</p>
+                <p className="text-sm text-destructive">{errors.previousProcedure.message}</p>
+              )}
+              {watchFields.previousProcedure === "yes" && (
+                <div className="animate-fade-in">
+                  <Label htmlFor="previous-details">Há quanto tempo? Onde realizou? *</Label>
+                  <Input
+                    id="previous-details"
+                    placeholder="Ex: Há 6 meses, no Studio X"
+                    {...register("previousProcedureDetails")}
+                    className="mt-2"
+                  />
+                  {errors.previousProcedureDetails && (
+                    <p className="text-sm text-destructive mt-1">{errors.previousProcedureDetails.message}</p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Pergunta 5 */}
+          {/* Pergunta 5 - Condição de Pele */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.skinConditions === "yes" ? "bg-primary/5 border-primary/40" : ""
@@ -419,13 +475,16 @@ const AnamnesisForm = () => {
               )}
               {watchFields.skinConditions === "yes" && (
                 <div className="animate-fade-in">
-                  <Label htmlFor="skin-details">Descreva a condição:</Label>
+                  <Label htmlFor="skin-details">Descreva a condição: *</Label>
                   <Textarea
                     id="skin-details"
                     placeholder="Descreva sua condição de pele..."
                     {...register("skinConditionDetails")}
                     className="mt-2 min-h-[80px]"
                   />
+                  {errors.skinConditionDetails && (
+                    <p className="text-sm text-destructive mt-1">{errors.skinConditionDetails.message}</p>
+                  )}
                 </div>
               )}
             </CardContent>

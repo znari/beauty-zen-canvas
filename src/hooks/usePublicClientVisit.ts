@@ -37,6 +37,7 @@ export const usePublicClientVisit = (clientId: string) => {
         visitTime: visit.visit_time ? visit.visit_time.slice(0, 5) : null,
         procedureName,
         professionalName: visit.professional_name || "Profissional",
+        studioName: visit.studio_name || null,
         anamnesisId: visit.anamnesis_id,
         anamnesisResponses: visit.anamnesis_responses,
         anamnesisFilledAt: visit.anamnesis_filled_at,
