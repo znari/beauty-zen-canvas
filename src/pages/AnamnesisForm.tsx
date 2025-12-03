@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, User, Sparkles, Heart, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { Calendar, User, Sparkles, Heart, AlertCircle, FileText, Loader2, ShieldCheck } from "lucide-react";
 import { usePublicClientVisit } from "@/hooks/usePublicClientVisit";
 import { usePublicSaveAnamnesis } from "@/hooks/usePublicSaveAnamnesis";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -38,6 +39,9 @@ const formSchema = z.object({
   }),
   skinConditionDetails: z.string().optional(),
   additionalNotes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  consentTerms: z.boolean().refine(val => val === true, {
+    message: "Você precisa concordar com os termos para enviar a ficha"
+  }),
 }).superRefine((data, ctx) => {
   // Validação condicional: se "Sim" selecionado, campo obrigatório com mínimo 5 caracteres
   if (data.useContinuousMedication === "yes" && (!data.medicationDetails || data.medicationDetails.length < 5)) {
@@ -91,15 +95,22 @@ const AnamnesisForm = () => {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: (visitData?.anamnesisResponses as FormData) || {
-      isPregnantOrBreastfeeding: "no",
-      useContinuousMedication: "no",
-      hasAllergies: "no",
-      previousProcedure: "no",
-      skinConditions: "no",
+    defaultValues: {
+      isPregnantOrBreastfeeding: (visitData?.anamnesisResponses as FormData)?.isPregnantOrBreastfeeding || "no",
+      useContinuousMedication: (visitData?.anamnesisResponses as FormData)?.useContinuousMedication || "no",
+      hasAllergies: (visitData?.anamnesisResponses as FormData)?.hasAllergies || "no",
+      previousProcedure: (visitData?.anamnesisResponses as FormData)?.previousProcedure || "no",
+      skinConditions: (visitData?.anamnesisResponses as FormData)?.skinConditions || "no",
+      medicationDetails: (visitData?.anamnesisResponses as FormData)?.medicationDetails || "",
+      allergyDetails: (visitData?.anamnesisResponses as FormData)?.allergyDetails || "",
+      previousProcedureDetails: (visitData?.anamnesisResponses as FormData)?.previousProcedureDetails || "",
+      skinConditionDetails: (visitData?.anamnesisResponses as FormData)?.skinConditionDetails || "",
+      additionalNotes: (visitData?.anamnesisResponses as FormData)?.additionalNotes || "",
+      consentTerms: false,
     }
   });
 
@@ -191,14 +202,18 @@ const AnamnesisForm = () => {
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-soft">
         <div className="container max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-center gap-3 mb-2 animate-fade-in">
+          <div className="flex items-center justify-center gap-3 mb-3 animate-fade-in">
             <Sparkles className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold gradient-text">FichaZen</h1>
           </div>
           {visitData.studioName && (
-            <p className="text-center text-muted-foreground text-sm mb-4 animate-fade-in">
-              {visitData.studioName}
-            </p>
+            <div className="flex items-center justify-center gap-3 mb-4 animate-fade-in">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/50" />
+              <p className="text-lg font-medium text-foreground">
+                {visitData.studioName}
+              </p>
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
+            </div>
           )}
           <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <h2 className="text-2xl font-semibold text-foreground">
@@ -280,19 +295,26 @@ const AnamnesisForm = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup
-                onValueChange={(value) => register("isPregnantOrBreastfeeding").onChange({ target: { value } })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="pregnant-yes" {...register("isPregnantOrBreastfeeding")} />
-                  <Label htmlFor="pregnant-yes" className="cursor-pointer">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="pregnant-no" {...register("isPregnantOrBreastfeeding")} />
-                  <Label htmlFor="pregnant-no" className="cursor-pointer">Não</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                control={control}
+                name="isPregnantOrBreastfeeding"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="pregnant-yes" />
+                      <Label htmlFor="pregnant-yes" className="cursor-pointer">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="pregnant-no" />
+                      <Label htmlFor="pregnant-no" className="cursor-pointer">Não</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.isPregnantOrBreastfeeding && (
                 <p className="text-sm text-destructive mt-2">{errors.isPregnantOrBreastfeeding.message}</p>
               )}
@@ -313,19 +335,26 @@ const AnamnesisForm = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <RadioGroup
-                onValueChange={(value) => register("useContinuousMedication").onChange({ target: { value } })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="medication-yes" {...register("useContinuousMedication")} />
-                  <Label htmlFor="medication-yes" className="cursor-pointer">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="medication-no" {...register("useContinuousMedication")} />
-                  <Label htmlFor="medication-no" className="cursor-pointer">Não</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                control={control}
+                name="useContinuousMedication"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="medication-yes" />
+                      <Label htmlFor="medication-yes" className="cursor-pointer">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="medication-no" />
+                      <Label htmlFor="medication-no" className="cursor-pointer">Não</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.useContinuousMedication && (
                 <p className="text-sm text-destructive">{errors.useContinuousMedication.message}</p>
               )}
@@ -360,19 +389,26 @@ const AnamnesisForm = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <RadioGroup
-                onValueChange={(value) => register("hasAllergies").onChange({ target: { value } })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="allergy-yes" {...register("hasAllergies")} />
-                  <Label htmlFor="allergy-yes" className="cursor-pointer">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="allergy-no" {...register("hasAllergies")} />
-                  <Label htmlFor="allergy-no" className="cursor-pointer">Não</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                control={control}
+                name="hasAllergies"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="allergy-yes" />
+                      <Label htmlFor="allergy-yes" className="cursor-pointer">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="allergy-no" />
+                      <Label htmlFor="allergy-no" className="cursor-pointer">Não</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.hasAllergies && (
                 <p className="text-sm text-destructive">{errors.hasAllergies.message}</p>
               )}
@@ -407,19 +443,26 @@ const AnamnesisForm = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <RadioGroup
-                onValueChange={(value) => register("previousProcedure").onChange({ target: { value } })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="previous-yes" {...register("previousProcedure")} />
-                  <Label htmlFor="previous-yes" className="cursor-pointer">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="previous-no" {...register("previousProcedure")} />
-                  <Label htmlFor="previous-no" className="cursor-pointer">Não</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                control={control}
+                name="previousProcedure"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="previous-yes" />
+                      <Label htmlFor="previous-yes" className="cursor-pointer">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="previous-no" />
+                      <Label htmlFor="previous-no" className="cursor-pointer">Não</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.previousProcedure && (
                 <p className="text-sm text-destructive">{errors.previousProcedure.message}</p>
               )}
@@ -457,19 +500,26 @@ const AnamnesisForm = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <RadioGroup
-                onValueChange={(value) => register("skinConditions").onChange({ target: { value } })}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="skin-yes" {...register("skinConditions")} />
-                  <Label htmlFor="skin-yes" className="cursor-pointer">Sim</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="skin-no" {...register("skinConditions")} />
-                  <Label htmlFor="skin-no" className="cursor-pointer">Não</Label>
-                </div>
-              </RadioGroup>
+              <Controller
+                control={control}
+                name="skinConditions"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="skin-yes" />
+                      <Label htmlFor="skin-yes" className="cursor-pointer">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="skin-no" />
+                      <Label htmlFor="skin-no" className="cursor-pointer">Não</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
               {errors.skinConditions && (
                 <p className="text-sm text-destructive">{errors.skinConditions.message}</p>
               )}
@@ -513,6 +563,48 @@ const AnamnesisForm = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Máximo de 500 caracteres
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Termos de Consentimento */}
+          <Card className="animate-fade-in border-primary/20 bg-primary/5" style={{ animationDelay: "0.85s" }}>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                Termo de Consentimento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>
+                  Ao enviar esta ficha, você declara que:
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>As informações fornecidas são verdadeiras e completas</li>
+                  <li>Autoriza o uso dos dados para fins de avaliação e realização do procedimento</li>
+                  <li>Compreende que a omissão de informações pode comprometer sua segurança</li>
+                </ul>
+              </div>
+              <div className="flex items-start space-x-3 pt-2">
+                <Controller
+                  control={control}
+                  name="consentTerms"
+                  render={({ field }) => (
+                    <Checkbox
+                      id="consent-terms"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-0.5"
+                    />
+                  )}
+                />
+                <Label htmlFor="consent-terms" className="cursor-pointer text-sm leading-relaxed">
+                  Li e concordo com os termos acima. Confirmo que todas as informações são verdadeiras.
+                </Label>
+              </div>
+              {errors.consentTerms && (
+                <p className="text-sm text-destructive">{errors.consentTerms.message}</p>
+              )}
             </CardContent>
           </Card>
 
