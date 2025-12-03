@@ -1,19 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ChevronLeft, Save, Calendar, User } from "lucide-react";
+import { ChevronLeft, Save, Calendar, User, FileDown, CheckCircle, XCircle } from "lucide-react";
 import { useClientAnamnesis } from "@/hooks/useClientAnamnesis";
 import { useSaveAnamnesis } from "@/hooks/useSaveAnamnesis";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Form,
   FormControl,
@@ -23,59 +24,130 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { exportAnamnesisToPDF } from "@/lib/exportAnamnesisPDF";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-// Schema de validação
+// Schema unificado que aceita tanto formato novo quanto legacy
 const anamnesisSchema = z.object({
-  dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
-  q1_alergia: z.enum(["sim", "nao"]),
-  q1_alergia_details: z.string().optional(),
-  q2_medicamento: z.enum(["sim", "nao"]),
-  q2_medicamento_details: z.string().optional(),
-  q3_doenca: z.enum(["sim", "nao"]),
-  q3_doenca_details: z.string().optional(),
-  q4_gravida: z.enum(["sim", "nao"]),
-  q5_observacao: z.enum(["sim", "nao"]),
-  q5_observacao_details: z.string().optional(),
-  consentimento: z.boolean().refine((val) => val === true, {
-    message: "Você deve aceitar o consentimento para continuar",
-  }),
+  dataNascimento: z.string().optional(),
+  isPregnantOrBreastfeeding: z.enum(["yes", "no"]),
+  useContinuousMedication: z.enum(["yes", "no"]),
+  medicationDetails: z.string().optional(),
+  hasAllergies: z.enum(["yes", "no"]),
+  allergyDetails: z.string().optional(),
+  previousProcedure: z.enum(["yes", "no"]),
+  previousProcedureDetails: z.string().optional(),
+  skinConditions: z.enum(["yes", "no"]),
+  skinConditionDetails: z.string().optional(),
+  additionalNotes: z.string().optional(),
+  consentTerms: z.boolean(),
 });
 
 type AnamnesisFormData = z.infer<typeof anamnesisSchema>;
 
+// Helper para converter formato legacy para novo
+const convertLegacyToNew = (responses: any): Partial<AnamnesisFormData> => {
+  if (!responses) return {};
+  
+  // Se já está no formato novo, retorna direto
+  if (responses.isPregnantOrBreastfeeding || responses.hasAllergies) {
+    return responses;
+  }
+  
+  // Converte formato legacy
+  return {
+    isPregnantOrBreastfeeding: responses.q4_gravida === "sim" ? "yes" : "no",
+    useContinuousMedication: responses.q2_medicamento === "sim" ? "yes" : "no",
+    medicationDetails: responses.q2_medicamento_details || "",
+    hasAllergies: responses.q1_alergia === "sim" ? "yes" : "no",
+    allergyDetails: responses.q1_alergia_details || "",
+    previousProcedure: "no",
+    previousProcedureDetails: "",
+    skinConditions: responses.q3_doenca === "sim" ? "yes" : "no",
+    skinConditionDetails: responses.q3_doenca_details || "",
+    additionalNotes: responses.q5_observacao_details || "",
+    consentTerms: responses.consentimento || false,
+  };
+};
+
 const ClientAnamnesisForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Buscar dados reais do banco
+  // Fetch studio name from profile
+  const { data: profileData } = useQuery({
+    queryKey: ["profile-studio", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("studio_name")
+        .eq("id", user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   const { data: client, isLoading, error } = useClientAnamnesis(id!);
   const saveMutation = useSaveAnamnesis();
 
-  // useForm sempre ANTES de qualquer return condicional
+  // Converter dados existentes
+  const existingData = client?.anamnesis?.responses 
+    ? convertLegacyToNew(client.anamnesis.responses)
+    : {};
+
   const form = useForm<AnamnesisFormData>({
     resolver: zodResolver(anamnesisSchema),
     defaultValues: {
-      dataNascimento: client?.dateOfBirth || "",
-      q1_alergia: "nao",
-      q1_alergia_details: "",
-      q2_medicamento: "nao",
-      q2_medicamento_details: "",
-      q3_doenca: "nao",
-      q3_doenca_details: "",
-      q4_gravida: "nao",
-      q5_observacao: "nao",
-      q5_observacao_details: "",
-      consentimento: client?.anamnesis?.consent || false,
-      ...(client?.anamnesis?.responses as Partial<AnamnesisFormData>)
+      dataNascimento: "",
+      isPregnantOrBreastfeeding: "no",
+      useContinuousMedication: "no",
+      medicationDetails: "",
+      hasAllergies: "no",
+      allergyDetails: "",
+      previousProcedure: "no",
+      previousProcedureDetails: "",
+      skinConditions: "no",
+      skinConditionDetails: "",
+      additionalNotes: "",
+      consentTerms: false,
     },
   });
 
+  // Atualizar form quando dados carregarem
+  useEffect(() => {
+    if (client) {
+      const convertedData = client.anamnesis?.responses 
+        ? convertLegacyToNew(client.anamnesis.responses)
+        : {};
+      
+      form.reset({
+        dataNascimento: client.dateOfBirth || "",
+        isPregnantOrBreastfeeding: convertedData.isPregnantOrBreastfeeding || "no",
+        useContinuousMedication: convertedData.useContinuousMedication || "no",
+        medicationDetails: convertedData.medicationDetails || "",
+        hasAllergies: convertedData.hasAllergies || "no",
+        allergyDetails: convertedData.allergyDetails || "",
+        previousProcedure: convertedData.previousProcedure || "no",
+        previousProcedureDetails: convertedData.previousProcedureDetails || "",
+        skinConditions: convertedData.skinConditions || "no",
+        skinConditionDetails: convertedData.skinConditionDetails || "",
+        additionalNotes: convertedData.additionalNotes || "",
+        consentTerms: client.anamnesis?.consent || convertedData.consentTerms || false,
+      });
+    }
+  }, [client, form]);
+
   const watchFields = form.watch([
-    "q1_alergia",
-    "q2_medicamento",
-    "q3_doenca",
-    "q5_observacao",
+    "hasAllergies",
+    "useContinuousMedication",
+    "skinConditions",
+    "previousProcedure",
   ]);
 
   const onSubmit = async (data: AnamnesisFormData) => {
@@ -85,7 +157,7 @@ const ClientAnamnesisForm = () => {
         clientId: id!,
         responses: data,
         dataNascimento: data.dataNascimento,
-        consent: data.consentimento
+        consent: data.consentTerms
       });
 
       toast({
@@ -109,7 +181,24 @@ const ClientAnamnesisForm = () => {
     navigate(`/cliente/${id}`);
   };
 
-  // Agora sim, returns condicionais DEPOIS de todos os hooks
+  const handleExportPDF = () => {
+    if (!client) return;
+
+    const formValues = form.getValues();
+    
+    exportAnamnesisToPDF({
+      clientName: client.name,
+      dateOfBirth: formValues.dataNascimento || client.dateOfBirth,
+      filledAt: client.anamnesis?.filled_at,
+      responses: formValues,
+    }, profileData?.studio_name || undefined);
+    
+    toast({
+      title: "PDF exportado!",
+      description: "A ficha foi baixada com sucesso.",
+    });
+  };
+
   if (isLoading) {
     return <LoadingSpinner message="Carregando ficha de anamnese..." />;
   }
@@ -118,10 +207,18 @@ const ClientAnamnesisForm = () => {
     return <ErrorMessage message="Erro ao carregar dados do cliente" />;
   }
 
+  // Helper para renderizar ícone de resposta
+  const ResponseIcon = ({ value }: { value: string }) => {
+    if (value === "yes") {
+      return <CheckCircle className="h-4 w-4 text-success inline mr-1" />;
+    }
+    return <XCircle className="h-4 w-4 text-muted-foreground inline mr-1" />;
+  };
+
   return (
     <div className="min-h-screen gradient-hero">
       {/* Header fixo */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
+      <header className="bg-background/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -129,12 +226,12 @@ const ClientAnamnesisForm = () => {
                 variant="ghost"
                 size="icon"
                 onClick={handleCancel}
-                className="hover:bg-primary-light"
+                className="hover:bg-primary/10"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-semibold text-primary-dark">
+                <h1 className="text-2xl font-semibold text-foreground">
                   Ficha de Anamnese
                 </h1>
                 <div className="flex items-center gap-4 mt-1">
@@ -151,14 +248,24 @@ const ClientAnamnesisForm = () => {
                 </div>
               </div>
             </div>
-            <Button
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={isSubmitting}
-              className="shadow-lg"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSubmitting ? "Salvando..." : "Salvar Ficha"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportPDF}
+                className="hidden sm:flex"
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Exportar PDF
+              </Button>
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={isSubmitting}
+                className="shadow-lg"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -170,7 +277,7 @@ const ClientAnamnesisForm = () => {
             {/* Data de Nascimento */}
             <Card className="shadow-card animate-fade-in">
               <CardHeader>
-                <CardTitle className="text-primary-dark">Informações Pessoais</CardTitle>
+                <CardTitle className="text-foreground">Informações Pessoais</CardTitle>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -178,7 +285,7 @@ const ClientAnamnesisForm = () => {
                   name="dataNascimento"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data de Nascimento *</FormLabel>
+                      <FormLabel>Data de Nascimento</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -189,232 +296,33 @@ const ClientAnamnesisForm = () => {
               </CardContent>
             </Card>
 
-            {/* Pergunta 1: Alergias */}
+            {/* Pergunta: Gravidez/Amamentação */}
             <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.1s" }}>
               <CardHeader>
-                <CardTitle className="text-primary-dark">Alergias</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="q1_alergia"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Você possui alguma alergia? *</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="sim"
-                              checked={field.value === "sim"}
-                              onChange={() => field.onChange("sim")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Sim</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="nao"
-                              checked={field.value === "nao"}
-                              onChange={() => field.onChange("nao")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Não</span>
-                          </label>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {watchFields[0] === "sim" && (
-                  <FormField
-                    control={form.control}
-                    name="q1_alergia_details"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Se sim, quais?</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Descreva suas alergias..."
-                            {...field}
-                            className="min-h-[100px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Pergunta 2: Medicamentos */}
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <CardHeader>
-                <CardTitle className="text-primary-dark">Medicamentos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="q2_medicamento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Você faz uso de medicamentos contínuos? *</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="sim"
-                              checked={field.value === "sim"}
-                              onChange={() => field.onChange("sim")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Sim</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="nao"
-                              checked={field.value === "nao"}
-                              onChange={() => field.onChange("nao")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Não</span>
-                          </label>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {watchFields[1] === "sim" && (
-                  <FormField
-                    control={form.control}
-                    name="q2_medicamento_details"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Se sim, quais?</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Descreva os medicamentos..."
-                            {...field}
-                            className="min-h-[100px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Pergunta 3: Doenças de Pele */}
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <CardHeader>
-                <CardTitle className="text-primary-dark">Condições de Pele</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="q3_doenca"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Você possui alguma doença de pele ou condição especial? *
-                      </FormLabel>
-                      <FormControl>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="sim"
-                              checked={field.value === "sim"}
-                              onChange={() => field.onChange("sim")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Sim</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="nao"
-                              checked={field.value === "nao"}
-                              onChange={() => field.onChange("nao")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Não</span>
-                          </label>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {watchFields[2] === "sim" && (
-                  <FormField
-                    control={form.control}
-                    name="q3_doenca_details"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Se sim, quais?</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Descreva as condições..."
-                            {...field}
-                            className="min-h-[100px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Pergunta 4: Gravidez/Amamentação */}
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              <CardHeader>
-                <CardTitle className="text-primary-dark">Gravidez e Amamentação</CardTitle>
+                <CardTitle className="text-foreground">Gravidez e Amamentação</CardTitle>
               </CardHeader>
               <CardContent>
                 <FormField
                   control={form.control}
-                  name="q4_gravida"
+                  name="isPregnantOrBreastfeeding"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Você está grávida ou amamentando? *</FormLabel>
+                      <FormLabel>Está grávida ou amamentando?</FormLabel>
                       <FormControl>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="sim"
-                              checked={field.value === "sim"}
-                              onChange={() => field.onChange("sim")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Sim</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="nao"
-                              checked={field.value === "nao"}
-                              onChange={() => field.onChange("nao")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Não</span>
-                          </label>
-                        </div>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="pregnant-yes" />
+                            <Label htmlFor="pregnant-yes" className="cursor-pointer">Sim</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="pregnant-no" />
+                            <Label htmlFor="pregnant-no" className="cursor-pointer">Não</Label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -423,59 +331,51 @@ const ClientAnamnesisForm = () => {
               </CardContent>
             </Card>
 
-            {/* Pergunta 5: Observações */}
-            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.5s" }}>
+            {/* Pergunta: Alergias */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.2s" }}>
               <CardHeader>
-                <CardTitle className="text-primary-dark">Observações Adicionais</CardTitle>
+                <CardTitle className="text-foreground">Alergias</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="q5_observacao"
+                  name="hasAllergies"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Deseja adicionar alguma observação? *</FormLabel>
+                      <FormLabel>Possui alguma alergia?</FormLabel>
                       <FormControl>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="sim"
-                              checked={field.value === "sim"}
-                              onChange={() => field.onChange("sim")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Sim</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              value="nao"
-                              checked={field.value === "nao"}
-                              onChange={() => field.onChange("nao")}
-                              className="w-4 h-4 accent-primary"
-                            />
-                            <span>Não</span>
-                          </label>
-                        </div>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="allergy-yes" />
+                            <Label htmlFor="allergy-yes" className="cursor-pointer">Sim</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="allergy-no" />
+                            <Label htmlFor="allergy-no" className="cursor-pointer">Não</Label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {watchFields[3] === "sim" && (
+                {watchFields[0] === "yes" && (
                   <FormField
                     control={form.control}
-                    name="q5_observacao_details"
+                    name="allergyDetails"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Qual observação?</FormLabel>
+                      <FormItem className="animate-fade-in">
+                        <FormLabel>Quais alergias?</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Escreva sua observação..."
+                            placeholder="Descreva suas alergias..."
                             {...field}
-                            className="min-h-[100px]"
+                            className="min-h-[80px]"
                           />
                         </FormControl>
                         <FormMessage />
@@ -486,12 +386,203 @@ const ClientAnamnesisForm = () => {
               </CardContent>
             </Card>
 
-            {/* Consentimento */}
+            {/* Pergunta: Medicamentos */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.3s" }}>
+              <CardHeader>
+                <CardTitle className="text-foreground">Medicamentos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="useContinuousMedication"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Faz uso de medicamentos contínuos?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="medication-yes" />
+                            <Label htmlFor="medication-yes" className="cursor-pointer">Sim</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="medication-no" />
+                            <Label htmlFor="medication-no" className="cursor-pointer">Não</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {watchFields[1] === "yes" && (
+                  <FormField
+                    control={form.control}
+                    name="medicationDetails"
+                    render={({ field }) => (
+                      <FormItem className="animate-fade-in">
+                        <FormLabel>Quais medicamentos?</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Descreva os medicamentos..."
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pergunta: Condições de Pele */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.4s" }}>
+              <CardHeader>
+                <CardTitle className="text-foreground">Condições de Pele</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="skinConditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Possui alguma condição de pele?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="skin-yes" />
+                            <Label htmlFor="skin-yes" className="cursor-pointer">Sim</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="skin-no" />
+                            <Label htmlFor="skin-no" className="cursor-pointer">Não</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {watchFields[2] === "yes" && (
+                  <FormField
+                    control={form.control}
+                    name="skinConditionDetails"
+                    render={({ field }) => (
+                      <FormItem className="animate-fade-in">
+                        <FormLabel>Descreva a condição</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Descreva as condições de pele..."
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pergunta: Procedimento Anterior */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.5s" }}>
+              <CardHeader>
+                <CardTitle className="text-foreground">Procedimento Anterior</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="previousProcedure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Já realizou este procedimento antes?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="previous-yes" />
+                            <Label htmlFor="previous-yes" className="cursor-pointer">Sim</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="previous-no" />
+                            <Label htmlFor="previous-no" className="cursor-pointer">Não</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {watchFields[3] === "yes" && (
+                  <FormField
+                    control={form.control}
+                    name="previousProcedureDetails"
+                    render={({ field }) => (
+                      <FormItem className="animate-fade-in">
+                        <FormLabel>Há quanto tempo? Onde?</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Ex: Há 6 meses, no Studio X"
+                            {...field}
+                            className="min-h-[80px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Observações Adicionais */}
             <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.6s" }}>
+              <CardHeader>
+                <CardTitle className="text-foreground">Observações Adicionais</CardTitle>
+                <CardDescription>Informações extras que o cliente informou</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="additionalNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Observações adicionais..."
+                          {...field}
+                          className="min-h-[100px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Consentimento */}
+            <Card className="shadow-card animate-fade-in" style={{ animationDelay: "0.7s" }}>
               <CardContent className="pt-6">
                 <FormField
                   control={form.control}
-                  name="consentimento"
+                  name="consentTerms"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
@@ -502,7 +593,7 @@ const ClientAnamnesisForm = () => {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="font-semibold">
-                          Declaro que as informações prestadas são verdadeiras. *
+                          Cliente declarou que as informações são verdadeiras
                         </FormLabel>
                         <FormMessage />
                       </div>
@@ -513,19 +604,30 @@ const ClientAnamnesisForm = () => {
             </Card>
 
             {/* Botões de Ação */}
-            <div className="flex gap-4 justify-end pb-8">
+            <div className="flex gap-4 justify-between pb-8">
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCancel}
-                disabled={isSubmitting}
+                onClick={handleExportPDF}
+                className="sm:hidden"
               >
-                Cancelar
+                <FileDown className="h-4 w-4 mr-2" />
+                PDF
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSubmitting ? "Salvando..." : "Salvar Ficha"}
-              </Button>
+              <div className="flex gap-4 ml-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSubmitting ? "Salvando..." : "Salvar Ficha"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

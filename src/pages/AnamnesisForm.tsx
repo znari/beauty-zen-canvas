@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, User, Sparkles, Heart, AlertCircle, FileText, Loader2, ShieldCheck } from "lucide-react";
+import { Calendar, User, Sparkles, Heart, AlertCircle, FileText, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { usePublicClientVisit } from "@/hooks/usePublicClientVisit";
 import { usePublicSaveAnamnesis } from "@/hooks/usePublicSaveAnamnesis";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -43,7 +43,6 @@ const formSchema = z.object({
     message: "Você precisa concordar com os termos para enviar a ficha"
   }),
 }).superRefine((data, ctx) => {
-  // Validação condicional: se "Sim" selecionado, campo obrigatório com mínimo 5 caracteres
   if (data.useContinuousMedication === "yes" && (!data.medicationDetails || data.medicationDetails.length < 5)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -76,20 +75,53 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+// Success Screen Component
+const SuccessScreen = ({ visitDate, visitTime, professionalName, studioName }: {
+  visitDate: string;
+  visitTime: string;
+  professionalName: string;
+  studioName?: string;
+}) => (
+  <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+    <Card className="max-w-md w-full text-center shadow-lg border-primary/20 animate-fade-in">
+      <CardHeader className="pb-4">
+        <div className="mx-auto w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-4 animate-bounce">
+          <CheckCircle2 className="w-10 h-10 text-success" />
+        </div>
+        <CardTitle className="text-2xl text-foreground">Ficha Enviada com Sucesso!</CardTitle>
+        <CardDescription className="text-base">
+          Obrigado por preencher sua ficha de anamnese. Estamos ansiosos para te atender!
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-primary/5 rounded-lg p-4 space-y-2">
+          <p className="text-sm text-muted-foreground">Seu agendamento</p>
+          <p className="text-lg font-semibold text-foreground">
+            {visitDate} às {visitTime}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            com <span className="text-primary font-medium">{professionalName}</span>
+          </p>
+          {studioName && (
+            <p className="text-xs text-muted-foreground mt-2">{studioName}</p>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          💜 Você já pode fechar esta página
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const AnamnesisForm = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState({ date: "", time: "", professional: "", studio: "" });
 
-  // Buscar dados reais da visita
   const { data: visitData, isLoading, error } = usePublicClientVisit(id || "");
   const saveMutation = usePublicSaveAnamnesis();
-
-  // Redirecionar se a visita já passou
-  if (visitData?.hasExpired) {
-    navigate("/ficha/expirada");
-    return null;
-  }
 
   const {
     register,
@@ -138,17 +170,15 @@ const AnamnesisForm = () => {
         description: "Obrigado por preencher sua ficha de anamnese.",
       });
 
-      // Redirecionar para página de sucesso com dados da visita
+      // Set success state and data
       const formattedDate = visitData.visitDate ? formatLocalDate(visitData.visitDate, "dd/MM/yyyy") : "";
-      const queryParams = new URLSearchParams({
+      setSubmittedData({
         date: formattedDate,
         time: visitData.visitTime || "",
-        professional: visitData.professionalName || ""
+        professional: visitData.professionalName || "",
+        studio: visitData.studioName || ""
       });
-      
-      setTimeout(() => {
-        navigate(`/ficha/sucesso?${queryParams.toString()}`);
-      }, 1500);
+      setIsSubmitted(true);
     } catch (error) {
       console.error("Erro ao enviar ficha:", error);
       toast({
@@ -161,7 +191,19 @@ const AnamnesisForm = () => {
     }
   };
 
-  // Estados de loading e erro
+  // Show success screen if submitted
+  if (isSubmitted) {
+    return (
+      <SuccessScreen
+        visitDate={submittedData.date}
+        visitTime={submittedData.time}
+        professionalName={submittedData.professional}
+        studioName={submittedData.studio}
+      />
+    );
+  }
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -170,6 +212,7 @@ const AnamnesisForm = () => {
     );
   }
 
+  // Error state
   if (error || !visitData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -178,7 +221,26 @@ const AnamnesisForm = () => {
     );
   }
 
-  // Verificar se já foi preenchida
+  // Redirect if expired
+  if (visitData.hasExpired) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardHeader>
+            <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <CardTitle>Link Expirado</CardTitle>
+            <CardDescription>
+              Este link já passou da data do procedimento e não pode mais ser utilizado.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  // Already filled
   if (visitData.isAlreadyFilled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -281,7 +343,7 @@ const AnamnesisForm = () => {
 
         {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Pergunta 1 - Gravidez (SEM caixa de observação) */}
+          {/* Pergunta 1 - Gravidez */}
           <Card 
             className={`animate-fade-in border-primary/20 transition-all duration-300 ${
               watchFields.isPregnantOrBreastfeeding === "yes" ? "bg-primary/5 border-primary/40" : ""
