@@ -3,10 +3,8 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import { SUPPORT_WHATSAPP } from "@/lib/constants";
-
 export const HeroSection = () => {
-  return (
-    <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
+  return <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero opacity-10"></div>
       
@@ -48,13 +46,7 @@ export const HeroSection = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="xl" asChild>
-                <a 
-                  href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Olá! Gostaria de saber mais sobre o FichaZen`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  💬 Falar com especialista
-                </a>
+                
               </Button>
             </div>
 
@@ -93,11 +85,7 @@ export const HeroSection = () => {
           {/* Right Column: Mockup */}
           <div className="relative animate-fade-in">
             <div className="relative z-10 hover-lift">
-              <img 
-                src={heroMockup} 
-                alt="FichaZen Dashboard - Visualização de agenda e fichas digitais" 
-                className="w-full h-auto rounded-3xl shadow-soft"
-              />
+              <img src={heroMockup} alt="FichaZen Dashboard - Visualização de agenda e fichas digitais" className="w-full h-auto rounded-3xl shadow-soft" />
             </div>
             {/* Decorative elements */}
             <div className="absolute -top-10 -right-10 w-72 h-72 bg-secondary/20 rounded-full blur-3xl -z-10"></div>
@@ -105,6 +93,5 @@ export const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
