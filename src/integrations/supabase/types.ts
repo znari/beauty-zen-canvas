@@ -823,6 +823,7 @@ export type Database = {
           client_name: string
           procedures: Json
           professional_name: string
+          studio_name: string
           visit_date: string
           visit_time: string
         }[]
