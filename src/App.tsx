@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import Landing from "./pages/Landing";
 import Registration from "./pages/Registration";
 import Login from "./pages/Login";
@@ -13,6 +14,7 @@ import NewPassword from "./pages/NewPassword";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
 import AnamnesisForm from "./pages/AnamnesisForm";
@@ -87,6 +89,9 @@ const App = () => (
             <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
             <Route path="/ajuda" element={<ProtectedRoute><Help /></ProtectedRoute>} />
             <Route path="/suporte" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+            
+            {/* Admin route */}
+            <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

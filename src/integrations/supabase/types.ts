@@ -664,6 +664,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
           assigned_professional_id: string | null
@@ -782,6 +803,24 @@ export type Database = {
       }
     }
     Views: {
+      v_admin_stats: {
+        Row: {
+          active_subscribers: number | null
+          churned_users: number | null
+          filled_anamneses: number | null
+          mrr: number | null
+          new_users_last_month: number | null
+          new_users_this_month: number | null
+          paid_transactions: number | null
+          pending_transactions: number | null
+          total_clients: number | null
+          total_revenue: number | null
+          total_users: number | null
+          total_visits: number | null
+          trial_users: number | null
+        }
+        Relationships: []
+      }
       v_dashboard_stats: {
         Row: {
           pending_anamneses: number | null
@@ -812,6 +851,63 @@ export type Database = {
         Args: { p_date: string; p_time: string }
         Returns: string
       }
+      get_admin_growth: {
+        Args: never
+        Returns: {
+          month: string
+          new_subscribers: number
+          new_users: number
+          revenue: number
+        }[]
+      }
+      get_admin_stats: {
+        Args: never
+        Returns: {
+          active_subscribers: number
+          churned_users: number
+          filled_anamneses: number
+          mrr: number
+          new_users_last_month: number
+          new_users_this_month: number
+          paid_transactions: number
+          pending_transactions: number
+          total_clients: number
+          total_revenue: number
+          total_users: number
+          total_visits: number
+          trial_users: number
+        }[]
+      }
+      get_admin_transactions: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          frequency: string
+          id: string
+          paid_at: string
+          payment_gateway: string
+          plan_id: string
+          professional_id: string
+          status: string
+          user_email: string
+          user_name: string
+        }[]
+      }
+      get_admin_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          plan: string
+          studio_name: string
+          subscription_ends_at: string
+          subscription_status: string
+          trial_ends_at: string
+        }[]
+      }
       get_public_visit_info: {
         Args: { client_uuid: string }
         Returns: {
@@ -828,6 +924,13 @@ export type Database = {
           visit_time: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       normalize_phone: { Args: { input_text: string }; Returns: string }
       submit_public_anamnesis: {
         Args: { p_client_id: string; p_responses: Json }
@@ -835,7 +938,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -962,6 +1065,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
