@@ -46,7 +46,7 @@ export function ClientStep({ onValidChange }: ClientStepProps) {
               variant="cta"
               onClick={() => {
                 // Navigate to new client page, they'll come back after
-                navigate("/cliente/novo");
+                navigate("/clientes/novo");
               }}
             >
               Cadastrar Cliente
