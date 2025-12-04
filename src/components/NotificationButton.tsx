@@ -99,9 +99,9 @@ export const NotificationButton = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-secondary hover:text-primary hover:bg-primary/10 relative"
+          className="text-secondary hover:text-primary hover:bg-primary/10 relative h-10 w-10"
         >
-          <Bell className="h-6 w-6" />
+          <Bell className="h-7 w-7" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
