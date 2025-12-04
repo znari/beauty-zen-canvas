@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2 } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { usePWAInstallReminder } from "@/hooks/usePWAInstallReminder";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,6 +74,7 @@ const Dashboard = () => {
   const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
   const [selectedDayInMonth, setSelectedDayInMonth] = useState<Date | undefined>();
   const [rescheduleProfessional, setRescheduleProfessional] = useState("");
+  const [studioName, setStudioName] = useState<string | null>(null);
 
   // Mutation hooks
   const completeVisit = useCompleteVisit();
@@ -102,6 +103,24 @@ const Dashboard = () => {
       date: format(date, "dd/MM"),
     };
   });
+
+  // Fetch studio name
+  useEffect(() => {
+    const fetchStudioName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('studio_name')
+          .eq('id', user.id)
+          .single();
+        if (data?.studio_name) {
+          setStudioName(data.studio_name);
+        }
+      }
+    };
+    fetchStudioName();
+  }, []);
 
   // Realtime updates
   useEffect(() => {
@@ -336,12 +355,23 @@ const Dashboard = () => {
       <header className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-primary">FichaZen</h1>
+          
+          {/* Studio Name - Center */}
+          {studioName && (
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-full border border-primary/10">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                {studioName}
+              </span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
             <NotificationButton />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-secondary hover:text-primary hover:bg-primary/10">
-                  <Settings className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="text-secondary hover:text-primary hover:bg-primary/10 h-10 w-10">
+                  <Settings className="h-7 w-7" />
                 </Button>
               </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
