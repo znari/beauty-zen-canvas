@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +14,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteVisitPhoto } from "@/hooks/useUploadVisitPhotos";
+import { useVisitPhotosUrls } from "@/hooks/useVisitPhotoUrl";
 import { toast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Photo {
-  url: string;
+  url?: string; // Mantido para compatibilidade com dados antigos
   type: "before" | "after";
   uploadedAt: string;
   path: string;
@@ -35,9 +37,22 @@ export const VisitPhotoGallery = ({ visitId, photos, editable = false }: VisitPh
   const [currentIndex, setCurrentIndex] = useState(0);
   
   const deleteMutation = useDeleteVisitPhoto();
+  
+  // Obter signed URLs para todas as fotos
+  const photoPaths = photos.map(p => p.path).filter(Boolean);
+  const { data: signedUrls, isLoading: isLoadingUrls } = useVisitPhotosUrls(photoPaths);
 
   const beforePhotos = photos.filter(p => p.type === "before");
   const afterPhotos = photos.filter(p => p.type === "after");
+
+  // Função para obter URL da foto (signed ou fallback para URL antiga)
+  const getPhotoUrl = (photo: Photo): string | null => {
+    if (signedUrls && photo.path && signedUrls[photo.path]) {
+      return signedUrls[photo.path];
+    }
+    // Fallback para dados antigos que ainda têm URL pública
+    return photo.url || null;
+  };
 
   const handleDelete = async () => {
     if (!photoToDelete) return;
@@ -88,6 +103,47 @@ export const VisitPhotoGallery = ({ visitId, photos, editable = false }: VisitPh
     );
   }
 
+  const renderPhotoGrid = (photoList: Photo[], label: string) => (
+    <div className="grid grid-cols-2 gap-3">
+      {photoList.map((photo, idx) => {
+        const photoUrl = getPhotoUrl(photo);
+        const isLoading = isLoadingUrls && !photoUrl;
+
+        return (
+          <div key={photo.path} className="relative group">
+            {isLoading ? (
+              <Skeleton className="w-full aspect-square rounded-lg" />
+            ) : photoUrl ? (
+              <button
+                onClick={() => openLightbox(photo, photos.indexOf(photo))}
+                className="w-full aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors"
+              >
+                <img 
+                  src={photoUrl} 
+                  alt={`${label} do procedimento`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </button>
+            ) : (
+              <div className="w-full aspect-square rounded-lg border flex items-center justify-center bg-muted">
+                <p className="text-xs text-muted-foreground">Erro ao carregar</p>
+              </div>
+            )}
+            
+            {editable && photoUrl && (
+              <button
+                onClick={() => setPhotoToDelete(photo)}
+                className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
       <div className="space-y-8">
@@ -102,31 +158,7 @@ export const VisitPhotoGallery = ({ visitId, photos, editable = false }: VisitPh
               )}
             </h4>
             
-            <div className="grid grid-cols-2 gap-3">
-              {beforePhotos.map((photo, idx) => (
-                <div key={photo.path} className="relative group">
-                  <button
-                    onClick={() => openLightbox(photo, photos.indexOf(photo))}
-                    className="w-full aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors"
-                  >
-                    <img 
-                      src={photo.url} 
-                      alt="Antes do procedimento"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </button>
-                  
-                  {editable && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            {renderPhotoGrid(beforePhotos, "Antes")}
             
             {beforePhotos.length === 0 && (
               <div className="h-32 border-2 border-dashed rounded-lg flex items-center justify-center">
@@ -144,31 +176,7 @@ export const VisitPhotoGallery = ({ visitId, photos, editable = false }: VisitPh
               )}
             </h4>
             
-            <div className="grid grid-cols-2 gap-3">
-              {afterPhotos.map((photo, idx) => (
-                <div key={photo.path} className="relative group">
-                  <button
-                    onClick={() => openLightbox(photo, photos.indexOf(photo))}
-                    className="w-full aspect-square rounded-lg overflow-hidden border hover:border-primary transition-colors"
-                  >
-                    <img 
-                      src={photo.url} 
-                      alt="Depois do procedimento"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </button>
-                  
-                  {editable && (
-                    <button
-                      onClick={() => setPhotoToDelete(photo)}
-                      className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            {renderPhotoGrid(afterPhotos, "Depois")}
             
             {afterPhotos.length === 0 && (
               <div className="h-32 border-2 border-dashed rounded-lg flex items-center justify-center">
@@ -214,11 +222,17 @@ export const VisitPhotoGallery = ({ visitId, photos, editable = false }: VisitPh
             className="max-w-4xl max-h-[90vh] relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <img 
-              src={selectedPhoto.url} 
-              alt={`${selectedPhoto.type === "before" ? "Antes" : "Depois"} do procedimento`}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            />
+            {getPhotoUrl(selectedPhoto) ? (
+              <img 
+                src={getPhotoUrl(selectedPhoto)!} 
+                alt={`${selectedPhoto.type === "before" ? "Antes" : "Depois"} do procedimento`}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              />
+            ) : (
+              <div className="flex items-center justify-center w-96 h-64 bg-muted rounded-lg">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
             
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Badge className="bg-white/20 backdrop-blur-sm">
