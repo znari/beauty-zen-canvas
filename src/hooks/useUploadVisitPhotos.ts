@@ -34,11 +34,6 @@ export const useUploadVisitPhotos = () => {
 
       if (uploadError) throw uploadError;
 
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('visit-photos')
-        .getPublicUrl(fileName);
-
       // Buscar fotos atuais da visita
       const { data: visit, error: fetchError } = await supabase
         .from('visits')
@@ -48,15 +43,14 @@ export const useUploadVisitPhotos = () => {
 
       if (fetchError) throw fetchError;
 
-      // Atualizar array de fotos
+      // Atualizar array de fotos (salvar apenas o path, não a URL)
       const currentPhotos = (visit.photos as any[]) || [];
       const updatedPhotos = [
         ...currentPhotos,
         {
-          url: publicUrl,
+          path: fileName,
           type: type,
-          uploadedAt: new Date().toISOString(),
-          path: fileName
+          uploadedAt: new Date().toISOString()
         }
       ];
 
@@ -68,7 +62,7 @@ export const useUploadVisitPhotos = () => {
 
       if (updateError) throw updateError;
 
-      return { publicUrl, path: fileName };
+      return { path: fileName };
     },
     onSuccess: (_, variables) => {
       // Invalidar cache do perfil do cliente
