@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.admin-terminate-sessions]
 verify_jwt = true
+
+[functions.admin-broadcast-notification]
+verify_jwt = true

@@ -880,6 +880,7 @@ export type Database = {
           user_name: string
         }[]
       }
+      get_admin_user_details: { Args: { p_user_id: string }; Returns: Json }
       get_admin_users: {
         Args: never
         Returns: {
