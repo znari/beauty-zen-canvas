@@ -31,7 +31,22 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
+  UserX,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { useTerminateSessions } from "@/hooks/useTerminateSessions";
+import { useState } from "react";
 import {
   BarChart,
   Bar,
