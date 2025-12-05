@@ -29,6 +29,24 @@ interface AdminUser {
   created_at: string;
 }
 
+interface AdminUserDetailed {
+  id: string;
+  email: string;
+  full_name: string;
+  studio_name: string;
+  plan: string;
+  subscription_status: string;
+  trial_ends_at: string;
+  subscription_ends_at: string;
+  created_at: string;
+  client_count: number;
+  team_count: number;
+  visit_count: number;
+  completed_visit_count: number;
+  total_revenue: number;
+  anamnesis_count: number;
+}
+
 interface AdminTransaction {
   id: string;
   professional_id: string;
@@ -72,6 +90,19 @@ export const useAdminUsers = () => {
       if (error) throw error;
 
       return (data as AdminUser[]) || [];
+    },
+  });
+};
+
+export const useAdminUsersDetailed = () => {
+  return useQuery({
+    queryKey: ["admin-users-detailed"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_admin_users_detailed");
+
+      if (error) throw error;
+
+      return (data as AdminUserDetailed[]) || [];
     },
   });
 };
