@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   useAdminStats,
   useAdminUsers,
+  useAdminUsersDetailed,
   useAdminTransactions,
   useAdminGrowth,
 } from "@/hooks/useAdminStats";
@@ -32,6 +33,13 @@ import {
   ArrowDownRight,
   RefreshCw,
   UserX,
+  Search,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  UsersRound,
+  Building2,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -46,7 +54,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useTerminateSessions } from "@/hooks/useTerminateSessions";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -64,6 +72,7 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 const PLAN_COLORS = {
   free: "#9CA3AF",
@@ -85,20 +94,34 @@ const PAYMENT_STATUS_COLORS = {
   failed: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
+type SortField = "full_name" | "client_count" | "team_count" | "total_revenue" | "created_at";
+type SortDirection = "asc" | "desc";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useAdminStats();
   const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useAdminUsers();
+  const { data: usersDetailed, isLoading: usersDetailedLoading, refetch: refetchUsersDetailed } = useAdminUsersDetailed();
   const { data: transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useAdminTransactions();
   const { data: growth, isLoading: growthLoading, refetch: refetchGrowth } = useAdminGrowth();
 
-  const isLoading = statsLoading || usersLoading || transactionsLoading || growthLoading;
+  const terminateSessionsMutation = useTerminateSessions();
+
+  const [confirmText, setConfirmText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const isLoading = statsLoading || usersLoading || usersDetailedLoading || transactionsLoading || growthLoading;
 
   const handleRefresh = () => {
     refetchStats();
     refetchUsers();
+    refetchUsersDetailed();
     refetchTransactions();
     refetchGrowth();
   };
@@ -106,6 +129,135 @@ export default function AdminDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const handleTerminateSessions = async () => {
+    try {
+      await terminateSessionsMutation.mutateAsync();
+      setConfirmText("");
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!usersDetailed || usersDetailed.length === 0) {
+      toast.error("Nenhum dado para exportar");
+      return;
+    }
+
+    const headers = ["Nome", "Email", "Studio", "Plano", "Status", "Clientes", "Equipe", "Visitas", "Faturamento", "Cadastro"];
+    const rows = usersDetailed.map(u => [
+      u.full_name || "",
+      u.email || "",
+      u.studio_name || "",
+      u.plan || "free",
+      u.subscription_status || "trialing",
+      u.client_count,
+      u.team_count,
+      u.visit_count,
+      u.total_revenue.toFixed(2),
+      u.created_at ? format(new Date(u.created_at), "dd/MM/yyyy") : "",
+    ]);
+
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `usuarios-fichazen-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exportação concluída!");
+  };
+
+  // Filtrar e ordenar usuários detalhados
+  const filteredUsers = useMemo(() => {
+    if (!usersDetailed) return [];
+    
+    let filtered = usersDetailed.filter(user => {
+      const query = searchQuery.toLowerCase();
+      return (
+        user.full_name?.toLowerCase().includes(query) ||
+        user.email?.toLowerCase().includes(query) ||
+        user.studio_name?.toLowerCase().includes(query)
+      );
+    });
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      let aVal: string | number = "";
+      let bVal: string | number = "";
+
+      switch (sortField) {
+        case "full_name":
+          aVal = a.full_name || "";
+          bVal = b.full_name || "";
+          break;
+        case "client_count":
+          aVal = a.client_count;
+          bVal = b.client_count;
+          break;
+        case "team_count":
+          aVal = a.team_count;
+          bVal = b.team_count;
+          break;
+        case "total_revenue":
+          aVal = a.total_revenue;
+          bVal = b.total_revenue;
+          break;
+        case "created_at":
+          aVal = new Date(a.created_at || 0).getTime();
+          bVal = new Date(b.created_at || 0).getTime();
+          break;
+      }
+
+      if (typeof aVal === "string") {
+        return sortDirection === "asc" 
+          ? aVal.localeCompare(bVal as string) 
+          : (bVal as string).localeCompare(aVal);
+      }
+      return sortDirection === "asc" ? aVal - (bVal as number) : (bVal as number) - aVal;
+    });
+
+    return filtered;
+  }, [usersDetailed, searchQuery, sortField, sortDirection]);
+
+  // Paginação
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Top 5 usuários por faturamento
+  const topUsersByRevenue = useMemo(() => {
+    if (!usersDetailed) return [];
+    return [...usersDetailed]
+      .sort((a, b) => b.total_revenue - a.total_revenue)
+      .slice(0, 5)
+      .map(u => ({
+        name: u.full_name || u.email?.split("@")[0] || "Sem nome",
+        revenue: u.total_revenue,
+      }));
+  }, [usersDetailed]);
+
+  // Médias
+  const avgClientsPerUser = usersDetailed && usersDetailed.length > 0
+    ? (usersDetailed.reduce((sum, u) => sum + u.client_count, 0) / usersDetailed.length).toFixed(1)
+    : "0";
+
+  const avgTeamPerUser = usersDetailed && usersDetailed.length > 0
+    ? (usersDetailed.reduce((sum, u) => sum + u.team_count, 0) / usersDetailed.length).toFixed(1)
+    : "0";
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
   };
 
   // Calcular distribuição de planos
@@ -169,6 +321,53 @@ export default function AdminDashboard() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
             </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <UserX className="w-4 h-4 mr-2" />
+                  Encerrar Sessões
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-destructive" />
+                    Encerrar Todas as Sessões?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <p>
+                      Esta ação irá <strong>desconectar TODOS os usuários</strong> do sistema, incluindo você.
+                    </p>
+                    <p className="text-yellow-500">
+                      ⚠️ Todos os usuários precisarão fazer login novamente.
+                    </p>
+                    <div className="mt-4">
+                      <p className="text-sm mb-2">Digite <strong>CONFIRMAR</strong> para prosseguir:</p>
+                      <Input
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder="CONFIRMAR"
+                        className="font-mono"
+                      />
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setConfirmText("")}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleTerminateSessions}
+                    disabled={confirmText !== "CONFIRMAR" || terminateSessionsMutation.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {terminateSessionsMutation.isPending ? "Encerrando..." : "Encerrar Sessões"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Sair
@@ -178,7 +377,7 @@ export default function AdminDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* KPI Cards */}
+        {/* KPI Cards - Linha 1 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Usuários Totais */}
           <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -279,13 +478,13 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Segunda linha de KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* KPI Cards - Linha 2 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Taxa de Conversão */}
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Taxa de Conversão
+                Conversão
               </CardTitle>
               <UserPlus className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
@@ -308,7 +507,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{churnRate}%</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                {stats?.churned_users || 0} usuários perdidos
+                {stats?.churned_users || 0} perdidos
               </div>
             </CardContent>
           </Card>
@@ -317,14 +516,46 @@ export default function AdminDashboard() {
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Novos Este Mês
+                Novos/Mês
               </CardTitle>
               <UserPlus className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">{stats?.new_users_this_month || 0}</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                vs {stats?.new_users_last_month || 0} mês passado
+                vs {stats?.new_users_last_month || 0} anterior
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Média Clientes/Usuário */}
+          <Card className="border-border/50 bg-card/50 backdrop-blur">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Méd. Clientes
+              </CardTitle>
+              <UsersRound className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{avgClientsPerUser}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                clientes/usuário
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Média Equipe/Usuário */}
+          <Card className="border-border/50 bg-card/50 backdrop-blur">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Méd. Equipe
+              </CardTitle>
+              <Building2 className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{avgTeamPerUser}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                membros/usuário
               </div>
             </CardContent>
           </Card>
@@ -410,8 +641,8 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Distribuição de Planos */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Distribuição de Planos + Top 5 Faturamento */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-foreground">
@@ -449,67 +680,205 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Últimos Cadastros */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur lg:col-span-2">
+          {/* Top 5 por Faturamento */}
+          <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-foreground">
-                👤 Últimos Cadastros
+                🏆 Top 5 por Faturamento
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Cadastro</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users?.slice(0, 5).map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-foreground text-sm">
-                              {user.full_name || "Sem nome"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            style={{
-                              borderColor: PLAN_COLORS[user.plan as keyof typeof PLAN_COLORS] || PLAN_COLORS.free,
-                              color: PLAN_COLORS[user.plan as keyof typeof PLAN_COLORS] || PLAN_COLORS.free,
-                            }}
-                          >
-                            {user.plan || "free"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={STATUS_COLORS[user.subscription_status as keyof typeof STATUS_COLORS] || STATUS_COLORS.trialing}
-                          >
-                            {user.subscription_status || "trialing"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {user.created_at
-                            ? format(new Date(user.created_at), "dd/MM/yy", { locale: ptBR })
-                            : "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topUsersByRevenue} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} width={100} />
+                    <Tooltip
+                      formatter={(value: number) =>
+                        `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                      }
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                    />
+                    <Bar dataKey="revenue" name="Faturamento" fill="#F59E0B" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Tabela de Todos os Usuários */}
+        <Card className="border-border/50 bg-card/50 backdrop-blur">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-lg font-semibold text-foreground">
+                📊 Todos os Usuários
+              </CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar usuário..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead 
+                      className="cursor-pointer hover:text-foreground"
+                      onClick={() => handleSort("full_name")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Usuário
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:text-foreground text-center"
+                      onClick={() => handleSort("client_count")}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Clientes
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:text-foreground text-center"
+                      onClick={() => handleSort("team_count")}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Equipe
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:text-foreground text-right"
+                      onClick={() => handleSort("total_revenue")}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        Faturamento
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:text-foreground"
+                      onClick={() => handleSort("created_at")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Cadastro
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-foreground text-sm">
+                            {user.full_name || "Sem nome"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                          {user.studio_name && (
+                            <p className="text-xs text-primary/70">{user.studio_name}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          style={{
+                            borderColor: PLAN_COLORS[user.plan as keyof typeof PLAN_COLORS] || PLAN_COLORS.free,
+                            color: PLAN_COLORS[user.plan as keyof typeof PLAN_COLORS] || PLAN_COLORS.free,
+                          }}
+                        >
+                          {user.plan || "free"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={STATUS_COLORS[user.subscription_status as keyof typeof STATUS_COLORS] || STATUS_COLORS.trialing}
+                        >
+                          {user.subscription_status || "trialing"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-medium text-foreground">
+                        {user.client_count}
+                      </TableCell>
+                      <TableCell className="text-center font-medium text-foreground">
+                        {user.team_count}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-green-500">
+                        R$ {user.total_revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {user.created_at
+                          ? format(new Date(user.created_at), "dd/MM/yy", { locale: ptBR })
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        Nenhum usuário encontrado
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Paginação */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Últimas Transações */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">

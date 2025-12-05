@@ -832,6 +832,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_terminate_all_sessions: { Args: never; Returns: number }
       format_visit_datetime: {
         Args: { p_date: string; p_time: string }
         Returns: string
@@ -891,6 +892,26 @@ export type Database = {
           subscription_ends_at: string
           subscription_status: string
           trial_ends_at: string
+        }[]
+      }
+      get_admin_users_detailed: {
+        Args: never
+        Returns: {
+          anamnesis_count: number
+          client_count: number
+          completed_visit_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          plan: string
+          studio_name: string
+          subscription_ends_at: string
+          subscription_status: string
+          team_count: number
+          total_revenue: number
+          trial_ends_at: string
+          visit_count: number
         }[]
       }
       get_public_visit_info: {
