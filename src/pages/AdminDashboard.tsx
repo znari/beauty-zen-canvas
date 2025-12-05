@@ -6,6 +6,7 @@ import {
   useAdminUsersDetailed,
   useAdminTransactions,
   useAdminGrowth,
+  AdminUserDetailed,
 } from "@/hooks/useAdminStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Users,
   DollarSign,
   TrendingUp,
   CreditCard,
   UserPlus,
   Calendar,
-  FileText,
   LogOut,
   Shield,
   ArrowUpRight,
@@ -40,6 +47,9 @@ import {
   UsersRound,
   Building2,
   ArrowUpDown,
+  Megaphone,
+  Filter,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -70,9 +80,11 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { format } from "date-fns";
+import { format, subDays, subMonths, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { BroadcastModal } from "@/components/admin/BroadcastModal";
+import { UserDetailsModal } from "@/components/admin/UserDetailsModal";
 
 const PLAN_COLORS = {
   free: "#9CA3AF",
@@ -115,6 +127,16 @@ export default function AdminDashboard() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Filtros avançados
+  const [filterPlan, setFilterPlan] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterDate, setFilterDate] = useState<string>("all");
+
+  // Modais
+  const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUserDetailed | null>(null);
+  const [userDetailsOpen, setUserDetailsOpen] = useState(false);
 
   const isLoading = statsLoading || usersLoading || usersDetailedLoading || transactionsLoading || growthLoading;
 
@@ -171,17 +193,61 @@ export default function AdminDashboard() {
     toast.success("Exportação concluída!");
   };
 
+  const handleRowClick = (user: AdminUserDetailed) => {
+    setSelectedUser(user);
+    setUserDetailsOpen(true);
+  };
+
+  const clearFilters = () => {
+    setFilterPlan("all");
+    setFilterStatus("all");
+    setFilterDate("all");
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = filterPlan !== "all" || filterStatus !== "all" || filterDate !== "all" || searchQuery.length > 0;
+
   // Filtrar e ordenar usuários detalhados
   const filteredUsers = useMemo(() => {
     if (!usersDetailed) return [];
     
     let filtered = usersDetailed.filter(user => {
+      // Busca textual
       const query = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = !query || 
         user.full_name?.toLowerCase().includes(query) ||
         user.email?.toLowerCase().includes(query) ||
-        user.studio_name?.toLowerCase().includes(query)
-      );
+        user.studio_name?.toLowerCase().includes(query);
+
+      // Filtro de plano
+      const matchesPlan = filterPlan === "all" || user.plan === filterPlan || (!user.plan && filterPlan === "free");
+
+      // Filtro de status
+      const matchesStatus = filterStatus === "all" || user.subscription_status === filterStatus;
+
+      // Filtro de data
+      let matchesDate = true;
+      if (filterDate !== "all" && user.created_at) {
+        const createdAt = new Date(user.created_at);
+        const now = new Date();
+        switch (filterDate) {
+          case "7days":
+            matchesDate = createdAt >= subDays(now, 7);
+            break;
+          case "30days":
+            matchesDate = createdAt >= subDays(now, 30);
+            break;
+          case "90days":
+            matchesDate = createdAt >= subDays(now, 90);
+            break;
+          case "thisyear":
+            matchesDate = createdAt >= startOfYear(now);
+            break;
+        }
+      }
+
+      return matchesSearch && matchesPlan && matchesStatus && matchesDate;
     });
 
     // Ordenar
@@ -221,7 +287,7 @@ export default function AdminDashboard() {
     });
 
     return filtered;
-  }, [usersDetailed, searchQuery, sortField, sortDirection]);
+  }, [usersDetailed, searchQuery, sortField, sortDirection, filterPlan, filterStatus, filterDate]);
 
   // Paginação
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -316,20 +382,24 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">Painel Administrativo</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setBroadcastModalOpen(true)}>
+              <Megaphone className="w-4 h-4 mr-2" />
+              Broadcast
+            </Button>
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
+              CSV
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
                   <UserX className="w-4 h-4 mr-2" />
-                  Encerrar Sessões
+                  Sessões
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -716,22 +786,83 @@ export default function AdminDashboard() {
         {/* Tabela de Todos os Usuários */}
         <Card className="border-border/50 bg-card/50 backdrop-blur">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle className="text-lg font-semibold text-foreground">
-                📊 Todos os Usuários
-              </CardTitle>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar usuário..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <CardTitle className="text-lg font-semibold text-foreground">
+                  📊 Todos os Usuários
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Clique em uma linha para ver detalhes
+                </p>
               </div>
+              
+              {/* Filtros Avançados */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar usuário..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-9"
+                  />
+                </div>
+                
+                <Select value={filterPlan} onValueChange={(v) => { setFilterPlan(v); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos planos</SelectItem>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="essencial">Essencial</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="ultimate">Ultimate</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos status</SelectItem>
+                    <SelectItem value="trialing">Em Trial</SelectItem>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="expired">Expirado</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterDate} onValueChange={(v) => { setFilterDate(v); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Data cadastro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas datas</SelectItem>
+                    <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                    <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                    <SelectItem value="90days">Últimos 90 dias</SelectItem>
+                    <SelectItem value="thisyear">Este ano</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                    <X className="w-4 h-4 mr-1" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
+
+              {hasActiveFilters && (
+                <p className="text-sm text-muted-foreground">
+                  {filteredUsers.length} usuário(s) encontrado(s)
+                </p>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -790,7 +921,11 @@ export default function AdminDashboard() {
                 </TableHeader>
                 <TableBody>
                   {paginatedUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow 
+                      key={user.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleRowClick(user)}
+                    >
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground text-sm">
@@ -956,6 +1091,25 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Modais */}
+      <BroadcastModal 
+        open={broadcastModalOpen} 
+        onOpenChange={setBroadcastModalOpen}
+        totalUsers={stats?.total_users || 0}
+      />
+
+      <UserDetailsModal
+        userId={selectedUser?.id || null}
+        open={userDetailsOpen}
+        onOpenChange={setUserDetailsOpen}
+        userMetrics={selectedUser ? {
+          client_count: selectedUser.client_count,
+          team_count: selectedUser.team_count,
+          visit_count: selectedUser.visit_count,
+          total_revenue: selectedUser.total_revenue
+        } : undefined}
+      />
     </div>
   );
 }

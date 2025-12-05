@@ -29,7 +29,7 @@ interface AdminUser {
   created_at: string;
 }
 
-interface AdminUserDetailed {
+export interface AdminUserDetailed {
   id: string;
   email: string;
   full_name: string;
