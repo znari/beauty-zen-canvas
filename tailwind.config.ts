@@ -116,12 +116,21 @@ export default {
             transform: "scale(1)",
           },
         },
+        "bounce-slow": {
+          "0%, 100%": {
+            transform: "translateY(0)",
+          },
+          "50%": {
+            transform: "translateY(-10px)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "price-in": "price-in 0.3s ease-out",
         "badge-pop": "badge-pop 0.3s ease-out 0.1s both",
+        "bounce-slow": "bounce-slow 3s ease-in-out infinite",
       },
     },
   },
