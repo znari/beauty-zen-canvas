@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Star, ShieldCheck, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroMockup from "@/assets/hero-mockup.jpg";
+import heroMockup from "@/assets/hero-mockup.png";
 export const HeroSection = () => {
   return <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
       {/* Background gradient refinado para foco visual */}
