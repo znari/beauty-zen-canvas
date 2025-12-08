@@ -144,6 +144,14 @@ export default {
             transform: "scale(1)",
           },
         },
+        "pulse-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 20px 0 hsl(var(--secondary) / 0.3)",
+          },
+          "50%": {
+            boxShadow: "0 0 40px 5px hsl(var(--secondary) / 0.5)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -153,6 +161,7 @@ export default {
         "bounce-slow": "bounce-slow 3s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.5s ease-out forwards",
         "counter-up": "counter-up 0.6s ease-out forwards",
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
       },
     },
   },
