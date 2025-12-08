@@ -2,10 +2,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Star, ShieldCheck, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroMockup from "@/assets/hero-mockup.jpg";
-
 export const HeroSection = () => {
-  return (
-    <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
+  return <section id="hero" className="relative pt-24 pb-16 sm:pt-28 md:pt-40 sm:pb-20 md:pb-32 overflow-hidden">
       {/* Background gradient refinado para foco visual */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-50"></div>
       
@@ -35,12 +33,7 @@ export const HeroSection = () => {
 
             {/* CTAs Agressivos */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
-                variant="default" 
-                size="xl" 
-                asChild 
-                className="group shadow-xl bg-primary hover:bg-primary/90 text-lg px-8 h-14 transition-all duration-300 transform hover:-translate-y-1 animate-pulse-glow"
-              >
+              <Button variant="default" size="xl" asChild className="group shadow-xl bg-primary hover:bg-primary/90 text-lg px-8 h-14 transition-all duration-300 transform hover:-translate-y-1 animate-pulse-glow">
                 <Link to="/registro">
                   Começar Grátis Sem Cartão
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -61,23 +54,31 @@ export const HeroSection = () => {
 
             {/* Trust Badges - Entrada Escalonada */}
             <div className="pt-8 border-t border-border/50 grid grid-cols-3 gap-4">
-              {[
-                { icon: ShieldCheck, color: "text-green-500", title: "Seguro", desc: "Dados Criptografados" },
-                { icon: Zap, color: "text-yellow-500", title: "Rápido", desc: "Funciona Offline" },
-                { icon: CheckCircle2, color: "text-blue-500", title: "Completo", desc: "Tudo em um app" },
-              ].map((badge, index) => (
-                <div 
-                  key={index}
-                  className="space-y-1 opacity-0 animate-fade-in-up"
-                  style={{ animationDelay: `${0.8 + index * 0.15}s`, animationFillMode: 'forwards' }}
-                >
+              {[{
+              icon: ShieldCheck,
+              color: "text-green-500",
+              title: "Seguro",
+              desc: "Dados Criptografados"
+            }, {
+              icon: Zap,
+              color: "text-yellow-500",
+              title: "Rápido",
+              desc: "Funciona Offline"
+            }, {
+              icon: CheckCircle2,
+              color: "text-blue-500",
+              title: "Completo",
+              desc: "Tudo em um app"
+            }].map((badge, index) => <div key={index} className="space-y-1 opacity-0 animate-fade-in-up" style={{
+              animationDelay: `${0.8 + index * 0.15}s`,
+              animationFillMode: 'forwards'
+            }}>
                   <div className="flex items-center justify-center lg:justify-start gap-2 text-foreground font-semibold">
                     <badge.icon className={`w-5 h-5 ${badge.color}`} />
                     <span>{badge.title}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{badge.desc}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </div>
 
@@ -85,29 +86,14 @@ export const HeroSection = () => {
           <div className="relative animate-fade-in hidden md:block">
             <div className="relative z-10 transition-transform duration-500 hover:scale-[1.02]">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 rounded-3xl blur-2xl transform rotate-6 scale-95 -z-10"></div>
-              <img 
-                src={heroMockup} 
-                alt="FichaZen App Dashboard - Gestão Simples" 
-                className="w-full h-auto rounded-2xl shadow-2xl border border-white/20" 
-              />
+              <img src={heroMockup} alt="FichaZen App Dashboard - Gestão Simples" className="w-full h-auto rounded-2xl shadow-2xl border border-white/20" />
               
               {/* Elemento Flutuante "Dinheiro no Bolso" - Psicologia Visual */}
-              <div className="absolute -bottom-6 -left-6 bg-card p-4 rounded-xl shadow-lg border border-border animate-bounce-slow">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-xl">💰</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">Receita Hoje</p>
-                    <p className="text-lg font-bold text-foreground">R$ 850,00</p>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </div>
 
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
