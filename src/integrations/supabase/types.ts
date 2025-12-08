@@ -832,7 +832,20 @@ export type Database = {
       }
     }
     Functions: {
+      admin_send_notification: {
+        Args: { p_message: string; p_title: string; p_user_id: string }
+        Returns: Json
+      }
       admin_terminate_all_sessions: { Args: never; Returns: number }
+      admin_update_user_plan: {
+        Args: {
+          p_plan: string
+          p_subscription_ends_at?: string
+          p_subscription_status: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       format_visit_datetime: {
         Args: { p_date: string; p_time: string }
         Returns: string
