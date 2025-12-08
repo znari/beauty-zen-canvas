@@ -50,6 +50,7 @@ import {
   Megaphone,
   Filter,
   X,
+  FileText,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -85,6 +86,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { BroadcastModal } from "@/components/admin/BroadcastModal";
 import { UserDetailsModal } from "@/components/admin/UserDetailsModal";
+import { exportAdminPDF } from "@/lib/exportAdminPDF";
 
 const PLAN_COLORS = {
   free: "#9CA3AF",
@@ -190,7 +192,22 @@ export default function AdminDashboard() {
     link.download = `usuarios-fichazen-${format(new Date(), "yyyy-MM-dd")}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Exportação concluída!");
+    toast.success("Exportação CSV concluída!");
+  };
+
+  const handleExportPDF = () => {
+    if (!stats || !usersDetailed || !transactions || !growth) {
+      toast.error("Aguarde os dados carregarem");
+      return;
+    }
+
+    exportAdminPDF({
+      stats,
+      users: usersDetailed,
+      transactions,
+      growth,
+    });
+    toast.success("Relatório PDF gerado!");
   };
 
   const handleRowClick = (user: AdminUserDetailed) => {
@@ -394,6 +411,10 @@ export default function AdminDashboard() {
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
               CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <FileText className="w-4 h-4 mr-2" />
+              PDF
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
