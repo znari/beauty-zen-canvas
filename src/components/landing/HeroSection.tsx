@@ -39,7 +39,7 @@ export const HeroSection = () => {
                 variant="default" 
                 size="xl" 
                 asChild 
-                className="group shadow-xl bg-primary hover:bg-primary/90 text-lg px-8 h-14 transition-all duration-300 transform hover:-translate-y-1 animate-pulse"
+                className="group shadow-xl bg-primary hover:bg-primary/90 text-lg px-8 h-14 transition-all duration-300 transform hover:-translate-y-1 animate-pulse-glow"
               >
                 <Link to="/registro">
                   Começar Grátis Sem Cartão
