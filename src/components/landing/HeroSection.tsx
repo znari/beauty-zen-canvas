@@ -59,31 +59,25 @@ export const HeroSection = () => {
               ⚡ Instalação em 30 segundos • Cancelamento a qualquer momento
             </p>
 
-            {/* Trust Badges - Reforço de Confiança */}
+            {/* Trust Badges - Entrada Escalonada */}
             <div className="pt-8 border-t border-border/50 grid grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center justify-center lg:justify-start gap-2 text-foreground font-semibold">
-                  <ShieldCheck className="w-5 h-5 text-green-500" />
-                  <span>Seguro</span>
+              {[
+                { icon: ShieldCheck, color: "text-green-500", title: "Seguro", desc: "Dados Criptografados" },
+                { icon: Zap, color: "text-yellow-500", title: "Rápido", desc: "Funciona Offline" },
+                { icon: CheckCircle2, color: "text-blue-500", title: "Completo", desc: "Tudo em um app" },
+              ].map((badge, index) => (
+                <div 
+                  key={index}
+                  className="space-y-1 opacity-0 animate-fade-in-up"
+                  style={{ animationDelay: `${0.8 + index * 0.15}s`, animationFillMode: 'forwards' }}
+                >
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-foreground font-semibold">
+                    <badge.icon className={`w-5 h-5 ${badge.color}`} />
+                    <span>{badge.title}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{badge.desc}</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Dados Criptografados</p>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="flex items-center justify-center lg:justify-start gap-2 text-foreground font-semibold">
-                  <Zap className="w-5 h-5 text-yellow-500" />
-                  <span>Rápido</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Funciona Offline</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-center lg:justify-start gap-2 text-foreground font-semibold">
-                  <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                  <span>Completo</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Tudo em um app</p>
-              </div>
+              ))}
             </div>
           </div>
 

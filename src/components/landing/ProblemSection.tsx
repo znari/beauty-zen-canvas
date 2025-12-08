@@ -1,5 +1,6 @@
-import { FileX, Clock, ImageOff, Search } from "lucide-react";
-import problemIllustration from "@/assets/problem-illustration.jpg";
+import { FileX, Clock, ImageOff, Search, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export const ProblemSection = () => {
   const problems = [
@@ -13,7 +14,8 @@ export const ProblemSection = () => {
       icon: Clock,
       title: "⏰ 8h/semana em confirmações",
       description: "= R$ 800 de perda produtiva por mês confirmando manualmente",
-      impact: "R$ 800/mês"
+      impact: "R$ 800/mês",
+      highlight: true
     },
     {
       icon: ImageOff,
@@ -33,8 +35,9 @@ export const ProblemSection = () => {
     <section id="problem" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
+          <p className="text-destructive font-semibold mb-2 text-sm uppercase tracking-wide">⚠️ Atenção</p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Você está perdendo <span className="text-secondary">R$ 1.500/mês</span> sem perceber
+            Você está perdendo <span className="text-secondary font-extrabold">R$ 1.500/mês</span> sem perceber
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Tempo perdido em tarefas administrativas = dinheiro deixando de entrar
@@ -47,11 +50,22 @@ export const ProblemSection = () => {
             return (
               <div 
                 key={index}
-                className="bg-card p-6 rounded-xl shadow-card hover-lift animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className={`relative bg-card p-6 rounded-xl shadow-lg border-l-4 
+                  ${problem.highlight 
+                    ? 'border-destructive hover:border-destructive' 
+                    : 'border-destructive/50 hover:border-destructive/80'
+                  } 
+                  transition-all duration-300 hover:shadow-xl hover:-translate-y-1 
+                  opacity-0 animate-fade-in-up`}
+                style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
               >
-                <div className="w-12 h-12 rounded-lg bg-primary-light flex items-center justify-center mb-4">
-                  <IconComponent className="w-6 h-6 text-primary" />
+                {problem.highlight && (
+                  <span className="absolute -top-3 right-4 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-full animate-badge-pop">
+                    MAIOR PERDA
+                  </span>
+                )}
+                <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
+                  <IconComponent className="w-6 h-6 text-destructive" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {problem.title}
@@ -59,7 +73,7 @@ export const ProblemSection = () => {
                 <p className="text-sm text-muted-foreground mb-3">
                   {problem.description}
                 </p>
-                <p className="text-xs font-semibold text-secondary">
+                <p className="text-xs font-bold text-destructive">
                   {problem.impact}
                 </p>
               </div>
@@ -67,13 +81,17 @@ export const ProblemSection = () => {
           })}
         </div>
 
-        {/* Illustration */}
-        <div className="mt-16 flex justify-center">
-          <img 
-            src={problemIllustration} 
-            alt="Profissional de beleza sobrecarregada com papelada" 
-            className="w-64 h-64 object-contain opacity-80"
-          />
+        {/* CTA de Urgência */}
+        <div className="mt-12 text-center opacity-0 animate-fade-in-up" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
+          <p className="text-lg text-muted-foreground mb-4">
+            💡 A boa notícia: <strong className="text-foreground">você pode resolver isso em 2 minutos</strong>
+          </p>
+          <Button asChild size="lg" className="group">
+            <Link to="/registro">
+              Quero parar de perder dinheiro
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
