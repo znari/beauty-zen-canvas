@@ -124,6 +124,26 @@ export default {
             transform: "translateY(-10px)",
           },
         },
+        "fade-in-up": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(20px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+        "counter-up": {
+          "0%": {
+            opacity: "0",
+            transform: "scale(0.5)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "scale(1)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -131,6 +151,8 @@ export default {
         "price-in": "price-in 0.3s ease-out",
         "badge-pop": "badge-pop 0.3s ease-out 0.1s both",
         "bounce-slow": "bounce-slow 3s ease-in-out infinite",
+        "fade-in-up": "fade-in-up 0.5s ease-out forwards",
+        "counter-up": "counter-up 0.6s ease-out forwards",
       },
     },
   },
