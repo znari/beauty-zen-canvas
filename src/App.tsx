@@ -87,7 +87,7 @@ const App = () => (
             <Route path="/notificacoes" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/pagamentos" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-            <Route path="/ajuda" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+            <Route path="/ajuda" element={<Help />} />
             
             {/* Public support route - accessible without login */}
             <Route path="/suporte" element={<Support />} />

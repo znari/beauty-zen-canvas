@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   ArrowLeft, 
   Rocket, 
@@ -14,6 +14,10 @@ import {
   Settings,
   LifeBuoy
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { LandingHeader } from "@/components/landing/LandingHeader";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { SUPPORT_WHATSAPP } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { HelpSearch } from "@/components/help/HelpSearch";
 import { HelpCategory } from "@/components/help/HelpCategory";
@@ -569,6 +573,8 @@ const helpCategories = [
 
 const Help = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -596,94 +602,163 @@ const Help = () => {
   const filteredArticles = getFilteredArticles();
   const currentCategory = helpCategories.find(c => c.id === selectedCategory);
 
-  return (
-    <div className="min-h-screen gradient-hero">
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Central de Ajuda</h1>
-            <p className="text-sm text-muted-foreground">Encontre respostas para suas dúvidas</p>
-          </div>
-        </div>
-      </header>
+  const handleBack = () => {
+    if (isLoggedIn) {
+      navigate("/dashboard");
+    } else {
+      navigate("/");
+    }
+  };
 
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Busca */}
+  // Conteúdo principal compartilhado
+  const HelpContent = () => (
+    <main className="container mx-auto px-4 py-8 max-w-5xl">
+      {/* Busca */}
+      <div className="mb-8">
+        <HelpSearch value={searchQuery} onChange={setSearchQuery} />
+      </div>
+
+      {/* Resultados da busca */}
+      {searchQuery.trim() && (
         <div className="mb-8">
-          <HelpSearch value={searchQuery} onChange={setSearchQuery} />
+          <h2 className="text-lg font-semibold text-secondary mb-4">
+            {filteredArticles.length} resultado{filteredArticles.length !== 1 && "s"} para "{searchQuery}"
+          </h2>
+          {filteredArticles.length > 0 ? (
+            <HelpArticle articles={filteredArticles} />
+          ) : (
+            <p className="text-muted-foreground">Nenhum artigo encontrado. Tente outras palavras-chave.</p>
+          )}
         </div>
+      )}
 
-        {/* Resultados da busca */}
-        {searchQuery.trim() && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-secondary mb-4">
-              {filteredArticles.length} resultado{filteredArticles.length !== 1 && "s"} para "{searchQuery}"
-            </h2>
-            {filteredArticles.length > 0 ? (
-              <HelpArticle articles={filteredArticles} />
-            ) : (
-              <p className="text-muted-foreground">Nenhum artigo encontrado. Tente outras palavras-chave.</p>
-            )}
-          </div>
-        )}
-
-        {/* Categoria selecionada */}
-        {selectedCategory && currentCategory && !searchQuery.trim() && (
-          <div className="mb-8 animate-fade-in">
-            <Button 
-              variant="ghost" 
-              onClick={() => setSelectedCategory(null)}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para categorias
-            </Button>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <currentCategory.icon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-secondary">{currentCategory.title}</h2>
-                <p className="text-sm text-muted-foreground">{currentCategory.description}</p>
-              </div>
-            </div>
-            <HelpArticle articles={currentCategory.articles} />
-          </div>
-        )}
-
-        {/* Grid de categorias */}
-        {!selectedCategory && !searchQuery.trim() && (
-          <>
-            <h2 className="text-lg font-semibold text-secondary mb-4">Categorias de Ajuda</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {helpCategories.map((category) => (
-                <HelpCategory
-                  key={category.id}
-                  icon={category.icon}
-                  title={category.title}
-                  description={category.description}
-                  articleCount={category.articles.length}
-                  onClick={() => setSelectedCategory(category.id)}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* CTA Suporte */}
-        <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-6 text-center mt-8">
-          <LifeBuoy className="h-10 w-10 text-primary mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-secondary mb-2">Não encontrou o que procura?</h3>
-          <p className="text-muted-foreground mb-4">Nossa equipe está pronta para ajudar você</p>
-          <Button onClick={() => navigate("/suporte")} className="font-semibold">
-            Falar com Suporte
+      {/* Categoria selecionada */}
+      {selectedCategory && currentCategory && !searchQuery.trim() && (
+        <div className="mb-8 animate-fade-in">
+          <Button 
+            variant="ghost" 
+            onClick={() => setSelectedCategory(null)}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para categorias
           </Button>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-primary/10 rounded-xl">
+              <currentCategory.icon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-secondary">{currentCategory.title}</h2>
+              <p className="text-sm text-muted-foreground">{currentCategory.description}</p>
+            </div>
+          </div>
+          <HelpArticle articles={currentCategory.articles} />
         </div>
-      </main>
+      )}
+
+      {/* Grid de categorias */}
+      {!selectedCategory && !searchQuery.trim() && (
+        <>
+          <h2 className="text-lg font-semibold text-secondary mb-4">Categorias de Ajuda</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {helpCategories.map((category) => (
+              <HelpCategory
+                key={category.id}
+                icon={category.icon}
+                title={category.title}
+                description={category.description}
+                articleCount={category.articles.length}
+                onClick={() => setSelectedCategory(category.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* CTA Suporte - Adaptado por contexto */}
+      <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-6 text-center mt-8">
+        <LifeBuoy className="h-10 w-10 text-primary mx-auto mb-3" />
+        <h3 className="text-lg font-semibold text-secondary mb-2">Não encontrou o que procura?</h3>
+        <p className="text-muted-foreground mb-4">
+          {isLoggedIn 
+            ? "Nossa equipe está pronta para ajudar você"
+            : "Fale conosco ou comece a usar o FichaZen gratuitamente"
+          }
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {isLoggedIn ? (
+            <Button onClick={() => navigate("/suporte")} className="font-semibold">
+              Falar com Suporte
+            </Button>
+          ) : (
+            <>
+              <Button asChild className="font-semibold">
+                <Link to="/registro">Começar Grátis</Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                asChild 
+                className="font-semibold"
+              >
+                <a 
+                  href={`https://wa.me/${SUPPORT_WHATSAPP}?text=Olá! Tenho uma dúvida sobre o FichaZen`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  💬 Falar no WhatsApp
+                </a>
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+
+  // Layout para usuários logados (estilo dashboard)
+  if (isLoggedIn) {
+    return (
+      <div className="min-h-screen gradient-hero">
+        <header className="bg-white/90 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4 flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleBack}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-primary">Central de Ajuda</h1>
+              <p className="text-sm text-muted-foreground">Encontre respostas para suas dúvidas</p>
+            </div>
+          </div>
+        </header>
+        <HelpContent />
+      </div>
+    );
+  }
+
+  // Layout para visitantes (estilo landing page)
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <LandingHeader />
+      
+      <div className="flex-1 pt-24">
+        {/* Header da página */}
+        <div className="bg-gradient-to-b from-primary/5 to-transparent py-12">
+          <div className="container mx-auto px-4 text-center">
+            <Button variant="ghost" onClick={handleBack} className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao início
+            </Button>
+            <h1 className="text-3xl md:text-4xl font-bold text-secondary mb-3">Central de Ajuda</h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Encontre respostas para suas dúvidas sobre o FichaZen
+            </p>
+          </div>
+        </div>
+        
+        <HelpContent />
+      </div>
+      
+      <LandingFooter />
     </div>
   );
 };
