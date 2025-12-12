@@ -175,8 +175,18 @@ export const LandingFooter = () => {
             </div>
           </div>
 
+          {/* Company Info */}
+          <div className="mt-4 pt-4 border-t border-border/50 text-center">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium">NEXUS LAB SOLUCOES EM TECNOLOGIA E INTELIGENCIA ARTIFICIAL LTDA</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              CNPJ: 64.037.239/0001-19
+            </p>
+          </div>
+
           {/* Developer Credits - Destaque Final */}
-          <div className="mt-6 pt-4 border-t border-border/50 text-center">
+          <div className="mt-4 pt-4 border-t border-border/50 text-center">
             <p className="text-sm text-muted-foreground">
               Desenvolvido com 💜 por{" "}
               <a 
