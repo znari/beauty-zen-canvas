@@ -183,6 +183,14 @@ export const LandingFooter = () => {
             <p className="text-xs text-muted-foreground mt-1">
               CNPJ: 64.037.239/0001-19
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              <a 
+                href="mailto:contato@nexuslab.net.br"
+                className="hover:text-secondary transition-colors"
+              >
+                contato@nexuslab.net.br
+              </a>
+            </p>
           </div>
 
           {/* Developer Credits - Destaque Final */}
@@ -190,12 +198,12 @@ export const LandingFooter = () => {
             <p className="text-sm text-muted-foreground">
               Desenvolvido com 💜 por{" "}
               <a 
-                href="https://nexuslab.dev.br" 
+                href="https://nexuslab.net.br/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="font-semibold text-secondary hover:text-secondary/80 transition-colors"
               >
-                Nexus Lab
+                Nexus Lab Soluções em Tecnologia
               </a>
             </p>
           </div>
