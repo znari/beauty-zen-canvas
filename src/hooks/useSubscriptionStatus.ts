@@ -10,7 +10,7 @@ export interface PlanLimits {
 
 export interface SubscriptionStatus {
   plan: string;
-  status: 'trialing' | 'active' | 'cancelled' | 'expired' | 'payment_required';
+  status: 'trialing' | 'active' | 'cancelled' | 'expired' | 'payment_required' | 'cancelling';
   trialEndsAt: string | null;
   isTrialActive: boolean;
   isBlocked: boolean;
@@ -20,6 +20,7 @@ export interface SubscriptionStatus {
   subscriptionStartedAt: string | null;
   daysUntilRenewal: number;
   isNearExpiry: boolean;
+  isCancelling: boolean; // Novo: cancelamento agendado
   limits: PlanLimits;
   currentUsage: {
     clientsCount: number;
@@ -109,7 +110,8 @@ export const useSubscriptionStatus = () => {
         .select("*", { count: "exact", head: true })
         .eq("professional_id", user.id);
 
-      const status = (profile.subscription_status || 'trialing') as 'trialing' | 'active' | 'cancelled' | 'expired' | 'payment_required';
+      const status = (profile.subscription_status || 'trialing') as 'trialing' | 'active' | 'cancelled' | 'expired' | 'payment_required' | 'cancelling';
+      const isCancelling = status === 'cancelling';
 
       return {
         plan: profile.plan || 'free',
@@ -123,6 +125,7 @@ export const useSubscriptionStatus = () => {
         subscriptionStartedAt: profile.subscription_started_at,
         daysUntilRenewal,
         isNearExpiry,
+        isCancelling,
         limits: {
           maxClients: planDef?.max_clients || null,
           maxAnamneses: planDef?.max_anamneses || null,
