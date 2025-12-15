@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.79.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 interface Visit {
@@ -23,6 +23,24 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validar secret do cron
+    const cronSecret = req.headers.get('X-Cron-Secret');
+    const expectedSecret = Deno.env.get('CRON_SECRET');
+
+    if (!cronSecret || cronSecret !== expectedSecret) {
+      console.error('❌ Acesso negado: secret inválido ou ausente');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Unauthorized' 
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     console.log('🔔 Iniciando verificação de lembretes de visitas...');
 
     // Criar cliente Supabase com service role
