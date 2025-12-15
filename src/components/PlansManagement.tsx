@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History } from "lucide-react";
+import { Crown, Sparkles, Zap, MessageCircle, AlertTriangle, Loader2, History, Settings } from "lucide-react";
 import { PaymentLoadingModal } from "@/components/PaymentLoadingModal";
 import { BillingPeriodModal } from "@/components/BillingPeriodModal";
 import { PlanActivationBanner } from "@/components/PlanActivationBanner";
@@ -14,6 +14,7 @@ import { PlanCard } from "@/components/PlanCard";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreateStripeCheckout } from "@/hooks/useCreateStripeCheckout";
+import { useCustomerPortal } from "@/hooks/useCustomerPortal";
 import { toast } from "sonner";
 export const PlansManagement = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export const PlansManagement = () => {
   const [processingPeriod, setProcessingPeriod] = useState<'monthly' | 'yearly' | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   const createStripeCheckout = useCreateStripeCheckout();
+  const { openCustomerPortal, isLoading: isLoadingPortal } = useCustomerPortal();
   const queryClient = useQueryClient();
 
   // Buscar definições de planos
@@ -269,18 +271,27 @@ export const PlansManagement = () => {
             </div>
           </div>
 
-          {/* Botão de Renovação */}
-          {subscription.status !== 'trialing' && subscription.plan !== 'free' && <div>
-              <Button variant="cta" className="w-full gap-2" onClick={() => handleRenewSubscription(subscription.plan)} disabled={processingPayment}>
+          {/* Botões de Ação da Assinatura */}
+          {subscription.status !== 'trialing' && subscription.plan !== 'free' && <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="cta" className="flex-1 gap-2" onClick={() => handleRenewSubscription(subscription.plan)} disabled={processingPayment || isLoadingPortal}>
                 {processingPayment ? <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Processando...
                   </> : <>
                     <Crown className="h-4 w-4" />
-                    Renovar Assinatura Agora
+                    Renovar Assinatura
                   </>}
               </Button>
               
+              {subscription.status === 'active' && <Button variant="outline" className="flex-1 gap-2" onClick={openCustomerPortal} disabled={processingPayment || isLoadingPortal}>
+                {isLoadingPortal ? <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Carregando...
+                  </> : <>
+                    <Settings className="h-4 w-4" />
+                    Gerenciar Assinatura
+                  </>}
+              </Button>}
             </div>}
 
           {/* Aviso de Trial */}
