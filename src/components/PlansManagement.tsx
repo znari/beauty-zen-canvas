@@ -13,7 +13,7 @@ import { PlanActivationBanner } from "@/components/PlanActivationBanner";
 import { PlanCard } from "@/components/PlanCard";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreateMercadoPagoPayment } from "@/hooks/useCreateMercadoPagoPayment";
+import { useCreateStripeCheckout } from "@/hooks/useCreateStripeCheckout";
 import { toast } from "sonner";
 export const PlansManagement = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ export const PlansManagement = () => {
   const [showBillingPeriodModal, setShowBillingPeriodModal] = useState(false);
   const [processingPeriod, setProcessingPeriod] = useState<'monthly' | 'yearly' | null>(null);
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
-  const createMercadoPagoPayment = useCreateMercadoPagoPayment();
+  const createStripeCheckout = useCreateStripeCheckout();
   const queryClient = useQueryClient();
 
   // Buscar definições de planos
@@ -101,13 +101,13 @@ export const PlansManagement = () => {
       billingPeriod
     }));
     try {
-      const result = await createMercadoPagoPayment.mutateAsync({
+      const result = await createStripeCheckout.mutateAsync({
         planId: pendingPlanId,
         billingPeriod
       });
-      if (result.success && result.paymentUrl) {
-        window.open(result.paymentUrl, '_blank');
-        toast.success('🎉 Redirecionando para o Mercado Pago...');
+      if (result.success && result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        toast.success('🎉 Redirecionando para o checkout...');
         localStorage.setItem('lastTransactionId', result.transactionId || '');
         setShowBillingPeriodModal(false);
       }
