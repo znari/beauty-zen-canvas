@@ -153,6 +153,12 @@ export const PlansManagement = () => {
           color: 'bg-green-50 border-green-200 text-green-900',
           icon: '✅'
         };
+      case 'cancelling':
+        return {
+          text: 'Cancelamento Agendado 📅',
+          color: 'bg-orange-50 border-orange-200 text-orange-900',
+          icon: '📅'
+        };
       case 'trialing':
         return {
           text: 'Teste Grátis 🎁',
@@ -271,8 +277,49 @@ export const PlansManagement = () => {
             </div>
           </div>
 
+          {/* Aviso de cancelamento agendado */}
+          {subscription.isCancelling && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-orange-900">
+                    Cancelamento agendado
+                  </p>
+                  <p className="text-sm text-orange-700 mt-1">
+                    Sua assinatura será encerrada em {subscription.subscriptionEndsAt 
+                      ? new Date(subscription.subscriptionEndsAt).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric'
+                        })
+                      : 'breve'}. Você pode continuar usando o sistema normalmente até essa data.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full gap-2 border-orange-300 text-orange-900 hover:bg-orange-100"
+                onClick={openCustomerPortal}
+                disabled={isLoadingPortal}
+              >
+                {isLoadingPortal ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Carregando...
+                  </>
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4" />
+                    Manter Assinatura
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Botões de Ação da Assinatura */}
-          {subscription.status !== 'trialing' && subscription.plan !== 'free' && <div className="flex flex-col sm:flex-row gap-3">
+          {subscription.status !== 'trialing' && subscription.plan !== 'free' && !subscription.isCancelling && <div className="flex flex-col sm:flex-row gap-3">
               <Button variant="cta" className="flex-1 gap-2" onClick={() => handleRenewSubscription(subscription.plan)} disabled={processingPayment || isLoadingPortal}>
                 {processingPayment ? <>
                     <Loader2 className="h-4 w-4 animate-spin" />

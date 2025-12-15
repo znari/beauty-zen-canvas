@@ -283,8 +283,79 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         logStep('Subscription updated', { 
           subscriptionId: subscription.id, 
-          status: subscription.status 
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end
         });
+
+        // Buscar usuário pelo customer_id
+        const { data: updatedProfile } = await supabase
+          .from('profiles')
+          .select('id, plan')
+          .eq('stripe_customer_id', subscription.customer as string)
+          .single();
+
+        if (updatedProfile) {
+          const priceId = subscription.items.data[0]?.price.id;
+          const cancelAtPeriodEnd = subscription.cancel_at_period_end;
+          const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+
+          // Buscar plano pelo price_id
+          const { data: planDef } = await supabase
+            .from('plan_definitions')
+            .select('id')
+            .or(`stripe_price_id_monthly.eq.${priceId},stripe_price_id_yearly.eq.${priceId}`)
+            .maybeSingle();
+
+          // Determinar novo status
+          let newStatus = subscription.status === 'active' ? 'active' : subscription.status;
+          if (cancelAtPeriodEnd) {
+            newStatus = 'cancelling';
+          }
+
+          // Atualizar perfil
+          const updateData: any = {
+            subscription_status: newStatus,
+            subscription_ends_at: currentPeriodEnd.toISOString(),
+          };
+
+          // Atualizar plano se mudou
+          if (planDef && planDef.id !== updatedProfile.plan) {
+            updateData.plan = planDef.id;
+            logStep('Plan changed', { from: updatedProfile.plan, to: planDef.id });
+          }
+
+          await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', updatedProfile.id);
+
+          logStep('Profile updated with subscription changes', {
+            userId: updatedProfile.id,
+            newStatus,
+            cancelAtPeriodEnd,
+            endsAt: currentPeriodEnd.toISOString()
+          });
+
+          // Notificar se cancelamento agendado
+          if (cancelAtPeriodEnd) {
+            const formattedDate = currentPeriodEnd.toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            });
+
+            await supabase
+              .from('notifications')
+              .insert({
+                professional_id: updatedProfile.id,
+                type: 'subscription_cancelling',
+                title: '📅 Cancelamento agendado',
+                message: `Sua assinatura será encerrada em ${formattedDate}. Você pode reverter a qualquer momento.`,
+              });
+
+            logStep('Cancellation scheduled notification created');
+          }
+        }
         break;
       }
 
