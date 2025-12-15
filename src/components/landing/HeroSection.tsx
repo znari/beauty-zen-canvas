@@ -22,7 +22,7 @@ export const HeroSection = () => {
             <div className="space-y-6">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] tracking-tight">
                 <span className="text-primary block mb-2">Adeus papelada.</span>
-                Seu estúdio organizado em <span className="text-secondary underline decoration-wavy decoration-2 underline-offset-4">1 clique.</span>
+                Seu estúdio organizado em <span className="text-secondary underline decoration-wavy decoration-2 underline-offset-4">um clique.</span>
               </h1>
               
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed">
