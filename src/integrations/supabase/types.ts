@@ -90,6 +90,11 @@ export type Database = {
           plan_id: string
           professional_id: string
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -109,6 +114,11 @@ export type Database = {
           plan_id: string
           professional_id: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -128,6 +138,11 @@ export type Database = {
           plan_id?: string
           professional_id?: string
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -393,6 +408,8 @@ export type Database = {
           name: string
           price_monthly: number
           price_yearly: number | null
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
         }
         Insert: {
           created_at?: string | null
@@ -407,6 +424,8 @@ export type Database = {
           name: string
           price_monthly: number
           price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
         }
         Update: {
           created_at?: string | null
@@ -421,6 +440,8 @@ export type Database = {
           name?: string
           price_monthly?: number
           price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
         }
         Relationships: []
       }
@@ -497,6 +518,7 @@ export type Database = {
           plan: string | null
           professionals_count: number | null
           storage_used_mb: number | null
+          stripe_customer_id: string | null
           studio_name: string | null
           subscription_ends_at: string | null
           subscription_started_at: string | null
@@ -525,6 +547,7 @@ export type Database = {
           plan?: string | null
           professionals_count?: number | null
           storage_used_mb?: number | null
+          stripe_customer_id?: string | null
           studio_name?: string | null
           subscription_ends_at?: string | null
           subscription_started_at?: string | null
@@ -553,6 +576,7 @@ export type Database = {
           plan?: string | null
           professionals_count?: number | null
           storage_used_mb?: number | null
+          stripe_customer_id?: string | null
           studio_name?: string | null
           subscription_ends_at?: string | null
           subscription_started_at?: string | null

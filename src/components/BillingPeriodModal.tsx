@@ -96,7 +96,7 @@ export const BillingPeriodModal = ({
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2 border-t">
           <ShieldCheck className="h-4 w-4" />
-          Pagamento seguro via Mercado Pago
+          Pagamento seguro via Stripe
         </div>
       </DialogContent>
     </Dialog>
