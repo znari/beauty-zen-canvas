@@ -48,19 +48,52 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     let customerId = profile?.stripe_customer_id;
 
-    // If no customer ID in profile, try to find by email
+    // Validar se o customer armazenado existe no Stripe
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+        logStep("Stored customer validated", { customerId });
+      } catch (e) {
+        // Customer não existe no Stripe (provavelmente de ambiente de teste)
+        logStep("Stored customer invalid", { invalidCustomerId: customerId });
+        customerId = null;
+        
+        // Limpar customer_id inválido do perfil
+        const supabaseClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { persistSession: false } }
+        );
+        await supabaseClient
+          .from("profiles")
+          .update({ stripe_customer_id: null })
+          .eq("id", user.id);
+      }
+    }
+
+    // Se não tem customer válido, procurar por email
     if (!customerId) {
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       if (customers.data.length === 0) {
-        throw new Error("No Stripe customer found for this user");
+        throw new Error("Você ainda não tem uma assinatura ativa. Assine um plano primeiro.");
       }
       customerId = customers.data[0].id;
       logStep("Found customer by email", { customerId });
-    } else {
-      logStep("Using stored customer ID", { customerId });
+      
+      // Atualizar o perfil com o customer_id correto
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+      await supabaseClient
+        .from("profiles")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", user.id);
+      logStep("Updated profile with valid customer ID", { customerId });
     }
 
     const origin = req.headers.get("origin") || "https://fichazen.com.br";
