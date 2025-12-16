@@ -68,8 +68,8 @@ export const exportPaymentHistoryPDF = (
     body: payments.transactions.map((t) => [
       format(new Date(t.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }),
       t.plan_name,
-      `R$ ${(t.amount / 100).toFixed(2)}`,
-      t.frequency === 'MONTHLY' ? 'Mensal' : 'Único',
+      `R$ ${t.amount.toFixed(2)}`,
+      t.frequency === 'MONTHLY' ? 'Mensal' : t.frequency === 'YEARLY' ? 'Anual' : 'Único',
       t.status === 'paid' ? 'Pago' : 
       t.status === 'pending' ? 'Pendente' : 
       t.status === 'cancelled' ? 'Cancelado' : 'Falhou'
