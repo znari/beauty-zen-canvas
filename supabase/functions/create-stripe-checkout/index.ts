@@ -86,13 +86,31 @@ serve(async (req) => {
     // Verificar se já existe customer no Stripe
     let customerId = profile.stripe_customer_id;
     
+    // Validar se o customer armazenado existe no Stripe
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+        logStep('Stored customer validated', { customerId });
+      } catch (e) {
+        // Customer não existe no Stripe (provavelmente de ambiente de teste)
+        logStep('Stored customer invalid, will create new', { invalidCustomerId: customerId });
+        customerId = null;
+        
+        // Limpar customer_id inválido do perfil
+        await supabase
+          .from('profiles')
+          .update({ stripe_customer_id: null })
+          .eq('id', user.id);
+      }
+    }
+    
     if (!customerId) {
       // Procurar por email
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
-        logStep('Existing customer found', { customerId });
+        logStep('Existing customer found by email', { customerId });
       } else {
         // Criar novo customer
         const customer = await stripe.customers.create({
