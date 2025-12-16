@@ -1,4 +1,4 @@
-import { Bell, Calendar, X, RefreshCw, Clock, FileCheck, Smartphone } from "lucide-react";
+import { Bell, Calendar, X, RefreshCw, Clock, FileCheck, Smartphone, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -32,6 +32,8 @@ const getNotificationIcon = (type: string) => {
       return <FileCheck className="h-4 w-4 text-green-500" />;
     case 'pwa_install_reminder':
       return <Smartphone className="h-4 w-4 text-purple-500" />;
+    case 'plan_activated':
+      return <Crown className="h-4 w-4 text-yellow-500" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
@@ -78,6 +80,13 @@ export const NotificationButton = () => {
     // Handle PWA install reminder - navigate to install page
     if (notification.type === 'pwa_install_reminder') {
       navigate('/instalar');
+      setOpen(false);
+      return;
+    }
+
+    // Handle plan activated - navigate to payment tab
+    if (notification.type === 'plan_activated') {
+      navigate('/configuracoes/perfil?tab=pagamento');
       setOpen(false);
       return;
     }

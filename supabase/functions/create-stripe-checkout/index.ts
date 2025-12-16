@@ -152,8 +152,8 @@ serve(async (req) => {
 
     // URLs de retorno
     const origin = req.headers.get('origin') || 'https://fichazen.com.br';
-    const successUrl = `${origin}/dashboard/planos?payment=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${origin}/dashboard/planos?payment=cancelled`;
+    const successUrl = `${origin}/configuracoes/perfil?tab=pagamento&payment=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${origin}/configuracoes/perfil?tab=pagamento&payment=cancelled`;
 
     // Criar Checkout Session
     const session = await stripe.checkout.sessions.create({
