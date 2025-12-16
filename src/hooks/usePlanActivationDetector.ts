@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { celebratePayment } from "@/lib/confetti";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const usePlanActivationDetector = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isWaitingActivation, setIsWaitingActivation] = useState(false);
 
   useEffect(() => {
@@ -25,8 +27,9 @@ export const usePlanActivationDetector = () => {
 
       // Se o plano já está ativo, limpar localStorage e não escutar mudanças
       if (profile?.subscription_status === 'active' && profile?.plan !== 'free') {
-        console.log('✅ Plano já ativo. Limpando localStorage.');
+        console.log('✅ Plano já ativo. Limpando localStorage e invalidando cache.');
         localStorage.removeItem('pendingPlanActivation');
+        queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
         setIsWaitingActivation(false);
         return true; // Indica que já está ativo
       }
@@ -57,6 +60,9 @@ export const usePlanActivationDetector = () => {
             // Verificar se o plano foi ativado
             if (newProfile.subscription_status === 'active' && 
                 newProfile.plan !== 'free') {
+              
+              // Invalidar cache do subscription status para forçar refetch
+              queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
               
               // Disparar notificação de sucesso
               celebratePayment();
