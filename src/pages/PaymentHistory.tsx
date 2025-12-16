@@ -217,10 +217,11 @@ const PaymentHistory = () => {
                           {payment.plan_name}
                         </TableCell>
                         <TableCell>
-                          R$ {(payment.amount / 100).toFixed(2)}
+                          R$ {payment.amount.toFixed(2)}
                         </TableCell>
                         <TableCell>
                           {payment.frequency === 'MONTHLY' && '🔄 Mensal'}
+                          {payment.frequency === 'YEARLY' && '📅 Anual'}
                           {payment.frequency === 'ONE_TIME' && '1x Único'}
                         </TableCell>
                         <TableCell>

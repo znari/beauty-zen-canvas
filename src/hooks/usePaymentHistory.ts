@@ -54,10 +54,10 @@ export const usePaymentHistory = (filters: PaymentHistoryFilters) => {
       const summary = {
         totalPaid: transactions
           .filter(t => t.status === 'paid')
-          .reduce((sum, t) => sum + t.amount, 0) / 100,
+          .reduce((sum, t) => sum + t.amount, 0),
         totalPending: transactions
           .filter(t => t.status === 'pending')
-          .reduce((sum, t) => sum + t.amount, 0) / 100,
+          .reduce((sum, t) => sum + t.amount, 0),
         totalCount: transactions.length
       };
 
