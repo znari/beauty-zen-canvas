@@ -1,4 +1,4 @@
-import { Instagram, Facebook } from "lucide-react";
+import { Instagram, Facebook, Handshake } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SUPPORT_WHATSAPP } from "@/lib/constants";
 
@@ -83,6 +83,12 @@ export const LandingFooter = () => {
               <li>
                 <Link to="/suporte" className="text-sm text-muted-foreground hover:text-secondary transition-colors">
                   Central de Ajuda
+                </Link>
+              </li>
+              <li>
+                <Link to="/parceiros" className="text-sm text-muted-foreground hover:text-secondary transition-colors flex items-center gap-1">
+                  <Handshake className="w-3 h-3" />
+                  Seja um Parceiro
                 </Link>
               </li>
             </ul>

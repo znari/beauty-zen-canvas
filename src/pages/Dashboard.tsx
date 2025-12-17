@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2 } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2, Handshake } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { usePWAInstallReminder } from "@/hooks/usePWAInstallReminder";
 import { useAuth } from "@/contexts/AuthContext";
@@ -406,6 +406,10 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => navigate("/suporte")}>
                 <LifeBuoy className="h-4 w-4 mr-2" />
                 Suporte
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/parceiro/dashboard")}>
+                <Handshake className="h-4 w-4 mr-2" />
+                Programa de Parceiros
               </DropdownMenuItem>
               {!isInstalled && (
                 <DropdownMenuItem onClick={() => navigate("/instalar")}>
