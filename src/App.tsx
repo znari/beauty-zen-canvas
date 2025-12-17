@@ -39,6 +39,9 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import LGPD from "./pages/LGPD";
 import Install from "./pages/Install";
+import Partners from "./pages/Partners";
+import ReferralRedirect from "./pages/ReferralRedirect";
+import PartnerDashboard from "./pages/PartnerDashboard";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 
@@ -66,6 +69,8 @@ const App = () => (
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfUse />} />
             <Route path="/lgpd" element={<LGPD />} />
+            <Route path="/parceiros" element={<Partners />} />
+            <Route path="/r/:code" element={<ReferralRedirect />} />
             
             {/* Onboarding route (protected) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
@@ -91,6 +96,9 @@ const App = () => (
             
             {/* Public support route - accessible without login */}
             <Route path="/suporte" element={<Support />} />
+            
+            {/* Partner dashboard (protected) */}
+            <Route path="/parceiro/dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
             
             {/* Admin route */}
             <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />

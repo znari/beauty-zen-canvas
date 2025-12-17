@@ -394,6 +394,110 @@ export type Database = {
           },
         ]
       }
+      partner_payouts: {
+        Row: {
+          amount: number
+          id: string
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          partner_id: string
+          pix_key: string
+          pix_key_type: string
+          referral_ids: string[]
+        }
+        Insert: {
+          amount: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          partner_id: string
+          pix_key: string
+          pix_key_type: string
+          referral_ids: string[]
+        }
+        Update: {
+          amount?: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          partner_id?: string
+          pix_key?: string
+          pix_key_type?: string
+          referral_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          commission_value: number
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          pending_balance: number | null
+          phone: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          referral_code: string
+          rejection_reason: string | null
+          status: string
+          total_paid: number | null
+          total_referrals: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          commission_value?: number
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          pending_balance?: number | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          referral_code: string
+          rejection_reason?: string | null
+          status?: string
+          total_paid?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          commission_value?: number
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          pending_balance?: number | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          referral_code?: string
+          rejection_reason?: string | null
+          status?: string
+          total_paid?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       plan_definitions: {
         Row: {
           created_at: string | null
@@ -517,6 +621,7 @@ export type Database = {
           phone_raw: string | null
           plan: string | null
           professionals_count: number | null
+          referred_by: string | null
           storage_used_mb: number | null
           stripe_customer_id: string | null
           studio_name: string | null
@@ -546,6 +651,7 @@ export type Database = {
           phone_raw?: string | null
           plan?: string | null
           professionals_count?: number | null
+          referred_by?: string | null
           storage_used_mb?: number | null
           stripe_customer_id?: string | null
           studio_name?: string | null
@@ -575,6 +681,7 @@ export type Database = {
           phone_raw?: string | null
           plan?: string | null
           professionals_count?: number | null
+          referred_by?: string | null
           storage_used_mb?: number | null
           stripe_customer_id?: string | null
           studio_name?: string | null
@@ -584,7 +691,59 @@ export type Database = {
           trial_ends_at?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          commission_amount: number | null
+          commission_paid_at: string | null
+          created_at: string | null
+          first_payment_at: string | null
+          id: string
+          partner_id: string
+          referred_email: string
+          referred_user_id: string | null
+          status: string
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_paid_at?: string | null
+          created_at?: string | null
+          first_payment_at?: string | null
+          id?: string
+          partner_id: string
+          referred_email: string
+          referred_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_paid_at?: string | null
+          created_at?: string | null
+          first_payment_at?: string | null
+          id?: string
+          partner_id?: string
+          referred_email?: string
+          referred_user_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_members: {
         Row: {
@@ -856,8 +1015,85 @@ export type Database = {
       }
     }
     Functions: {
+      admin_approve_partner: {
+        Args: { p_commission_value?: number; p_partner_id: string }
+        Returns: Json
+      }
+      admin_get_partner_payouts: {
+        Args: { p_partner_id: string }
+        Returns: {
+          amount: number
+          id: string
+          notes: string
+          paid_at: string
+          pix_key: string
+          pix_key_type: string
+          referral_count: number
+        }[]
+      }
+      admin_get_partner_referrals: {
+        Args: { p_partner_id: string }
+        Returns: {
+          commission_amount: number
+          commission_paid_at: string
+          created_at: string
+          first_payment_at: string
+          id: string
+          referred_email: string
+          referred_user_id: string
+          status: string
+        }[]
+      }
+      admin_get_partners: {
+        Args: never
+        Returns: {
+          commission_value: number
+          created_at: string
+          email: string
+          id: string
+          name: string
+          notes: string
+          pending_balance: number
+          phone: string
+          pix_key: string
+          pix_key_type: string
+          referral_code: string
+          rejection_reason: string
+          status: string
+          total_paid: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      admin_get_pending_commissions: {
+        Args: never
+        Returns: {
+          commission_amount: number
+          first_payment_at: string
+          partner_email: string
+          partner_id: string
+          partner_name: string
+          partner_pix_key: string
+          partner_pix_key_type: string
+          referral_id: string
+          referred_email: string
+        }[]
+      }
+      admin_pay_commissions: {
+        Args: { p_notes?: string; p_referral_ids: string[] }
+        Returns: Json
+      }
+      admin_reject_partner: {
+        Args: { p_partner_id: string; p_reason: string }
+        Returns: Json
+      }
       admin_send_notification: {
         Args: { p_message: string; p_title: string; p_user_id: string }
+        Returns: Json
+      }
+      admin_suspend_partner: {
+        Args: { p_partner_id: string; p_reason?: string }
         Returns: Json
       }
       admin_terminate_all_sessions: { Args: never; Returns: number }
@@ -874,6 +1110,7 @@ export type Database = {
         Args: { p_date: string; p_time: string }
         Returns: string
       }
+      generate_referral_code: { Args: never; Returns: string }
       get_admin_growth: {
         Args: never
         Returns: {
@@ -952,6 +1189,7 @@ export type Database = {
           visit_count: number
         }[]
       }
+      get_partner_dashboard: { Args: { p_user_id?: string }; Returns: Json }
       get_public_visit_info: {
         Args: { client_uuid: string }
         Returns: {
@@ -976,10 +1214,23 @@ export type Database = {
         Returns: boolean
       }
       normalize_phone: { Args: { input_text: string }; Returns: string }
+      process_referral_commission: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      register_referral: {
+        Args: {
+          p_referral_code: string
+          p_user_email: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       submit_public_anamnesis: {
         Args: { p_client_id: string; p_responses: Json }
         Returns: Json
       }
+      validate_referral_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
