@@ -163,6 +163,19 @@ serve(async (req) => {
           });
 
         logStep('Activation notification created');
+
+        // Processar comissão de indicação (primeiro pagamento)
+        const { data: referralResult } = await supabase.rpc('process_referral_commission', {
+          p_user_id: userId
+        });
+        
+        if (referralResult?.processed) {
+          logStep('Referral commission processed', { 
+            commission: referralResult.commission, 
+            partnerId: referralResult.partner_id 
+          });
+        }
+        
         break;
       }
 
