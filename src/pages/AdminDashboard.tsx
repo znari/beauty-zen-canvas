@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users,
   DollarSign,
@@ -51,6 +52,8 @@ import {
   Filter,
   X,
   FileText,
+  Handshake,
+  BarChart3,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -87,6 +90,7 @@ import { toast } from "sonner";
 import { BroadcastModal } from "@/components/admin/BroadcastModal";
 import { UserDetailsModal } from "@/components/admin/UserDetailsModal";
 import { exportAdminPDF } from "@/lib/exportAdminPDF";
+import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 
 const PLAN_COLORS = {
   free: "#9CA3AF",
@@ -467,11 +471,24 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* KPI Cards - Linha 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Usuários Totais */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mb-8">
+            <TabsTrigger value="dashboard" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="partners" className="gap-2">
+              <Handshake className="w-4 h-4" />
+              Parceiros
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-8">
+            {/* KPI Cards - Linha 1 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Usuários Totais */}
+              <Card className="border-border/50 bg-card/50 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Usuários Totais
@@ -1111,6 +1128,12 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="partners">
+            <AdminPartnersTab />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Modais */}
