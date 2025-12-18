@@ -22,6 +22,23 @@ const generateTempCode = () => {
   return code;
 };
 
+// Send confirmation email via edge function
+const sendConfirmationEmail = async (name: string, email: string) => {
+  try {
+    const { error } = await supabase.functions.invoke('send-partner-confirmation', {
+      body: { name, email },
+    });
+    
+    if (error) {
+      console.error('Failed to send confirmation email:', error);
+    } else {
+      console.log('Confirmation email sent successfully');
+    }
+  } catch (err) {
+    console.error('Error sending confirmation email:', err);
+  }
+};
+
 export const usePartnerRegistration = () => {
   return useMutation({
     mutationFn: async (data: PartnerRegistrationData) => {
@@ -63,10 +80,14 @@ export const usePartnerRegistration = () => {
         .single();
 
       if (error) throw error;
+
+      // Send confirmation email (non-blocking)
+      sendConfirmationEmail(data.name, data.email);
+
       return partner;
     },
     onSuccess: () => {
-      toast.success('Solicitação enviada! Você receberá um email quando for aprovado.');
+      toast.success('Solicitação enviada! Você receberá um email de confirmação.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao enviar solicitação');
