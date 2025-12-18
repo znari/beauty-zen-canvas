@@ -77,13 +77,20 @@ const AdminPartnersTab = () => {
   const handleApprove = (partner: any) => {
     approvePartner({ 
       partnerId: partner.id, 
-      commissionValue: parseFloat(commissionValue) 
+      commissionValue: parseFloat(commissionValue),
+      partnerName: partner.name,
+      partnerEmail: partner.email,
     });
   };
 
   const handleReject = () => {
     if (!selectedPartner || !rejectReason) return;
-    rejectPartner({ partnerId: selectedPartner.id, reason: rejectReason }, {
+    rejectPartner({ 
+      partnerId: selectedPartner.id, 
+      reason: rejectReason,
+      partnerName: selectedPartner.name,
+      partnerEmail: selectedPartner.email,
+    }, {
       onSuccess: () => {
         setShowRejectDialog(false);
         setRejectReason("");
