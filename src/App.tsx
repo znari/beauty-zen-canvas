@@ -40,6 +40,7 @@ import TermsOfUse from "./pages/TermsOfUse";
 import LGPD from "./pages/LGPD";
 import Install from "./pages/Install";
 import Partners from "./pages/Partners";
+import PartnerSuccess from "./pages/PartnerSuccess";
 import ReferralRedirect from "./pages/ReferralRedirect";
 import PartnerDashboard from "./pages/PartnerDashboard";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/termos" element={<TermsOfUse />} />
             <Route path="/lgpd" element={<LGPD />} />
             <Route path="/parceiros" element={<Partners />} />
+            <Route path="/parceiros/sucesso" element={<PartnerSuccess />} />
             <Route path="/r/:code" element={<ReferralRedirect />} />
             
             {/* Onboarding route (protected) */}
