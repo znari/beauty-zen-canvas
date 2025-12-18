@@ -56,17 +56,51 @@ export const useAdminPendingCommissions = () => {
   });
 };
 
+// Send status email via edge function
+const sendPartnerStatusEmail = async (
+  name: string, 
+  email: string, 
+  status: 'approved' | 'rejected',
+  referralCode?: string,
+  rejectionReason?: string
+) => {
+  try {
+    const { error } = await supabase.functions.invoke('send-partner-status-email', {
+      body: { name, email, status, referralCode, rejectionReason },
+    });
+    
+    if (error) {
+      console.error('Failed to send status email:', error);
+    } else {
+      console.log('Status email sent successfully');
+    }
+  } catch (err) {
+    console.error('Error sending status email:', err);
+  }
+};
+
 export const useApprovePartner = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ partnerId, commissionValue }: { partnerId: string; commissionValue?: number }) => {
+    mutationFn: async ({ partnerId, commissionValue, partnerName, partnerEmail }: { 
+      partnerId: string; 
+      commissionValue?: number;
+      partnerName: string;
+      partnerEmail: string;
+    }) => {
       const { data, error } = await supabase.rpc('admin_approve_partner', {
         p_partner_id: partnerId,
         p_commission_value: commissionValue,
       });
       if (error) throw error;
-      return data as unknown as { success: boolean; referral_code: string };
+      
+      const result = data as unknown as { success: boolean; referral_code: string };
+      
+      // Send approval email (non-blocking)
+      sendPartnerStatusEmail(partnerName, partnerEmail, 'approved', result.referral_code);
+      
+      return result;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-partners'] });
@@ -82,12 +116,21 @@ export const useRejectPartner = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ partnerId, reason }: { partnerId: string; reason: string }) => {
+    mutationFn: async ({ partnerId, reason, partnerName, partnerEmail }: { 
+      partnerId: string; 
+      reason: string;
+      partnerName: string;
+      partnerEmail: string;
+    }) => {
       const { data, error } = await supabase.rpc('admin_reject_partner', {
         p_partner_id: partnerId,
         p_reason: reason,
       });
       if (error) throw error;
+      
+      // Send rejection email (non-blocking)
+      sendPartnerStatusEmail(partnerName, partnerEmail, 'rejected', undefined, reason);
+      
       return data;
     },
     onSuccess: () => {
