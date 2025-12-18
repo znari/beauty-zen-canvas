@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,7 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, Link as LinkIcon, BarChart3, Gift, CheckCircle2, ArrowRight } from "lucide-react";
+import { Users, DollarSign, Link as LinkIcon, BarChart3, Gift, ArrowRight } from "lucide-react";
 import { usePartnerRegistration } from "@/hooks/usePartnerRegistration";
 
 const formSchema = z.object({
@@ -30,7 +29,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Partners = () => {
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   const { mutate: register, isPending } = usePartnerRegistration();
 
   const form = useForm<FormData>({
@@ -57,7 +56,7 @@ const Partners = () => {
       isFichaZenClient: data.isFichaZenClient,
       message: data.message,
     }, {
-      onSuccess: () => setSubmitted(true),
+      onSuccess: () => navigate("/parceiros/sucesso"),
     });
   };
 
@@ -153,32 +152,18 @@ const Partners = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                {submitted ? "Solicitação Enviada!" : "Seja um Parceiro"}
+                Seja um Parceiro
               </CardTitle>
               <CardDescription>
-                {submitted 
-                  ? "Sua solicitação foi recebida. Você receberá um email quando for aprovado."
-                  : "Preencha os dados abaixo para se cadastrar no programa de parceiros"
-                }
+                Preencha os dados abaixo para se cadastrar no programa de parceiros
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {submitted ? (
-                <div className="text-center py-8">
-                  <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">
-                    Analisaremos sua solicitação e entraremos em contato em breve.
-                  </p>
-                  <Link to="/">
-                    <Button variant="outline">Voltar para o início</Button>
-                  </Link>
-                </div>
-              ) : (
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="name"
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nome completo</FormLabel>
@@ -329,7 +314,6 @@ const Partners = () => {
                     </Button>
                   </form>
                 </Form>
-              )}
             </CardContent>
           </Card>
         </section>
