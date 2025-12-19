@@ -183,7 +183,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "FichaZen <noreply@fichazen.com.br>",
+      from: "FichaZen <noreply@mail.fichazen.com.br>",
       to: [email],
       subject,
       html,
