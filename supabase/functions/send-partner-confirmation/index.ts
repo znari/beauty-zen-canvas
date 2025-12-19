@@ -25,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending partner confirmation email to: ${email}`);
 
     const emailResponse = await resend.emails.send({
-      from: "FichaZen <noreply@fichazen.com.br>",
+      from: "FichaZen <noreply@mail.fichazen.com.br>",
       to: [email],
       subject: "🎉 FichaZen - Recebemos sua solicitação de parceria!",
       html: `
