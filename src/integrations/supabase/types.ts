@@ -1106,6 +1106,13 @@ export type Database = {
         }
         Returns: Json
       }
+      check_partner_email_exists: {
+        Args: { p_email: string }
+        Returns: {
+          email_exists: boolean
+          email_status: string
+        }[]
+      }
       format_visit_datetime: {
         Args: { p_date: string; p_time: string }
         Returns: string

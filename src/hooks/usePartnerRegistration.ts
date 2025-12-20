@@ -42,20 +42,25 @@ const sendConfirmationEmail = async (name: string, email: string) => {
 export const usePartnerRegistration = () => {
   return useMutation({
     mutationFn: async (data: PartnerRegistrationData) => {
-      // Check if email already registered
-      const { data: existing } = await supabase
-        .from('partners')
-        .select('id, status')
-        .eq('email', data.email)
+      // Check if email already registered using RPC (bypasses RLS)
+      const { data: emailCheck, error: checkError } = await supabase
+        .rpc('check_partner_email_exists', { p_email: data.email })
         .maybeSingle();
 
-      if (existing) {
-        if (existing.status === 'pending') {
+      if (checkError) {
+        console.error('Error checking email:', checkError);
+        throw new Error('Erro ao verificar email');
+      }
+
+      if (emailCheck?.email_exists) {
+        if (emailCheck.email_status === 'pending') {
           throw new Error('Este email já possui uma solicitação pendente');
-        } else if (existing.status === 'active') {
+        } else if (emailCheck.email_status === 'active') {
           throw new Error('Este email já é um parceiro ativo');
-        } else if (existing.status === 'rejected') {
+        } else if (emailCheck.email_status === 'rejected') {
           throw new Error('Este email foi rejeitado anteriormente');
+        } else if (emailCheck.email_status === 'suspended') {
+          throw new Error('Este email está suspenso');
         }
       }
 
@@ -63,8 +68,8 @@ export const usePartnerRegistration = () => {
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
 
-      // Insert new partner
-      const { data: partner, error } = await supabase
+      // Insert new partner (without .select() to avoid RLS issues)
+      const { error } = await supabase
         .from('partners')
         .insert({
           user_id: userId,
@@ -75,16 +80,14 @@ export const usePartnerRegistration = () => {
           pix_key_type: data.pixKeyType,
           referral_code: generateTempCode(),
           notes: data.message || null,
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
       // Send confirmation email (non-blocking)
       sendConfirmationEmail(data.name, data.email);
 
-      return partner;
+      return { success: true };
     },
     onSuccess: () => {
       toast.success('Solicitação enviada! Você receberá um email de confirmação.');
