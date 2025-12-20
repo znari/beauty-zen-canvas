@@ -17,7 +17,10 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  User,
+  Phone,
+  Key
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -74,6 +77,24 @@ const PartnerDashboard = () => {
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
     toast.success("Link copiado!");
+  };
+
+  const copyPixKey = () => {
+    if (partner.pix_key) {
+      navigator.clipboard.writeText(partner.pix_key);
+      toast.success("Chave PIX copiada!");
+    }
+  };
+
+  const getPixKeyTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      cpf: 'CPF',
+      cnpj: 'CNPJ',
+      email: 'Email',
+      phone: 'Telefone',
+      random: 'Aleatória',
+    };
+    return labels[type] || type;
   };
 
   const getStatusBadge = (status: string) => {
@@ -162,6 +183,52 @@ const PartnerDashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Account Info Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Minha Conta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5" />
+                  Nome
+                </p>
+                <p className="font-medium text-foreground">{partner.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5" />
+                  Telefone
+                </p>
+                <p className="font-medium text-foreground">{partner.phone || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <Key className="h-3.5 w-3.5" />
+                  Tipo de chave PIX
+                </p>
+                <p className="font-medium text-foreground">{getPixKeyTypeLabel(partner.pix_key_type)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Chave PIX</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium font-mono text-foreground truncate">{partner.pix_key || '-'}</p>
+                  {partner.pix_key && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyPixKey}>
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {partner.status === 'active' && (
           <Card className="mb-6">
