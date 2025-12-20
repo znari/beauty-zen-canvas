@@ -47,6 +47,15 @@ const getApprovalEmail = (name: string, referralCode: string) => `
         <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857; letter-spacing: 4px;">${referralCode}</p>
       </div>
       
+      <!-- Login Instructions -->
+      <div style="background-color: #EDE9FE; border-radius: 12px; padding: 20px; margin-bottom: 30px; border-left: 4px solid #8B5CF6;">
+        <h3 style="margin: 0 0 10px; font-size: 16px; color: #5B21B6; font-weight: 600;">🔐 Como acessar seu dashboard</h3>
+        <p style="margin: 0; font-size: 14px; color: #6D28D9; line-height: 1.5;">
+          Acesse com o <strong>email e senha</strong> que você cadastrou no momento da solicitação. 
+          Clique no botão abaixo para fazer login e começar a indicar!
+        </p>
+      </div>
+      
       <!-- How it works -->
       <div style="background-color: #F3F4F6; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
         <h2 style="font-size: 16px; color: #374151; margin: 0 0 20px; font-weight: 600;">🚀 Como começar a indicar</h2>
@@ -75,8 +84,8 @@ const getApprovalEmail = (name: string, referralCode: string) => `
       
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 30px;">
-        <a href="https://fichazen.com.br/parceiro/dashboard" style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-size: 16px; font-weight: 600;">
-          Acessar Dashboard de Parceiro
+        <a href="https://fichazen.com.br/login" style="display: inline-block; background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-size: 16px; font-weight: 600;">
+          Fazer Login e Acessar Dashboard
         </a>
       </div>
       

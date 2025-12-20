@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePartnerStatus } from "@/hooks/usePartnerDashboard";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido").max(255),
@@ -25,13 +27,20 @@ export default function Login() {
   const { signIn, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const { data: partnerStatus } = usePartnerStatus();
+  const { onboardingCompleted } = useOnboardingStatus();
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
+    if (user && partnerStatus !== undefined) {
+      // Check if user is a partner that hasn't completed onboarding
+      if (partnerStatus?.isPartner && !onboardingCompleted) {
+        navigate("/parceiro/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }
-  }, [user, navigate]);
+  }, [user, partnerStatus, onboardingCompleted, navigate]);
 
   const {
     register,
@@ -66,12 +75,14 @@ export default function Login() {
     } else {
       // Forçar verificação única de assinatura após login
       await queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      await queryClient.invalidateQueries({ queryKey: ["partner-status"] });
       
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vinda de volta 💜",
       });
-      navigate("/dashboard");
+      
+      // The useEffect will handle the redirect based on partner/onboarding status
     }
   };
 

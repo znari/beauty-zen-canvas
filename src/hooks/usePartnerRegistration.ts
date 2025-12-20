@@ -9,6 +9,7 @@ interface PartnerRegistrationData {
   pixKey: string;
   pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';
   isFichaZenClient: boolean;
+  password?: string;
   message?: string;
 }
 
@@ -64,9 +65,51 @@ export const usePartnerRegistration = () => {
         }
       }
 
-      // Get user_id if logged in
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id || null;
+      let userId: string | null = null;
+
+      if (data.isFichaZenClient) {
+        // User claims to be an existing client - validate by signing in
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password || '',
+        });
+
+        if (signInError) {
+          if (signInError.message.includes('Invalid login credentials')) {
+            throw new Error('Email ou senha incorretos. Verifique suas credenciais FichaZen.');
+          }
+          throw new Error('Erro ao validar conta. Tente novamente.');
+        }
+
+        userId = signInData.user?.id || null;
+      } else {
+        // New user - create account
+        if (!data.password) {
+          throw new Error('Senha é obrigatória');
+        }
+
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/parceiro/dashboard`,
+            data: {
+              full_name: data.name,
+              is_partner_signup: true,
+            },
+          },
+        });
+
+        if (signUpError) {
+          if (signUpError.message.includes('User already registered')) {
+            throw new Error('Este email já está cadastrado. Marque a opção "Já sou cliente FichaZen" e confirme sua senha.');
+          }
+          console.error('SignUp error:', signUpError);
+          throw new Error('Erro ao criar conta. Tente novamente.');
+        }
+
+        userId = signUpData.user?.id || null;
+      }
 
       // Insert new partner (without .select() to avoid RLS issues)
       const { error } = await supabase

@@ -12,8 +12,9 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, Link as LinkIcon, BarChart3, Gift, ArrowRight } from "lucide-react";
+import { Users, DollarSign, Link as LinkIcon, BarChart3, Gift, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { usePartnerRegistration } from "@/hooks/usePartnerRegistration";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -22,8 +23,38 @@ const formSchema = z.object({
   pixKey: z.string().min(5, "Chave PIX inválida"),
   pixKeyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random']),
   isFichaZenClient: z.boolean().default(false),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+  accountPassword: z.string().optional(),
   message: z.string().optional(),
   acceptTerms: z.boolean().refine(val => val === true, "Você deve aceitar os termos"),
+}).refine((data) => {
+  // If NOT a client, password is required
+  if (!data.isFichaZenClient) {
+    return data.password && data.password.length >= 6;
+  }
+  return true;
+}, {
+  message: "Senha deve ter pelo menos 6 caracteres",
+  path: ["password"],
+}).refine((data) => {
+  // If NOT a client, confirm password must match
+  if (!data.isFichaZenClient) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+}).refine((data) => {
+  // If IS a client, account password is required
+  if (data.isFichaZenClient) {
+    return data.accountPassword && data.accountPassword.length >= 6;
+  }
+  return true;
+}, {
+  message: "Confirme sua senha da conta FichaZen",
+  path: ["accountPassword"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -31,6 +62,9 @@ type FormData = z.infer<typeof formSchema>;
 const Partners = () => {
   const navigate = useNavigate();
   const { mutate: register, isPending } = usePartnerRegistration();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -41,10 +75,15 @@ const Partners = () => {
       pixKey: "",
       pixKeyType: "cpf",
       isFichaZenClient: false,
+      password: "",
+      confirmPassword: "",
+      accountPassword: "",
       message: "",
       acceptTerms: false,
     },
   });
+
+  const isFichaZenClient = form.watch("isFichaZenClient");
 
   const onSubmit = (data: FormData) => {
     register({
@@ -54,6 +93,7 @@ const Partners = () => {
       pixKey: data.pixKey,
       pixKeyType: data.pixKeyType,
       isFichaZenClient: data.isFichaZenClient,
+      password: data.isFichaZenClient ? data.accountPassword : data.password,
       message: data.message,
     }, {
       onSuccess: () => navigate("/parceiros/sucesso"),
@@ -266,6 +306,108 @@ const Partners = () => {
                         </FormItem>
                       )}
                     />
+
+                    {/* Password fields - conditional based on isFichaZenClient */}
+                    {!isFichaZenClient ? (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
+                        <p className="text-sm text-muted-foreground">
+                          Crie uma senha para acessar o dashboard de parceiro após a aprovação:
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Senha</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      type={showPassword ? "text" : "password"} 
+                                      placeholder="••••••" 
+                                      {...field} 
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute right-0 top-0 h-full px-3"
+                                      onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Confirmar senha</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      type={showConfirmPassword ? "text" : "password"} 
+                                      placeholder="••••••" 
+                                      {...field} 
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute right-0 top-0 h-full px-3"
+                                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
+                        <p className="text-sm text-muted-foreground">
+                          Confirme a senha da sua conta FichaZen para vincular ao programa de parceiros:
+                        </p>
+                        <FormField
+                          control={form.control}
+                          name="accountPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Senha da conta FichaZen</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input 
+                                    type={showAccountPassword ? "text" : "password"} 
+                                    placeholder="••••••" 
+                                    {...field} 
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-0 top-0 h-full px-3"
+                                    onClick={() => setShowAccountPassword(!showAccountPassword)}
+                                  >
+                                    {showAccountPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </Button>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
 
                     <FormField
                       control={form.control}
