@@ -304,23 +304,33 @@ const ClientProfile = () => {
             animationDelay: "0.2s"
           }}>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="flex items-center gap-2 text-primary-dark">
                     <Calendar className="h-5 w-5" />
                     Histórico de Visitas
                   </CardTitle>
-                  <div className="flex gap-2">
-                    {client.visits.some(visit => visit.status === "Agendado") && <Button onClick={() => {
-                    const nextVisit = client.visits.find(v => v.status === "Agendado");
-                    if (nextVisit) openRescheduleDialog(nextVisit);
-                  }} variant="outline" className="border-primary hover:bg-primary/10">
+                  <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
+                    {client.visits.some(visit => visit.status === "Agendado") && (
+                      <Button 
+                        onClick={() => {
+                          const nextVisit = client.visits.find(v => v.status === "Agendado");
+                          if (nextVisit) openRescheduleDialog(nextVisit);
+                        }} 
+                        variant="outline" 
+                        className="border-primary hover:bg-primary/10 w-full sm:w-auto text-sm"
+                      >
                         <Calendar className="h-4 w-4 mr-2" />
-                        Reagendar Visita
-                      </Button>}
-                <Button onClick={() => navigate(`/cliente/${id}/nova-visita`)} variant="cta">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Visita
-                </Button>
+                        <span className="sm:inline">Reagendar</span>
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={() => navigate(`/cliente/${id}/nova-visita`)} 
+                      variant="cta"
+                      className="w-full sm:w-auto text-sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="sm:inline">Nova Visita</span>
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

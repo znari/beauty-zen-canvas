@@ -354,14 +354,18 @@ export default function ProfileSettings() {
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-primary/10 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-primary-dark">Perfil</h1>
               <p className="text-sm text-muted-foreground">
                 Gerencie as informações do seu estúdio
               </p>
             </div>
-            <Button onClick={() => setShowSaveConfirmDialog(true)} className="shadow-lg" disabled={saving || loading}>
+            <Button 
+              onClick={() => setShowSaveConfirmDialog(true)} 
+              className="shadow-lg w-full sm:w-auto" 
+              disabled={saving || loading}
+            >
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Salvando..." : "Salvar Alterações"}
             </Button>
