@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, FileText, Camera } from "lucide-react";
 import agendaPreview from "@/assets/agenda-preview.webp";
+import beforeAfterPreview from "@/assets/before-after-preview.jpeg";
 
 export const ProductShowcaseSection = () => {
   return (
@@ -112,23 +113,16 @@ export const ProductShowcaseSection = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <div 
-                      key={index} 
-                      className="aspect-square bg-gradient-to-br from-muted via-muted/50 to-background rounded-lg border border-border/50 flex items-center justify-center group hover:border-secondary/50 transition-colors"
-                    >
-                      <Camera className="w-8 h-8 text-muted-foreground/40 group-hover:text-secondary/60 transition-colors" />
-                    </div>
-                  ))}
+                <div className="flex justify-center">
+                  <img 
+                    src={beforeAfterPreview} 
+                    alt="Exemplo de galeria de antes e depois no FichaZen"
+                    className="rounded-xl border border-border/50 shadow-lg max-w-full max-h-[500px] object-contain"
+                  />
                 </div>
 
-                <div className="pt-6 flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-muted-foreground">6 fotos • Visita 23/11/2025</span>
-                  </div>
-                  <span className="text-secondary font-medium">Criptografado 🔒</span>
+                <div className="pt-6 flex items-center justify-center text-sm">
+                  <span className="text-secondary font-medium">Armazenamento criptografado 🔒</span>
                 </div>
               </div>
             </div>
