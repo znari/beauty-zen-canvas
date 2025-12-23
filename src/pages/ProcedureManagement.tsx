@@ -203,22 +203,24 @@ export default function ProcedureManagement() {
                           R$ {procedimento.preco.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex flex-col xs:flex-row gap-2 justify-end">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => openEditDialog(procedimento)}
+                              className="w-full xs:w-auto"
                             >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
+                              <Edit className="h-4 w-4 xs:mr-2" />
+                              <span className="hidden xs:inline">Editar</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
                               onClick={() => openDeleteDialog(procedimento)}
+                              className="w-full xs:w-auto"
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Remover
+                              <Trash2 className="h-4 w-4 xs:mr-2" />
+                              <span className="hidden xs:inline">Remover</span>
                             </Button>
                           </div>
                         </TableCell>

@@ -151,33 +151,46 @@ const Billing = () => {
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Month Navigation + Professional Filter */}
         <Card className="bg-white shadow-card border-0">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <Button
-                variant="outline"
-                onClick={handlePreviousMonth}
-                className="border-primary/30 hover:bg-primary/10"
-              >
-                <ChevronLeft className="h-5 w-5 mr-2" />
-                Mês Anterior
-              </Button>
-              
-              <div className="text-center flex flex-col items-center gap-2">
-                <h2 className="text-2xl font-bold text-secondary">{formattedMonth}</h2>
-                {selectedProfessional && (
-                  <span className="text-sm text-muted-foreground">
-                    Filtrando: {teamMembers.find(m => m.id === selectedProfessional)?.name}
-                  </span>
-                )}
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
+              {/* Navigation Row */}
+              <div className="flex flex-col xs:flex-row items-center justify-between gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousMonth}
+                  className="border-primary/30 hover:bg-primary/10 w-full xs:w-auto"
+                >
+                  <ChevronLeft className="h-5 w-5 xs:mr-2" />
+                  <span className="hidden xs:inline">Mês Anterior</span>
+                </Button>
+                
+                <div className="text-center flex flex-col items-center">
+                  <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-secondary">{formattedMonth}</h2>
+                  {selectedProfessional && (
+                    <span className="text-xs sm:text-sm text-muted-foreground">
+                      Filtrando: {teamMembers.find(m => m.id === selectedProfessional)?.name}
+                    </span>
+                  )}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleNextMonth}
+                  className="border-primary/30 hover:bg-primary/10 w-full xs:w-auto"
+                  disabled={selectedMonth >= new Date()}
+                >
+                  <span className="hidden xs:inline">Próximo Mês</span>
+                  <ChevronRight className="h-5 w-5 xs:ml-2" />
+                </Button>
               </div>
-              
-              <div className="flex gap-2 flex-wrap justify-end">
-                {/* Filtro por profissional */}
+
+              {/* Filters Row */}
+              <div className="flex flex-col xs:flex-row gap-2 w-full">
                 <Select 
                   value={selectedProfessional || "all"} 
                   onValueChange={(v) => setSelectedProfessional(v === "all" ? null : v)}
                 >
-                  <SelectTrigger className="w-[200px] border-primary/30">
+                  <SelectTrigger className="w-full xs:flex-1 border-primary/30">
                     <Users className="h-4 w-4 mr-2 text-primary" />
                     <SelectValue placeholder="Todos os profissionais" />
                   </SelectTrigger>
@@ -192,21 +205,13 @@ const Billing = () => {
                 </Select>
 
                 <Button
-                  variant="outline"
-                  onClick={handleNextMonth}
-                  className="border-primary/30 hover:bg-primary/10"
-                  disabled={selectedMonth >= new Date()}
-                >
-                  Próximo Mês
-                  <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-                <Button
                   onClick={handleExportPDF}
-                  className="gradient-button text-white font-semibold"
+                  className="gradient-button text-white font-semibold w-full xs:w-auto"
                   disabled={!canExportPDF}
                 >
-                  <Download className="h-5 w-5 mr-2" />
-                  {canExportPDF ? "Exportar PDF" : "Bloqueado"}
+                  <Download className="h-5 w-5 xs:mr-2" />
+                  <span className="hidden xs:inline">{canExportPDF ? "Exportar PDF" : "Bloqueado"}</span>
+                  <span className="xs:hidden">{canExportPDF ? "PDF" : "Bloqueado"}</span>
                 </Button>
               </div>
             </div>
@@ -214,7 +219,7 @@ const Billing = () => {
         </Card>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
           <Card className="bg-white border-b-4 border-b-primary shadow-card hover-lift">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">

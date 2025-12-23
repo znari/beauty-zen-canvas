@@ -29,6 +29,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Users,
   DollarSign,
   TrendingUp,
@@ -403,28 +409,62 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">Painel Administrativo</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <div className="flex items-center gap-2">
+            {/* Mobile: Compact buttons */}
+            <Button variant="outline" size="icon" onClick={handleRefresh} className="sm:hidden">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            
+            {/* Mobile: Dropdown for secondary actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="sm:hidden">
+                  <Filter className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setBroadcastModalOpen(true)}>
+                  <Megaphone className="w-4 h-4 mr-2" />
+                  Broadcast
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: Full buttons */}
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="hidden sm:flex">
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setBroadcastModalOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setBroadcastModalOpen(true)} className="hidden sm:flex">
               <Megaphone className="w-4 h-4 mr-2" />
               Broadcast
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
               <Download className="w-4 h-4 mr-2" />
               CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} className="hidden sm:flex">
               <FileText className="w-4 h-4 mr-2" />
               PDF
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" className="hidden sm:flex">
                   <UserX className="w-4 h-4 mr-2" />
                   Sessões
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon" className="sm:hidden">
+                  <UserX className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
