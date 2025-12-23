@@ -453,18 +453,19 @@ const Dashboard = () => {
         {/* Weekly Calendar */}
         <Card className="bg-white shadow-card border-0 animate-fade-in-up">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-                <Calendar className="h-6 w-6" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-primary flex items-center gap-2">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
                 Agenda Semanal
               </CardTitle>
               <Button
                 onClick={() => setShowMonthlyCalendar(true)}
                 variant="outline"
-                className="border-primary hover:bg-primary/10 font-semibold"
+                className="border-primary hover:bg-primary/10 font-semibold w-full sm:w-auto"
               >
-                <CalendarDays className="h-5 w-5 mr-2" />
-                Agendamentos do Mês
+                <CalendarDays className="h-5 w-5 xs:mr-2" />
+                <span className="hidden xs:inline">Agendamentos do Mês</span>
+                <span className="xs:hidden">Ver Mês</span>
               </Button>
             </div>
           </CardHeader>
