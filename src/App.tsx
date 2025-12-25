@@ -43,6 +43,8 @@ import Partners from "./pages/Partners";
 import PartnerSuccess from "./pages/PartnerSuccess";
 import ReferralRedirect from "./pages/ReferralRedirect";
 import PartnerDashboard from "./pages/PartnerDashboard";
+import PublicBooking from "./pages/PublicBooking";
+import PublicBookingSuccess from "./pages/PublicBookingSuccess";
 import { PWAInstallBanner } from "./components/PWAInstallBanner";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 
@@ -73,6 +75,8 @@ const App = () => (
             <Route path="/parceiros" element={<Partners />} />
             <Route path="/parceiros/sucesso" element={<PartnerSuccess />} />
             <Route path="/r/:code" element={<ReferralRedirect />} />
+            <Route path="/agendar/:slug" element={<PublicBooking />} />
+            <Route path="/agendar/sucesso" element={<PublicBookingSuccess />} />
             
             {/* Onboarding route (protected) */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
