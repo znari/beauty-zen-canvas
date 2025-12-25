@@ -162,6 +162,169 @@ export type Database = {
           },
         ]
       }
+      booking_requests: {
+        Row: {
+          assigned_professional_id: string | null
+          client_email: string | null
+          client_name: string
+          client_phone: string
+          converted_client_id: string | null
+          converted_visit_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          procedure_id: string
+          professional_id: string
+          rejection_reason: string | null
+          requested_date: string
+          requested_time: string
+          reviewed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          assigned_professional_id?: string | null
+          client_email?: string | null
+          client_name: string
+          client_phone: string
+          converted_client_id?: string | null
+          converted_visit_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          procedure_id: string
+          professional_id: string
+          rejection_reason?: string | null
+          requested_date: string
+          requested_time: string
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          assigned_professional_id?: string | null
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string
+          converted_client_id?: string | null
+          converted_visit_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          procedure_id?: string
+          professional_id?: string
+          rejection_reason?: string | null
+          requested_date?: string
+          requested_time?: string
+          reviewed_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_requests_assigned_professional_id_fkey"
+            columns: ["assigned_professional_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_requests_converted_client_id_fkey"
+            columns: ["converted_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_requests_converted_visit_id_fkey"
+            columns: ["converted_visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_requests_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_requests_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_requests_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "v_dashboard_stats"
+            referencedColumns: ["professional_id"]
+          },
+        ]
+      }
+      booking_settings: {
+        Row: {
+          blocked_dates: Json | null
+          booking_slug: string | null
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          max_advance_days: number | null
+          min_advance_hours: number | null
+          professional_id: string
+          require_approval: boolean | null
+          slot_duration_minutes: number | null
+          updated_at: string | null
+          welcome_message: string | null
+          working_hours: Json | null
+        }
+        Insert: {
+          blocked_dates?: Json | null
+          booking_slug?: string | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          max_advance_days?: number | null
+          min_advance_hours?: number | null
+          professional_id: string
+          require_approval?: boolean | null
+          slot_duration_minutes?: number | null
+          updated_at?: string | null
+          welcome_message?: string | null
+          working_hours?: Json | null
+        }
+        Update: {
+          blocked_dates?: Json | null
+          booking_slug?: string | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          max_advance_days?: number | null
+          min_advance_hours?: number | null
+          professional_id?: string
+          require_approval?: boolean | null
+          slot_duration_minutes?: number | null
+          updated_at?: string | null
+          welcome_message?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_settings_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_settings_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: true
+            referencedRelation: "v_dashboard_stats"
+            referencedColumns: ["professional_id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string | null
@@ -1196,7 +1359,48 @@ export type Database = {
           visit_count: number
         }[]
       }
+      get_booked_slots: {
+        Args: {
+          p_date: string
+          p_professional_id: string
+          p_team_member_id?: string
+        }
+        Returns: {
+          end_time: string
+          start_time: string
+        }[]
+      }
+      get_booking_settings_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          blocked_dates: Json
+          max_advance_days: number
+          min_advance_hours: number
+          professional_id: string
+          slot_duration_minutes: number
+          studio_name: string
+          welcome_message: string
+          working_hours: Json
+        }[]
+      }
       get_partner_dashboard: { Args: { p_user_id?: string }; Returns: Json }
+      get_public_procedures: {
+        Args: { p_professional_id: string }
+        Returns: {
+          duration_minutes: number
+          id: string
+          name: string
+          price: number
+        }[]
+      }
+      get_public_team_members: {
+        Args: { p_professional_id: string }
+        Returns: {
+          id: string
+          name: string
+          specialty: string
+        }[]
+      }
       get_public_visit_info: {
         Args: { client_uuid: string }
         Returns: {
