@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { WorkingHours } from "./useBookingSettings";
+import { generateSlugFromName } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
 
 interface SaveBookingSettingsData {
   is_enabled: boolean;
-  booking_slug: string | null;
   welcome_message: string | null;
   min_advance_hours: number;
   max_advance_days: number;
@@ -26,19 +26,37 @@ export const useSaveBookingSettings = () => {
     mutationFn: async (data: SaveBookingSettingsData) => {
       if (!user?.id) throw new Error("Usuário não autenticado");
 
-      // Check if slug is available (if provided)
-      if (data.booking_slug) {
-        const { data: existingSlug, error: slugError } = await supabase
+      // Buscar studio_name do perfil
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("studio_name, full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Gerar slug a partir do studio_name ou full_name
+      const studioName = profile.studio_name || profile.full_name;
+      let baseSlug = generateSlugFromName(studioName);
+      if (!baseSlug || baseSlug.length < 3) {
+        baseSlug = "meu-studio";
+      }
+
+      // Verificar duplicatas e adicionar sufixo se necessário
+      let finalSlug = baseSlug;
+      let counter = 1;
+      
+      while (true) {
+        const { data: existingSlug } = await supabase
           .from("booking_settings")
           .select("professional_id")
-          .eq("booking_slug", data.booking_slug)
+          .eq("booking_slug", finalSlug)
           .neq("professional_id", user.id)
           .maybeSingle();
 
-        if (slugError) throw slugError;
-        if (existingSlug) {
-          throw new Error("Este link já está em uso. Escolha outro.");
-        }
+        if (!existingSlug) break;
+        counter++;
+        finalSlug = `${baseSlug}-${counter}`;
       }
 
       const { data: result, error } = await supabase
@@ -46,7 +64,7 @@ export const useSaveBookingSettings = () => {
         .upsert({
           professional_id: user.id,
           is_enabled: data.is_enabled,
-          booking_slug: data.booking_slug,
+          booking_slug: finalSlug,
           welcome_message: data.welcome_message,
           min_advance_hours: data.min_advance_hours,
           max_advance_days: data.max_advance_days,
