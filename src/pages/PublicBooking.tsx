@@ -89,7 +89,7 @@ const PublicBooking = () => {
     }
 
     try {
-      await createBookingRequest.mutateAsync({
+      const result = await createBookingRequest.mutateAsync({
         professional_id: settings.professional_id,
         client_name: clientName,
         client_phone: clientPhone,
@@ -106,6 +106,7 @@ const PublicBooking = () => {
           studioName: settings.studio_name,
           date: format(selectedDate, "dd 'de' MMMM", { locale: ptBR }),
           time: selectedTime,
+          isAutoApproved: result.isAutoApproved,
         },
       });
     } catch (error) {

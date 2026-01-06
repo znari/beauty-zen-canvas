@@ -1,5 +1,5 @@
 import { useLocation, Link } from "react-router-dom";
-import { CheckCircle, Calendar, Clock, ArrowLeft } from "lucide-react";
+import { CheckCircle, Calendar, Clock, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -7,27 +7,38 @@ interface LocationState {
   studioName: string;
   date: string;
   time: string;
+  isAutoApproved?: boolean;
 }
 
 const PublicBookingSuccess = () => {
   const location = useLocation();
   const state = location.state as LocationState | null;
+  const isAutoApproved = state?.isAutoApproved ?? false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background-alt flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardContent className="pt-8 pb-8 text-center">
           {/* Success icon */}
-          <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-success-foreground" />
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            isAutoApproved ? "bg-success/20" : "bg-primary/20"
+          }`}>
+            {isAutoApproved ? (
+              <CheckCircle className="h-10 w-10 text-success-foreground" />
+            ) : (
+              <Sparkles className="h-10 w-10 text-primary" />
+            )}
           </div>
 
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Solicitação enviada!
+            {isAutoApproved ? "Agendamento confirmado!" : "Solicitação enviada!"}
           </h1>
 
           <p className="text-muted-foreground mb-6">
-            Sua solicitação de agendamento foi enviada com sucesso e será analisada em breve.
+            {isAutoApproved 
+              ? "Seu agendamento foi confirmado automaticamente. Aguardamos você!"
+              : "Sua solicitação de agendamento foi enviada com sucesso e será analisada em breve."
+            }
           </p>
 
           {state && (
@@ -48,7 +59,10 @@ const PublicBookingSuccess = () => {
 
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              📱 Você receberá uma mensagem no WhatsApp assim que o agendamento for confirmado.
+              {isAutoApproved 
+                ? "📱 Você pode salvar essas informações ou aguardar nosso contato via WhatsApp."
+                : "📱 Você receberá uma mensagem no WhatsApp assim que o agendamento for confirmado."
+              }
             </p>
 
             <Button asChild variant="outline" className="w-full">
