@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Copy, ExternalLink, Link2, Clock, CalendarDays, Settings2, MessageSquare } from "lucide-react";
+import { ArrowLeft, Save, Copy, ExternalLink, Link2, Clock, CalendarDays, Settings2, MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +19,10 @@ import { useBookingSettings, defaultWorkingHours, WorkingHours } from "@/hooks/u
 import { useSaveBookingSettings } from "@/hooks/useSaveBookingSettings";
 import { WorkingHoursRow } from "@/components/booking/WorkingHoursRow";
 import { BlockedDatesSelector } from "@/components/booking/BlockedDatesSelector";
+import { generateSlugFromName } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const dayLabels: Record<string, string> = {
   monday: "Segunda-feira",
@@ -36,12 +39,31 @@ const daysOrder = ["monday", "tuesday", "wednesday", "thursday", "friday", "satu
 const BookingSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: settings, isLoading } = useBookingSettings();
   const saveSettings = useSaveBookingSettings();
 
+  // Buscar perfil para obter studio_name
+  const { data: profile } = useQuery({
+    queryKey: ["profile-studio", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("studio_name, full_name")
+        .eq("id", user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Gerar slug a partir do studio_name
+  const studioName = profile?.studio_name || profile?.full_name || "";
+  const generatedSlug = settings?.booking_slug || generateSlugFromName(studioName) || "meu-studio";
+
   // Form state
   const [isEnabled, setIsEnabled] = useState(true);
-  const [slug, setSlug] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [minAdvanceHours, setMinAdvanceHours] = useState(24);
   const [maxAdvanceDays, setMaxAdvanceDays] = useState(30);
@@ -54,7 +76,6 @@ const BookingSettings = () => {
   useEffect(() => {
     if (settings) {
       setIsEnabled(settings.is_enabled);
-      setSlug(settings.booking_slug || "");
       setWelcomeMessage(settings.welcome_message || "");
       setMinAdvanceHours(settings.min_advance_hours);
       setMaxAdvanceDays(settings.max_advance_days);
@@ -65,23 +86,7 @@ const BookingSettings = () => {
     }
   }, [settings]);
 
-  const handleSlugChange = (value: string) => {
-    // Only allow lowercase letters, numbers, and hyphens
-    const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    setSlug(sanitized);
-  };
-
   const handleSave = async () => {
-    // Validate slug
-    if (isEnabled && (!slug || slug.length < 3)) {
-      toast({
-        title: "Link inválido",
-        description: "O link deve ter pelo menos 3 caracteres.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate working hours
     for (const day of daysOrder) {
       const hours = workingHours[day];
@@ -97,7 +102,6 @@ const BookingSettings = () => {
 
     await saveSettings.mutateAsync({
       is_enabled: isEnabled,
-      booking_slug: slug || null,
       welcome_message: welcomeMessage || null,
       min_advance_hours: minAdvanceHours,
       max_advance_days: maxAdvanceDays,
@@ -109,7 +113,7 @@ const BookingSettings = () => {
   };
 
   const copyLink = () => {
-    const fullUrl = `${window.location.origin}/agendar/${slug}`;
+    const fullUrl = `${window.location.origin}/agendar/${generatedSlug}`;
     navigator.clipboard.writeText(fullUrl);
     toast({
       title: "Link copiado!",
@@ -118,7 +122,7 @@ const BookingSettings = () => {
   };
 
   const testLink = () => {
-    window.open(`/agendar/${slug}`, "_blank");
+    window.open(`/agendar/${generatedSlug}`, "_blank");
   };
 
   const updateWorkingHours = (day: string, value: WorkingHours) => {
@@ -179,26 +183,16 @@ const BookingSettings = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug">Seu link personalizado</Label>
+              <Label>Seu link de agendamento</Label>
               <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 flex items-center gap-0">
-                  <span className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-l-md border border-r-0">
-                    {window.location.origin}/agendar/
-                  </span>
-                  <Input
-                    id="slug"
-                    value={slug}
-                    onChange={(e) => handleSlugChange(e.target.value)}
-                    placeholder="seu-studio"
-                    className="rounded-l-none"
-                  />
+                <div className="flex-1 bg-muted px-3 py-2 rounded-md border text-sm text-muted-foreground truncate">
+                  {window.location.origin}/agendar/{generatedSlug}
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={copyLink}
-                    disabled={!slug}
                     title="Copiar link"
                   >
                     <Copy className="h-4 w-4" />
@@ -207,16 +201,19 @@ const BookingSettings = () => {
                     variant="outline"
                     size="icon"
                     onClick={testLink}
-                    disabled={!slug}
                     title="Testar link"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use apenas letras minúsculas, números e hífens. Mínimo 3 caracteres.
-              </p>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  O link é gerado automaticamente a partir do nome do seu estúdio. 
+                  Para alterá-lo, atualize o nome em <button onClick={() => navigate("/perfil")} className="underline hover:text-primary">Configurações do Perfil</button>.
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
