@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2, Handshake, CalendarCheck } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2, Handshake, CalendarCheck, CalendarClock } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { usePWAInstallReminder } from "@/hooks/usePWAInstallReminder";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +51,7 @@ import { useCancelVisit } from "@/hooks/useCancelVisit";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBlockedActions } from "@/hooks/useBlockedActions";
+import { usePendingBookingRequestsCount } from "@/hooks/usePendingBookingRequestsCount";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, addDays, format, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -89,6 +90,7 @@ const Dashboard = () => {
   const { data: teamMembers = [] } = useTeamMembers(true); // activeOnly = true
   const { checkPermission, isBlocked } = useBlockedActions();
   const { isInstalled } = usePWAInstall();
+  const { data: pendingBookingCount = 0 } = usePendingBookingRequestsCount();
   
   // Trigger PWA install reminder after 3 days
   usePWAInstallReminder();
@@ -398,6 +400,15 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => navigate("/configuracoes/agendamento")}>
                 <CalendarCheck className="h-4 w-4 mr-2" />
                 Agendamento Online
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/agendamentos/solicitacoes")} className="relative">
+                <CalendarClock className="h-4 w-4 mr-2" />
+                Solicitações de Agendamento
+                {pendingBookingCount > 0 && (
+                  <Badge variant="destructive" className="ml-auto h-5 min-w-5 flex items-center justify-center text-xs px-1.5">
+                    {pendingBookingCount}
+                  </Badge>
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/faturamento")}>
                 <DollarSign className="h-4 w-4 mr-2" />
