@@ -13,10 +13,15 @@ interface CreateBookingRequestData {
   notes?: string;
 }
 
+export interface CreateBookingRequestResult {
+  status: string;
+  isAutoApproved: boolean;
+}
+
 export const useCreateBookingRequest = () => {
   return useMutation({
-    mutationFn: async (data: CreateBookingRequestData) => {
-      const { error } = await supabase
+    mutationFn: async (data: CreateBookingRequestData): Promise<CreateBookingRequestResult> => {
+      const { data: result, error } = await supabase
         .from("booking_requests")
         .insert({
           professional_id: data.professional_id,
@@ -28,9 +33,16 @@ export const useCreateBookingRequest = () => {
           requested_date: data.requested_date,
           requested_time: data.requested_time,
           notes: data.notes || null,
-        });
+        })
+        .select("status")
+        .single();
 
       if (error) throw error;
+
+      return {
+        status: result?.status || "pending",
+        isAutoApproved: result?.status === "approved",
+      };
     },
   });
 };

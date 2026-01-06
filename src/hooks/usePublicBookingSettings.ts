@@ -16,6 +16,7 @@ export interface BookingSettings {
   slot_duration_minutes: number;
   working_hours: Record<string, WorkingHours>;
   blocked_dates: string[];
+  require_approval: boolean;
 }
 
 export const usePublicBookingSettings = (slug: string) => {
@@ -40,6 +41,7 @@ export const usePublicBookingSettings = (slug: string) => {
         slot_duration_minutes: settings.slot_duration_minutes,
         working_hours: settings.working_hours as unknown as Record<string, WorkingHours>,
         blocked_dates: (settings.blocked_dates as unknown as string[]) || [],
+        require_approval: settings.require_approval ?? true,
       };
     },
     enabled: !!slug,

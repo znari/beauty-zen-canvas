@@ -1377,6 +1377,7 @@ export type Database = {
           max_advance_days: number
           min_advance_hours: number
           professional_id: string
+          require_approval: boolean
           slot_duration_minutes: number
           studio_name: string
           welcome_message: string
