@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2, Handshake } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Search, Plus, MessageSquare, User, Clipboard, HelpCircle, LifeBuoy, LogOut, CheckCircle2, XCircle, X, Send, CalendarDays, ChevronLeft, ChevronRight, DollarSign, ExternalLink, Download, Building2, Handshake, CalendarCheck } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { usePWAInstallReminder } from "@/hooks/usePWAInstallReminder";
 import { useAuth } from "@/contexts/AuthContext";
@@ -394,6 +394,10 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => navigate("/configuracoes/equipe")}>
                 <Users className="h-4 w-4 mr-2" />
                 Minha Equipe
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/agendamento")}>
+                <CalendarCheck className="h-4 w-4 mr-2" />
+                Agendamento Online
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/faturamento")}>
                 <DollarSign className="h-4 w-4 mr-2" />
