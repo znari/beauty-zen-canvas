@@ -410,7 +410,7 @@ export default function ProfileSettings() {
                       className="h-10 w-10 rounded-full"
                       onClick={() => setShowCropDialog(true)}
                       disabled={uploadAvatar.isPending}
-                      title="Editar foto"
+                      title="Editar logo"
                     >
                       <Camera className="h-5 w-5" />
                     </Button>
@@ -422,7 +422,7 @@ export default function ProfileSettings() {
                         className="h-10 w-10 rounded-full"
                         onClick={() => setShowDeleteDialog(true)}
                         disabled={deleteAvatar.isPending}
-                        title="Excluir foto"
+                        title="Excluir logo"
                       >
                         <Trash2 className="h-5 w-5" />
                       </Button>
@@ -436,7 +436,7 @@ export default function ProfileSettings() {
                   </h2>
                   <p className="text-muted-foreground">{profileData.email}</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    🔒 Suas fotos são privadas e seguras
+                    🔒 Seu logo é privado e seguro
                   </p>
                 </div>
               </div>
