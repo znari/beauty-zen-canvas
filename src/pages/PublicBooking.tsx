@@ -2,18 +2,20 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Clock, User, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, Sparkles, ArrowLeft, Loader2, MapPin, Phone, PauseCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { usePublicBookingSettings, WorkingHours } from "@/hooks/usePublicBookingSettings";
 import { usePublicProcedures } from "@/hooks/usePublicProcedures";
 import { usePublicTeamMembers } from "@/hooks/usePublicTeamMembers";
 import { usePublicAvailableSlots } from "@/hooks/usePublicAvailableSlots";
 import { useCreateBookingRequest } from "@/hooks/useCreateBookingRequest";
+import { usePublicAvatarUrl } from "@/hooks/usePublicAvatarUrl";
 import { toast } from "sonner";
 import { addDays, isBefore, startOfDay, isAfter } from "date-fns";
 
@@ -25,6 +27,12 @@ const DAY_MAP: Record<number, string> = {
   4: "thursday",
   5: "friday",
   6: "saturday",
+};
+
+const formatWhatsAppLink = (phone: string) => {
+  const cleaned = phone.replace(/\D/g, "");
+  const withCountry = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
+  return `https://wa.me/${withCountry}`;
 };
 
 const PublicBooking = () => {
@@ -55,6 +63,7 @@ const PublicBooking = () => {
     settings?.min_advance_hours || 24
   );
 
+  const { avatarUrl } = usePublicAvatarUrl(settings?.avatar_url);
   const createBookingRequest = useCreateBookingRequest();
 
   const isDateDisabled = (date: Date): boolean => {
@@ -147,8 +156,52 @@ const PublicBooking = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Agenda não encontrada</h1>
             <p className="text-muted-foreground">
-              Este link de agendamento não existe ou não está ativo.
+              Este link de agendamento não existe ou foi removido.
             </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Disabled state - agenda exists but is not enabled
+  if (!settings.is_enabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-background-alt p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8 pb-8">
+            {/* Avatar */}
+            <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-primary/20">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={settings.studio_name} />
+              ) : null}
+              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                {settings.studio_name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <h1 className="text-2xl font-bold text-foreground mb-2">{settings.studio_name}</h1>
+            
+            <div className="w-12 h-12 bg-warning/20 rounded-full flex items-center justify-center mx-auto my-4">
+              <PauseCircle className="h-6 w-6 text-warning" />
+            </div>
+            
+            <h2 className="text-lg font-medium text-foreground mb-2">
+              Agendamentos temporariamente indisponíveis
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Esta agenda não está aceitando novos agendamentos no momento.
+              Por favor, entre em contato diretamente com o profissional.
+            </p>
+
+            {settings.phone && (
+              <Button asChild className="w-full">
+                <a href={formatWhatsAppLink(settings.phone)} target="_blank" rel="noopener noreferrer">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Falar pelo WhatsApp
+                </a>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -157,20 +210,51 @@ const PublicBooking = () => {
 
   const selectedProcedureData = procedures?.find(p => p.id === selectedProcedure);
   const selectedProfessionalData = teamMembers?.find(t => t.id === selectedProfessional);
+  const hasLocation = settings.address_city || settings.address_state;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-background-alt py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full mb-4">
-            <Sparkles className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+          {/* Avatar */}
+          <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-primary/20 shadow-lg">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={settings.studio_name} />
+            ) : null}
+            <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+              {settings.studio_name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
             {settings.studio_name}
           </h1>
+          
+          {/* Location */}
+          {hasLocation && (
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2">
+              <MapPin className="h-3.5 w-3.5" />
+              {[settings.address_city, settings.address_state].filter(Boolean).join(", ")}
+            </p>
+          )}
+
+          {/* Welcome message */}
           {settings.welcome_message && (
-            <p className="text-muted-foreground">{settings.welcome_message}</p>
+            <p className="text-muted-foreground italic">&ldquo;{settings.welcome_message}&rdquo;</p>
+          )}
+
+          {/* WhatsApp contact */}
+          {settings.phone && (
+            <a
+              href={formatWhatsAppLink(settings.phone)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-3 text-sm text-primary hover:underline"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              Fale conosco pelo WhatsApp
+            </a>
           )}
         </div>
 
@@ -227,17 +311,17 @@ const PublicBooking = () => {
                           : "border-border"
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-foreground">{procedure.name}</h3>
-                          {procedure.duration_minutes && (
-                            <p className="text-sm text-muted-foreground">
-                              {procedure.duration_minutes} minutos
+                          {procedure.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {procedure.description}
                             </p>
                           )}
                         </div>
                         {procedure.price > 0 && (
-                          <span className="text-primary font-semibold">
+                          <span className="text-primary font-semibold whitespace-nowrap">
                             R$ {procedure.price.toFixed(2)}
                           </span>
                         )}

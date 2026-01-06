@@ -5,7 +5,7 @@ export interface PublicProcedure {
   id: string;
   name: string;
   price: number;
-  duration_minutes: number | null;
+  description: string | null;
 }
 
 export const usePublicProcedures = (professionalId: string | undefined) => {

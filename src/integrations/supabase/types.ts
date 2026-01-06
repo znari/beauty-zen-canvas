@@ -1373,9 +1373,14 @@ export type Database = {
       get_booking_settings_by_slug: {
         Args: { p_slug: string }
         Returns: {
+          address_city: string
+          address_state: string
+          avatar_url: string
           blocked_dates: Json
+          is_enabled: boolean
           max_advance_days: number
           min_advance_hours: number
+          phone: string
           professional_id: string
           require_approval: boolean
           slot_duration_minutes: number
@@ -1388,7 +1393,7 @@ export type Database = {
       get_public_procedures: {
         Args: { p_professional_id: string }
         Returns: {
-          duration_minutes: number
+          description: string
           id: string
           name: string
           price: number
