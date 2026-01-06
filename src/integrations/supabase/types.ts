@@ -1442,6 +1442,7 @@ export type Database = {
         Args: { p_client_id: string; p_responses: Json }
         Returns: Json
       }
+      unaccent: { Args: { "": string }; Returns: string }
       validate_referral_code: { Args: { p_code: string }; Returns: Json }
     }
     Enums: {
