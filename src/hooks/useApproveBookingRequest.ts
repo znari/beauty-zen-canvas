@@ -1,0 +1,121 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+
+interface ApproveParams {
+  requestId: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string | null;
+  procedureId: string;
+  procedureName: string;
+  requestedDate: string;
+  requestedTime: string;
+  assignedProfessionalId?: string | null;
+  notes?: string | null;
+}
+
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("55") && digits.length >= 12) {
+    return digits;
+  }
+  if (digits.length === 11 || digits.length === 10) {
+    return `55${digits}`;
+  }
+  return digits;
+}
+
+export function useApproveBookingRequest() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: ApproveParams) => {
+      if (!user?.id) throw new Error("Usuário não autenticado");
+
+      const normalizedPhone = normalizePhone(params.clientPhone);
+
+      // Check if client already exists by phone
+      const { data: existingClients } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("professional_id", user.id)
+        .eq("whatsapp_normalized", normalizedPhone)
+        .limit(1);
+
+      let clientId: string;
+
+      if (existingClients && existingClients.length > 0) {
+        clientId = existingClients[0].id;
+      } else {
+        // Create new client
+        const { data: newClient, error: clientError } = await supabase
+          .from("clients")
+          .insert({
+            professional_id: user.id,
+            name: params.clientName,
+            whatsapp_raw: params.clientPhone,
+            whatsapp_normalized: normalizedPhone,
+            notes: params.clientEmail ? `Email: ${params.clientEmail}` : null,
+          })
+          .select("id")
+          .single();
+
+        if (clientError) throw clientError;
+        clientId = newClient.id;
+      }
+
+      // Create visit
+      const { data: newVisit, error: visitError } = await supabase
+        .from("visits")
+        .insert({
+          professional_id: user.id,
+          client_id: clientId,
+          visit_date: params.requestedDate,
+          visit_time: params.requestedTime,
+          procedures: [{ id: params.procedureId, name: params.procedureName }],
+          assigned_professional_id: params.assignedProfessionalId,
+          notes: params.notes,
+          status: "scheduled",
+        })
+        .select("id")
+        .single();
+
+      if (visitError) throw visitError;
+
+      // Update booking request
+      const { error: updateError } = await supabase
+        .from("booking_requests")
+        .update({
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          converted_client_id: clientId,
+          converted_visit_id: newVisit.id,
+        })
+        .eq("id", params.requestId);
+
+      if (updateError) throw updateError;
+
+      return { clientId, visitId: newVisit.id };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Solicitação aprovada",
+        description: "O agendamento foi criado com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["booking-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-booking-requests-count"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["weekly-visits"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao aprovar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}

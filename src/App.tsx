@@ -20,6 +20,7 @@ import ClientAnamnesisForm from "./pages/ClientAnamnesisForm";
 import AnamnesisForm from "./pages/AnamnesisForm";
 import ExpiredVisit from "./pages/ExpiredVisit";
 import BookingSettings from "./pages/BookingSettings";
+import BookingRequests from "./pages/BookingRequests";
 import AnamnesisSuccess from "./pages/AnamnesisSuccess";
 import NewVisit from "./pages/NewVisit";
 import Success from "./pages/Success";
@@ -100,6 +101,7 @@ const App = () => (
             <Route path="/pagamentos" element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             <Route path="/configuracoes/equipe" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
             <Route path="/configuracoes/agendamento" element={<ProtectedRoute><BookingSettings /></ProtectedRoute>} />
+            <Route path="/agendamentos/solicitacoes" element={<ProtectedRoute><BookingRequests /></ProtectedRoute>} />
             <Route path="/ajuda" element={<Help />} />
             
             {/* Public support route - accessible without login */}
