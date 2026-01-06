@@ -113,6 +113,7 @@ const PublicBooking = () => {
       navigate("/agendar/sucesso", {
         state: {
           studioName: settings.studio_name,
+          avatarUrl: settings.avatar_url,
           date: format(selectedDate, "dd 'de' MMMM", { locale: ptBR }),
           time: selectedTime,
           isAutoApproved: result.isAutoApproved,
